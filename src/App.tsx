@@ -5,13 +5,13 @@ import MainLayout from './App/Mainlayout';
 import Login from './App/Login';
 import Price from './App/Price';
 import Candle from './App/Candle';
+import ProtectedRoute from './Components/ProtectedRoute';
+import PublicRoute from './Components/PublicRoute';
 
 function App() {
-  // const isDark = localStorage.getItem('darkMode') === 'true' ? true : false;
-
   const [isDark, setIsDark] = useState<boolean>(() => {
     const saved = localStorage.getItem('darkMode');
-    return saved ? saved === 'true' : true; // mặc định dark = true
+    return saved ? saved === 'true' : true;
   });
 
   const handle_dark_mode_toggle = () => {
@@ -23,16 +23,27 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login Route */}
-        <Route path="/login" element={<Login />} />
+        {/* Public Route - Login */}
+        <Route 
+          path="/login" 
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } 
+        />
         
-        {/* Main Layout with Nested Routes */}
-        <Route path="/" element={<MainLayout handle_dark_mode_toggle={handle_dark_mode_toggle} />}>
+        {/* Protected Routes - Main Layout */}
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <MainLayout handle_dark_mode_toggle={handle_dark_mode_toggle} />
+            </ProtectedRoute>
+          }
+        >
           {/* Default redirect to /price */}
-          <Route index element={<Navigate to="/price" replace  />} />
-
-          {/* Home Page */}   
-          {/* <Route path="home" element={<Price isDark={isDark}  />} /> */}
+          <Route index element={<Navigate to="/price" replace />} />
           
           {/* Price Page */}
           <Route path="price" element={<Price isDark={isDark} />} />
@@ -41,8 +52,8 @@ function App() {
           <Route path="candle" element={<Candle isDark={isDark} />} />
         </Route>
         
-        {/* Catch all - redirect to price */}
-        <Route path="*" element={<Navigate to="/price" replace />} />
+        {/* Catch all - redirect to login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );
