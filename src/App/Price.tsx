@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Space, Tag, Tooltip } from 'antd';
+import { Badge, Button, Modal, Space, Tag, Tooltip } from 'antd';
 import { 
   SearchOutlined, 
   AppstoreOutlined, 
@@ -1087,11 +1087,12 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   return (
     <div style={{ background: t.bg, minHeight: '100vh', padding: 0 }}>
       {/* Modal Thông Tin Broker */}
-      <CustomModal
+      <Modal
+        width={isMobile ? '90%' : isTablet ? '80%' : '70%'}
         open={openModalInfo}
-        onClose={() => setOpenModalInfo(false)}
+        onCancel={() => setOpenModalInfo(false)}
         title={isMobile ? "Thông Tin Sàn" : "Thông Tin Các Sàn Giao Dịch Đang Kết Nối"}
-        isDark={isDark}
+        // isDark={isDark}
       >
         <div style={{ overflowX: 'auto' }}>
           <Table
@@ -1102,14 +1103,16 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             size={isMobile ? 'small' : 'middle'}
           />
         </div>
-      </CustomModal>
+      </Modal>
+
+
 
       {/* Modal Thông Tin Symbols */}
-      <CustomModal
+      <Modal
+        width={isMobile ? '90%' : isTablet ? '80%' : '70%'}
         open={modalOpenSymbol}
-        onClose={() => setModalOpenSymbol(false)}
+        onCancel={() => setModalOpenSymbol(false)}
         title={isMobile ? `CHI TIẾT SYMBOL: ${activeTab}` : `CHI TIẾT SYMBOL: ${activeTab}`}
-        isDark={isDark}
       >
         <div style={{ overflowX: 'auto' }}>
           <Table
@@ -1120,7 +1123,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             size={isMobile ? 'small' : 'middle'}
           />
         </div>
-      </CustomModal>
+      </Modal>
 
       {/* Drawer */}
       <Drawer
