@@ -32,6 +32,7 @@ import { useWebSocketBrokers } from '../Hooks/ws.brokers';
 import { useWebSocketBrokerInfo } from '../Hooks/ws.broker.info';
 import { useWebSocketSymbols } from '../Hooks/ws.symbol.brokers';
 import axios from 'axios';
+import { Navigate } from 'react-router-dom';
 
 type ViewMode = 'grid' | 'list';
 
@@ -1392,15 +1393,19 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         try {
           message.loading("Resetting...");
           console.log('Reset ALL brokers initiated');
+          
+          const AccessToken = localStorage.getItem('accessToken') || '';
+          if (!AccessToken) {
+            messageApi.open({
+              type: 'warning',
+              content: 'Chưa có token truy cập!, vui lòng đăng nhập lại.',
+            });
+            return;
+          }
           messageApi.open({
       type: 'success',
       content: 'Đã gửi yêu cầu Reset ALL!',
     });
-          const AccessToken = localStorage.getItem('accessToken') || '';
-          if (!AccessToken) {
-            console.error('No access token found');
-            return;
-          }
           const resp = await axios.get(
             'http://116.105.227.149:8000/v1/api/reset-all-brokers',
             {
