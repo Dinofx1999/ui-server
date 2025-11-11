@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Modal, Space, Tag, Tooltip } from 'antd';
+import { Badge, Button, Modal, Space, Tag, Tooltip ,Alert } from 'antd';
 import { 
   SearchOutlined, 
   AppstoreOutlined, 
@@ -17,7 +17,7 @@ import {
 import AutocompleteSearch from '../Components/Autocomplete';
 import CustomModal from './../Components/CustomModal'; 
 import type { TableProps } from 'antd';
-import { Table, Drawer } from 'antd';
+import { Table, Drawer ,message } from 'antd';
 
 //Icon
 import {BidPriceIcon ,LongCandleIcon } from '../Helpers/icon';
@@ -31,6 +31,7 @@ import { useWebSocketAnalysis } from '../Hooks/ws.analysis';
 import { useWebSocketBrokers } from '../Hooks/ws.brokers';
 import { useWebSocketBrokerInfo } from '../Hooks/ws.broker.info';
 import { useWebSocketSymbols } from '../Hooks/ws.symbol.brokers';
+import axios from 'axios';
 
 type ViewMode = 'grid' | 'list';
 
@@ -214,7 +215,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       width: isMobile ? 50 : 80,
       render: (_, r) => (
         <div style={{ textAlign: 'center' }}>
-          <Tooltip title={`totalsymbol: ${r.totalsymbol}`} >
+          <Tooltip title={`Market Watch`} >
             <Tag
               style={{ cursor: 'pointer' }}
               color="tomato"
@@ -868,7 +869,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 
   const { symbols, connected_symbols, connect_symbols, disconnect_symbols } =
     useWebSocketSymbols(`ws://116.105.227.149:2000/symbol-brokers?symbol=${activeTab}`, {
-      autoConnect: true,
+      autoConnect: false,
       autoReconnect: false,
       debug: true,
     });
@@ -924,21 +925,21 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   useEffect(() => {
     if (brokers) {
       setDataBrokerInfo(brokers);
-      console.log('📊 Brokers data updated:', brokers);
+      // console.log('📊 Brokers data updated:', brokers);
     }
   }, [brokers]);
 
-  useEffect(() => {
-    if (symbols) {
-      console.log('📊 Symbols data updated:', symbols);
-    }
-  }, [symbols]);
+  // useEffect(() => {
+  //   if (symbols) {
+  //     console.log('📊 Symbols data updated:', symbols);
+  //   }
+  // }, [symbols]);
 
-  useEffect(() => {
-    if (brokerInfo) {
-      console.log('📊 Brokers data updated 71238:', brokerInfo);
-    }
-  }, [brokerInfo]);
+  // useEffect(() => {
+  //   if (brokerInfo) {
+  //     console.log('📊 Brokers data updated 71238:', brokerInfo);
+  //   }
+  // }, [brokerInfo]);
 
   const handleClickInfo = () => {
     setOpenModalInfo(prev => !prev);
@@ -1345,7 +1346,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         title={isMobile ? "Thông Tin Sàn" : "Thông Tin Các Sàn Giao Dịch Đang Kết Nối"}
         // isDark={isDark}
       >
-        <div style={{ overflowX: 'auto' }}>
+
+        <div style={{ overflowX: 'auto',textAlign: 'center'  }}>
           <Table
             columns={columns}
             dataSource={Array.isArray(dataBrokerInfo) ? dataBrokerInfo : []}
@@ -1353,7 +1355,36 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             pagination={{ pageSize: isMobile ? 5 : 10, simple: isMobile }}
             size={isMobile ? 'small' : 'middle'}
           />
+          <Button onClick={async () => {
+            try {
+              const AccessToken = localStorage.getItem('accessToken') || '';
+              if (!AccessToken) {
+                console.error('No access token found');
+                return;
+              }
+              const resp = await axios.get(
+                'http://116.105.227.149:8000/v1/api/reset-all-brokers',
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `${AccessToken}`,
+                  },
+                  timeout: 10000, // optional: giới hạn 10s
+                }
+              );
+              if (resp.data && resp.data.success) {
+                message.success("Reset ALL successful!");
+                console.log('Reset ALL response:', resp.data);
+              }else {
+                console.error('Reset ALL failed:', resp.data);
+                
+              }
+          } catch (error) {
+            console.error('Error resetting:', error);
+          }
+        }}>Reset ALL</Button>
         </div>
+
       </Modal>
 
 
@@ -1538,244 +1569,481 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 
       {/* Search Bar */}
       <div
-        style={{
-          padding: isMobile ? '12px 16px' : isTablet ? '14px 20px' : '16px 24px',
-          background: t.subHeaderBg,
-          borderBottom: `1px solid ${t.border}`,
-        }}
-      >
-        <div style={{
-          display: 'flex',
-          gap: isMobile ? '8px' : '12px',
-          alignItems: 'center',
-          flexWrap: 'wrap',
+  style={{
+    padding: isMobile ? '12px 16px' : isTablet ? '14px 20px' : '16px 24px',
+    background: t.subHeaderBg,
+    borderBottom: `1px solid ${t.border}`,
+  }}
+>
+  <div style={{
+    display: 'flex',
+    gap: isMobile ? '8px' : '12px',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    
+  }}>
+    <div style={{ flex: isMobile ? '1 1 100%' : '1 1 auto', minWidth: isMobile ? '100%' : '200px' }}>
+      <AutocompleteSearch
+        suggestions={analysis?.symbols || []}
+        placeholder="Search..."
+        onSearch={handleSearch}
+        onSelect={handleSelect}
+        theme={t}
+      />
+   </div>
+
+  <div style={{ 
+  width: isMobile ? '100%' : '600px', // ✅ Width cố định
+  maxWidth: '100%',
+}}>
+  {analysis?.resetting && Array.isArray(analysis.resetting) && analysis.resetting.length > 0 && (
+    <Alert
+      message={
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 8,
+          overflow: 'hidden', // ✅ Hide overflow
         }}>
-          <div style={{ flex: isMobile ? '1 1 100%' : '1 1 auto', minWidth: isMobile ? '100%' : '200px' }}>
-            <AutocompleteSearch
-              suggestions={analysis?.symbols || []}
-              placeholder="Search..."
-              onSearch={handleSearch}
-              onSelect={handleSelect}
-              theme={t}
-            />
-          </div>
+          <span style={{ 
+            fontWeight: 700,
+            fontSize: '14px',
+            color: '#d97706',
+            flexShrink: 0,
+          }}>
+            ({analysis.resetting.length})
+          </span>
+          <span style={{ color: '#6b7280', flexShrink: 0 }}>:</span>
+          
+          <span style={{
+            overflow: 'hidden', // ✅ Hide overflow
+            textOverflow: 'ellipsis', // ✅ Show "..."
+            whiteSpace: 'nowrap', // ✅ Single line
+            fontSize: '13px',
+          }}>
+            {analysis.resetting.map((item: any, idx: number) => (
+              <span key={idx}>
+                <span style={{ fontWeight: 600 }}>{item.broker}</span>
+                {' '}
+                <span style={{ color: '#f59e0b', fontWeight: 700 }}>{item.status}</span>
+                {idx < analysis.resetting.length - 1 && ', '}
+              </span>
+            ))}
+          </span>
+        </div>
+      }
+      type="warning"
+      showIcon
+      closable
+      style={{
+        borderRadius: '8px',
+        border: '1px solid #fbbf24',
+      }}
+    />
+  )}
+</div>
 
-          {!isMobile && (
-            <>
-              <button
-                onClick={handleClickInfo}
-                style={{
-                  padding: isTablet ? '8px 16px' : '10px 20px',
-                  background: t.accentIndigo,
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
-                }}
-              >
-                <InfoCircleOutlined />
-                {!isTablet && 'Info'}
-              </button>
+    {!isMobile && (
+      <>
+        {/* Info Button */}
+        <button
+          onClick={handleClickInfo}
+          style={{
+            padding: isTablet ? '8px 16px' : '10px 20px',
+            background: t.accentIndigo,
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = t.accentIndigoGradient;
+            e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+            e.currentTarget.style.boxShadow = '0 8px 20px rgba(5, 150, 105, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = t.accentIndigo;
+            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.25)';
+          }}
+          onMouseDown={(e) => {
+            e.currentTarget.style.transform = 'translateY(0) scale(0.98)';
+          }}
+          onMouseUp={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+          }}
+        >
+          <InfoCircleOutlined />
+          {!isTablet && 'Info'}
+        </button>
 
-              {!isTablet && (
-                <>
-                  <button
-                    style={{
-                      padding: '10px 20px',
-                      background: t.btnNeutral,
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: t.muted,
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    <SettingOutlined />
-                    Config
-                  </button>
-
-                  <button
-                    style={{
-                      padding: '10px 20px',
-                      background: t.btnNeutral,
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: t.muted,
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    <HistoryOutlined />
-                    History
-                  </button>
-
-                  <button
-                    style={{
-                      padding: '10px 20px',
-                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#fff',
-                      fontSize: '13px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.35)',
-                    }}
-                  >
-                    <ThunderboltOutlined />
-                    Spread 0
-                  </button>
-                </>
-              )}
-
-              <button
-                style={{
-                  padding: '10px',
-                  background: t.btnNeutral,
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: t.muted,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <ReloadOutlined style={{ fontSize: '16px' }} />
-              </button>
-            </>
-          )}
-
-          {isMobile && (
+        {!isTablet && (
+          <>
+            {/* Config Button */}
             <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
               style={{
-                padding: '8px 12px',
-                background: t.accentIndigo,
+                padding: '10px 20px',
+                background: t.btnNeutral,
                 border: 'none',
                 borderRadius: '8px',
-                color: '#fff',
+                color: t.muted,
+                fontSize: '13px',
+                fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                fontSize: '13px',
-                fontWeight: 600,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = t.btnNeutralHover;
+                e.currentTarget.style.color = t.text;
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = t.btnNeutral;
+                e.currentTarget.style.color = t.muted;
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(0.95)';
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1)';
               }}
             >
-              <MenuOutlined />
-              Menu
+              <SettingOutlined />
+              Config
             </button>
-          )}
-        </div>
 
-        {/* Mobile Menu Dropdown */}
-        {isMobile && showMobileMenu && (
-          <div style={{
-            marginTop: '12px',
-            padding: '12px',
-            background: t.panelBg,
-            borderRadius: '8px',
-            border: `1px solid ${t.border}`,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '8px',
-          }}>
-            <button
-              onClick={handleClickInfo}
-              style={{
-                padding: '10px',
-                background: t.accentIndigo,
-                border: 'none',
-                borderRadius: '6px',
-                color: '#fff',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-              }}
-            >
-              <InfoCircleOutlined /> Info
-            </button>
+            {/* History Button */}
             <button
               style={{
-                padding: '10px',
+                padding: '10px 20px',
                 background: t.btnNeutral,
                 border: 'none',
-                borderRadius: '6px',
-                color: t.text,
+                borderRadius: '8px',
+                color: t.muted,
                 fontSize: '13px',
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
                 gap: '6px',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = t.btnNeutralHover;
+                e.currentTarget.style.color = t.text;
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = t.btnNeutral;
+                e.currentTarget.style.color = t.muted;
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(0.95)';
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1)';
               }}
             >
-              <SettingOutlined /> Config
+              <HistoryOutlined />
+              History
             </button>
+
+            {/* Spread 0 Button */}
             <button
               style={{
-                padding: '10px',
-                background: t.btnNeutral,
-                border: 'none',
-                borderRadius: '6px',
-                color: t.text,
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-              }}
-            >
-              <HistoryOutlined /> History
-            </button>
-            <button
-              style={{
-                padding: '10px',
+                padding: '10px 20px',
                 background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 color: '#fff',
                 fontSize: '13px',
                 fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
                 gap: '6px',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.35)',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(245, 158, 11, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.35)';
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(0.98)';
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
               }}
             >
-              <ThunderboltOutlined /> Spread 0
+              <ThunderboltOutlined />
+              Spread 0
             </button>
-          </div>
+          </>
         )}
-      </div>
+
+        {/* Reload Button */}
+        <button
+          style={{
+            padding: '10px',
+            background: t.btnNeutral,
+            border: 'none',
+            borderRadius: '8px',
+            color: t.muted,
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = t.btnNeutralHover;
+            e.currentTarget.style.color = t.text;
+            e.currentTarget.style.transform = 'rotate(180deg) scale(1.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = t.btnNeutral;
+            e.currentTarget.style.color = t.muted;
+            e.currentTarget.style.transform = 'rotate(0deg) scale(1)';
+          }}
+          onMouseDown={(e) => {
+            e.currentTarget.style.transform = 'rotate(180deg) scale(0.9)';
+          }}
+          onMouseUp={(e) => {
+            e.currentTarget.style.transform = 'rotate(180deg) scale(1.1)';
+          }}
+        >
+          <ReloadOutlined style={{ fontSize: '16px' }} />
+        </button>
+      </>
+    )}
+
+    {isMobile && (
+      <button
+        onClick={() => setShowMobileMenu(!showMobileMenu)}
+        style={{
+          padding: '8px 12px',
+          background: t.accentIndigo,
+          border: 'none',
+          borderRadius: '8px',
+          color: '#fff',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '13px',
+          fontWeight: 600,
+          transition: 'all 0.3s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = t.accentIndigoGradient;
+          e.currentTarget.style.transform = 'scale(1.05)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = t.accentIndigo;
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
+      >
+        <MenuOutlined />
+        Menu
+      </button>
+    )}
+  </div>
+
+  {/* Mobile Menu Dropdown */}
+  {isMobile && showMobileMenu && (
+    <div style={{
+      marginTop: '12px',
+      padding: '12px',
+      background: t.panelBg,
+      borderRadius: '8px',
+      border: `1px solid ${t.border}`,
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '8px',
+      animation: 'slideDown 0.3s ease',
+    }}>
+      {/* Info Button - Mobile */}
+      <button
+        onClick={handleClickInfo}
+        style={{
+          padding: '10px',
+          background: t.accentIndigo,
+          border: 'none',
+          borderRadius: '6px',
+          color: '#fff',
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+          transition: 'all 0.2s ease',
+        }}
+        onTouchStart={(e) => {
+          e.currentTarget.style.transform = 'scale(0.95)';
+          e.currentTarget.style.opacity = '0.8';
+        }}
+        onTouchEnd={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.opacity = '1';
+        }}
+      >
+        <InfoCircleOutlined /> Info
+      </button>
+
+      {/* Config Button - Mobile */}
+      <button
+        style={{
+          padding: '10px',
+          background: t.btnNeutral,
+          border: 'none',
+          borderRadius: '6px',
+          color: t.text,
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+          transition: 'all 0.2s ease',
+        }}
+        onTouchStart={(e) => {
+          e.currentTarget.style.transform = 'scale(0.95)';
+          e.currentTarget.style.background = t.btnNeutralHover;
+        }}
+        onTouchEnd={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.background = t.btnNeutral;
+        }}
+      >
+        <SettingOutlined /> Config
+      </button>
+
+      {/* History Button - Mobile */}
+      <button
+        style={{
+          padding: '10px',
+          background: t.btnNeutral,
+          border: 'none',
+          borderRadius: '6px',
+          color: t.text,
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+          transition: 'all 0.2s ease',
+        }}
+        onTouchStart={(e) => {
+          e.currentTarget.style.transform = 'scale(0.95)';
+          e.currentTarget.style.background = t.btnNeutralHover;
+        }}
+        onTouchEnd={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.background = t.btnNeutral;
+        }}
+      >
+        <HistoryOutlined /> History
+      </button>
+
+      {/* Spread 0 Button - Mobile */}
+      <button
+        style={{
+          padding: '10px',
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          border: 'none',
+          borderRadius: '6px',
+          color: '#fff',
+          fontSize: '13px',
+          fontWeight: 700,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+          transition: 'all 0.2s ease',
+        }}
+        onTouchStart={(e) => {
+          e.currentTarget.style.transform = 'scale(0.95)';
+          e.currentTarget.style.opacity = '0.9';
+        }}
+        onTouchEnd={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.opacity = '1';
+        }}
+      >
+        <ThunderboltOutlined /> Spread 0
+      </button>
+    </div>
+  )}
+
+  {/* Animation styles */}
+  <style>{`
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Ripple effect for buttons */
+    button {
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    button:active::before {
+      width: 300px;
+      height: 300px;
+    }
+  `}</style>
+</div>
 
       {/* Main Content */}
       <div style={{

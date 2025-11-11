@@ -15,15 +15,15 @@ export default function ForexLogin() {
     setLoading(true);
     try {
         const resp = await axios.post(
-  'http://116.105.227.149:8000/auth/login',
-  {
-    username,
-    password: pass,
-  },
-  {
-    headers: {
-      'Content-Type': 'application/json',
-    },
+        'http://116.105.227.149:8000/auth/login',
+        {
+          username,
+          password: pass,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
     timeout: 10000, // optional: giới hạn 10s
   }
 );
@@ -31,6 +31,8 @@ export default function ForexLogin() {
             setMsg({ type: 'success', text: 'Đăng nhập thành công!' });
             // Lưu trạng thái đăng nhập vào localStorage
             localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('accessToken', 'Bearer ' + resp.data.accessToken);
+            localStorage.setItem('refreshToken', 'Bearer ' + resp.data.refreshToken);
             // Chuyển hướng hoặc tải lại trang
             window.location.href = '/';
         } else {
