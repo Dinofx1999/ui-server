@@ -576,29 +576,162 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         sorter: (a: any, b: any) => a.timecurrent.localeCompare(b.timecurrent),
       },
     {
-      title: 'Time Trade',
-      dataIndex: 'trade',
-      key: 'trade',
-      render: (_text, record) => {
-        const sessions = Array.isArray(record.timetrade) ? record.timetrade : [];
-        const active = sessions.find((s) => String(s.status).toLowerCase() === 'true');
-        const label = record.trade === 'TRUE' && active ? `${active.open} - ${active.close}` : 'Close';
-        const color = record.trade === 'TRUE' && active ? '#16a34a' : '#dc2626';
+  title: 'Time Trade',
+  dataIndex: 'trade',
+  key: 'trade',
+  render: (_text, record) => {
+    try {
+      const sessions = Array.isArray(record.timetrade)
+        ? record.timetrade
+        : [];
 
+      // ✅ Helper function để safely convert value to string
+      const safeToString = (value: any): string => {
+        if (value === null || value === undefined) return 'N/A';
+        if (typeof value === 'string') return value;
+        if (typeof value === 'number') return value.toString();
+        if (typeof value === 'boolean') return value ? 'True' : 'False';
+        if (typeof value === 'object') {
+          // If object has a specific format, handle it
+          if (value.toString && typeof value.toString === 'function') {
+            const str = value.toString();
+            if (str !== '[object Object]') return str;
+          }
+          return JSON.stringify(value);
+        }
+        return String(value);
+      };
+
+      // Tìm session đang active
+      const active = sessions.find(
+        (s) => String(s?.status || '').toLowerCase() === 'true'
+      );
+
+      // Mobile version
+      if (isMobile) {
+        const isOpen = record.trade === 'TRUE' && active;
         return (
-          <span style={{
-            fontSize: isMobile ? '11px' : '13px',
-            fontWeight: 600,
-            color,
-            whiteSpace: 'nowrap',
-          }}>
-            {isMobile ? (record.trade === 'TRUE' ? '✓' : '✕') : label}
-          </span>
+          <Tooltip 
+            title={isOpen ? `${safeToString(active.open)} - ${safeToString(active.close)}` : 'Closed'}
+          >
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                color: isOpen ? '#16a34a' : '#dc2626',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {isOpen ? '✓' : '✕'}
+            </span>
+          </Tooltip>
         );
-      },
-      sorter: (a: any, b: any) => a.trade.localeCompare(b.trade),
-      width: isMobile ? 50 : undefined,
-    },
+      }
+
+      // Label cho desktop
+      const label =
+        record.trade === 'TRUE' && active
+          ? `${safeToString(active.open)} - ${safeToString(active.close)}`
+          : 'Close Trade';
+
+      // Tooltip content
+      const tooltipContent =
+        sessions.length > 0 ? (
+          <div style={{ lineHeight: 1.6, maxWidth: 300 }}>
+            <div style={{ 
+              marginBottom: 8, 
+              fontWeight: 600,
+              borderBottom: '1px solid rgba(255,255,255,0.2)',
+              paddingBottom: 4,
+            }}>
+              Trading Sessions:
+            </div>
+            {sessions.map((s, idx) => {
+              const isActive = String(s?.status || '').toLowerCase() === 'true';
+              return (
+                <div 
+                  key={idx} 
+                  style={{ 
+                    marginBottom: 4,
+                    padding: '4px 0',
+                  }}
+                >
+                  <Space size={6} align="center">
+                    <Badge status={isActive ? 'success' : 'default'} />
+                    <span style={{ 
+                      color: isActive ? '#16a34a' : '#9ca3af',
+                      fontSize: '13px',
+                    }}>
+                      {safeToString(s?.open)} - {safeToString(s?.close)}
+                    </span>
+                    <em style={{ 
+                      fontSize: '11px',
+                      color: isActive ? '#16a34a' : '#6b7280',
+                      fontStyle: 'normal',
+                    }}>
+                      ({safeToString(s?.status)})
+                    </em>
+                  </Space>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <span>No trading sessions available</span>
+        );
+
+      // Màu text
+      const color =
+        record.trade === 'TRUE' && active
+          ? '#16a34a'
+          : '#dc2626';
+
+      return (
+        <Tooltip 
+          title={tooltipContent} 
+          placement="topLeft"
+          overlayStyle={{ maxWidth: 350 }}
+        >
+          <span
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: 'inline-block',
+              maxWidth: 200,
+              color,
+              cursor: 'pointer',
+              borderBottom: `2px solid ${color}`,
+              paddingBottom: 2,
+            }}
+          >
+            {label}
+          </span>
+        </Tooltip>
+      );
+    } catch (error) {
+      console.error('Error rendering Time Trade:', error, record);
+      return (
+        <span style={{ color: '#ef4444', fontSize: '12px' }}>
+          Error
+        </span>
+      );
+    }
+  },
+  sorter: (a: any, b: any) => {
+    try {
+      const aValue = String(a?.trade || '');
+      const bValue = String(b?.trade || '');
+      return aValue.localeCompare(bValue);
+    } catch (error) {
+      return 0;
+    }
+  },
+  fixed: isMobile ? undefined : 'left',
+  width: isMobile ? 80 : 150,
+},
     {
       title: 'Action',
       key: 'action',
