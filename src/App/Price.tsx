@@ -579,144 +579,240 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   title: 'Time Trade',
   dataIndex: 'trade',
   key: 'trade',
+  align: 'center' as const,
   render: (_text, record) => {
     try {
+      const safeToString = (value: any): string => {
+        if (value === null || value === undefined) return 'N/A';
+        if (typeof value === 'object') return JSON.stringify(value);
+        return String(value);
+      };
+
+      // ✅ Case 1: trade !== "TRUE" → Hiển thị "Close", Tooltip = record.trade
+      if (record.trade !== 'TRUE') {
+        if (isMobile) {
+          return (
+            <Tooltip title={`Status: ${safeToString(record.trade)}`}>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#dc2626',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                ✕
+              </span>
+            </Tooltip>
+          );
+        }
+
+        return (
+          <Tooltip title={`Trade Status: ${safeToString(record.trade)}`} placement="topLeft">
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 12px',
+                borderRadius: 6,
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1.5px solid #ef4444',
+                cursor: 'pointer',
+              }}
+            >
+              <div
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#ef4444',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: '#dc2626',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Close
+              </span>
+            </div>
+          </Tooltip>
+        );
+      }
+
+      // ✅ Case 2: trade === "TRUE" → Hiển thị timetrade có status = true
       const sessions = Array.isArray(record.timetrade)
         ? record.timetrade
         : [];
 
-      // ✅ Helper function để safely convert value to string
-      const safeToString = (value: any): string => {
-        if (value === null || value === undefined) return 'N/A';
-        if (typeof value === 'string') return value;
-        if (typeof value === 'number') return value.toString();
-        if (typeof value === 'boolean') return value ? 'True' : 'False';
-        if (typeof value === 'object') {
-          // If object has a specific format, handle it
-          if (value.toString && typeof value.toString === 'function') {
-            const str = value.toString();
-            if (str !== '[object Object]') return str;
-          }
-          return JSON.stringify(value);
-        }
-        return String(value);
-      };
-
-      // Tìm session đang active
       const active = sessions.find(
         (s) => String(s?.status || '').toLowerCase() === 'true'
       );
 
       // Mobile version
       if (isMobile) {
-        const isOpen = record.trade === 'TRUE' && active;
+        const hasActiveSession = !!active;
         return (
           <Tooltip 
-            title={isOpen ? `${safeToString(active.open)} - ${safeToString(active.close)}` : 'Closed'}
+            title={
+              hasActiveSession 
+                ? `Open: ${safeToString(active.open)} - ${safeToString(active.close)}` 
+                : 'No active session'
+            }
           >
             <span
               style={{
                 fontSize: '11px',
                 fontWeight: 600,
-                color: isOpen ? '#16a34a' : '#dc2626',
+                color: hasActiveSession ? '#16a34a' : '#f59e0b',
                 whiteSpace: 'nowrap',
               }}
             >
-              {isOpen ? '✓' : '✕'}
+              {hasActiveSession ? '✓' : '⚠️'}
             </span>
           </Tooltip>
         );
       }
 
-      // Label cho desktop
-      const label =
-        record.trade === 'TRUE' && active
-          ? `${safeToString(active.open)} - ${safeToString(active.close)}`
-          : 'Close Trade';
+      // Desktop version
+      const label = active
+        ? `${safeToString(active.open)} - ${safeToString(active.close)}`
+        : 'No Active Session';
 
-      // Tooltip content
-      const tooltipContent =
-        sessions.length > 0 ? (
-          <div style={{ lineHeight: 1.6, maxWidth: 300 }}>
-            <div style={{ 
-              marginBottom: 8, 
-              fontWeight: 600,
-              borderBottom: '1px solid rgba(255,255,255,0.2)',
-              paddingBottom: 4,
-            }}>
-              Trading Sessions:
-            </div>
-            {sessions.map((s, idx) => {
-              const isActive = String(s?.status || '').toLowerCase() === 'true';
-              return (
-                <div 
-                  key={idx} 
-                  style={{ 
-                    marginBottom: 4,
-                    padding: '4px 0',
-                  }}
-                >
-                  <Space size={6} align="center">
-                    <Badge status={isActive ? 'success' : 'default'} />
-                    <span style={{ 
-                      color: isActive ? '#16a34a' : '#9ca3af',
-                      fontSize: '13px',
-                    }}>
-                      {safeToString(s?.open)} - {safeToString(s?.close)}
-                    </span>
-                    <em style={{ 
-                      fontSize: '11px',
-                      color: isActive ? '#16a34a' : '#6b7280',
-                      fontStyle: 'normal',
-                    }}>
-                      ({safeToString(s?.status)})
-                    </em>
-                  </Space>
-                </div>
-              );
-            })}
+      // Tooltip content - Show all sessions
+      const tooltipContent = sessions.length > 0 ? (
+        <div style={{ lineHeight: 1.8, minWidth: 250 }}>
+          <div style={{ 
+            fontWeight: 700,
+            fontSize: '13px',
+            marginBottom: 8,
+            paddingBottom: 8,
+            borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+          }}>
+            📊 Trading Sessions
           </div>
-        ) : (
-          <span>No trading sessions available</span>
-        );
+          {sessions.map((s, idx) => {
+            const isActive = String(s?.status || '').toLowerCase() === 'true';
+            return (
+              <div 
+                key={idx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 8px',
+                  marginBottom: 4,
+                  borderRadius: 4,
+                  background: isActive 
+                    ? 'rgba(16, 185, 129, 0.15)' 
+                    : 'rgba(100, 116, 139, 0.1)',
+                }}
+              >
+                <Badge status={isActive ? 'success' : 'default'} />
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? '#10b981' : '#94a3b8',
+                  flex: 1,
+                }}>
+                  {safeToString(s?.open)} - {safeToString(s?.close)}
+                </span>
+                {isActive && (
+                  <span style={{
+                    fontSize: '10px',
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    background: '#10b981',
+                    color: '#fff',
+                    fontWeight: 700,
+                  }}>
+                    ACTIVE
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+          No sessions configured
+        </span>
+      );
 
-      // Màu text
-      const color =
-        record.trade === 'TRUE' && active
-          ? '#16a34a'
-          : '#dc2626';
+      const color = active ? '#16a34a' : '#f59e0b';
 
       return (
         <Tooltip 
-          title={tooltipContent} 
+          title={tooltipContent}
           placement="topLeft"
-          overlayStyle={{ maxWidth: 350 }}
+          overlayStyle={{ maxWidth: 400 }}
         >
-          <span
+          <div
             style={{
-              fontSize: '13px',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              display: 'inline-block',
-              maxWidth: 200,
-              color,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 12px',
+              borderRadius: 8,
+              background: active
+                ? 'rgba(16, 185, 129, 0.1)'
+                : 'rgba(245, 158, 11, 0.1)',
+              border: `1.5px solid ${color}`,
               cursor: 'pointer',
-              borderBottom: `2px solid ${color}`,
-              paddingBottom: 2,
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = active
+                ? '0 4px 12px rgba(16, 185, 129, 0.3)'
+                : '0 4px 12px rgba(245, 158, 11, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
-            {label}
-          </span>
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: color,
+                boxShadow: active
+                  ? '0 0 8px rgba(16, 185, 129, 0.6)'
+                  : '0 0 8px rgba(245, 158, 11, 0.6)',
+                animation: active ? 'pulse 2s infinite' : 'none',
+              }}
+            />
+            <span
+              style={{
+                fontSize: '13px',
+                fontWeight: 700,
+                color,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {label}
+            </span>
+          </div>
         </Tooltip>
       );
     } catch (error) {
-      console.error('Error rendering Time Trade:', error, record);
+      console.error('Time Trade render error:', error, record);
       return (
-        <span style={{ color: '#ef4444', fontSize: '12px' }}>
-          Error
-        </span>
+        <Tooltip title="Error loading trade sessions">
+          <span style={{ 
+            color: '#ef4444', 
+            fontSize: '12px',
+            fontWeight: 500,
+          }}>
+            ⚠️ Error
+          </span>
+        </Tooltip>
       );
     }
   },
@@ -730,7 +826,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     }
   },
   fixed: isMobile ? undefined : 'left',
-  width: isMobile ? 80 : 150,
+  width: isMobile ? 60 : 180,
 },
     {
       title: 'Action',
