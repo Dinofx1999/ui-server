@@ -119,7 +119,7 @@ export default function ForexLogin() {
               'Watchlist nhiều sản phẩm của các sàn Forex hàng đầu',
               'Quản lý lợi nhuận',
               'Auto Trade với MT4/MT5',
-              'Copy Trade chuyên nghiệp',
+              // 'Copy Trade chuyên nghiệp',
             ].map((t, i)=>(
               <li key={i} className="flex items-center gap-2">
                 <CheckIcon />

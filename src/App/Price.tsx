@@ -148,7 +148,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   };
 
   // Responsive columns for broker table
-  const columns: TableProps<BrokerRow>['columns'] = [
+  const columns: TableProps['columns'] = [
     {
       title: 'STT',
       dataIndex: 'index',
@@ -171,13 +171,13 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       fixed: isMobile ? undefined : 'left',
     },
     {
-      title: 'Type Account',
+      title: 'Type',
       dataIndex: 'typeaccount',
       key: 'typeaccount',
       render: (text, record: any) => (
-        <Space size={6}>
+        <div style ={{ textAlign: 'center' }}>
           <a onClick={() => console.log('Open type account:', record.typeaccount)}>{text}</a>
-        </Space>
+        </div>
       ),
       sorter: (a: any, b: any) => a.typeaccount.localeCompare(b.typeaccount),
       fixed: isMobile ? undefined : 'left',
@@ -186,7 +186,11 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       title: 'Version',
       dataIndex: 'version',
       key: 'version',
-      render: (v) => <Tag color="geekblue">v{v}</Tag>,
+      render: (v) => (
+        <div style={{ textAlign: 'center' }}>
+          <Tag color="geekblue">v{v}</Tag>
+        </div>
+      ),
       width: isMobile ? 80 : 100,
       align: 'center' as const,
     },
@@ -196,19 +200,24 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       key: 'port',
       align: 'center' as const,
       width: isMobile ? 70 : 90,
+      render: (v) => (
+        <div style={{ textAlign: 'center' }}>
+          <Tag color="geekblue">{v}</Tag>
+        </div>
+      ),
       sorter: (a, b) => Number(a.port) - Number(b.port),
     },
     {
       title: 'Symbols',
       key: 'symbols',
       align: 'right' as const,
-      width: isMobile ? 100 : 130,
+      width: isMobile ? 50 : 80,
       render: (_, r) => (
-        <Space>
-          <Tooltip title={`totalsymbol: ${r.totalsymbol}`}>
+        <div style={{ textAlign: 'center' }}>
+          <Tooltip title={`totalsymbol: ${r.totalsymbol}`} >
             <Tag
               style={{ cursor: 'pointer' }}
-              color="green"
+              color="tomato"
               onClick={() => {
                 setNameDrawer(r.broker);
                 setUrlWsBrokerInfo(`ws://116.105.227.149:2002/symbols-broker-info?broker=${r.broker_}`);
@@ -218,11 +227,25 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               {numberFmt(r.symbolCount)}
             </Tag>
           </Tooltip>
-        </Space>
+        </div>
       ),
       sorter: (a, b) => a.symbolCount - b.symbolCount,
     },
-    ...(isMobile ? [] : [{
+    {
+      title: 'Status',
+      key: 'status',
+      align: 'center' as const,
+      width: isMobile ? 100 : 140,
+      render: (_, r) => (
+        <div style={{ textAlign: 'center' }}>
+            <Tag style = {{ width: isMobile ? 80 : 140 , textAlign: 'center' }} color={r.status === 'True' ? 'green' : 'red'}>
+              {r.status === 'True' ? 'Connected' : r.status}
+            </Tag>
+        </div>
+      ),
+      sorter: (a, b) => a.symbolCount - b.symbolCount,
+    },
+    {
       title: 'Time Now',
       dataIndex: 'timecurent',
       key: 'timecurent',
@@ -232,7 +255,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         </Tooltip>
       ),
       width: 180,
-    }]),
+    },
     ...(isMobile ? [] : [{
       title: 'Last Updated',
       dataIndex: 'timeUpdated',
@@ -242,7 +265,6 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         const color = freshnessColor(t);
         return (
           <Space>
-            <Badge status={color} />
             <Tooltip title={t}>
               <span>{d ? d.toLocaleString() : t}</span>
             </Tooltip>
@@ -267,7 +289,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             size={isMobile ? 'small' : 'middle'}
             onClick={() => console.log('Connect', record.broker, record.port)}
           >
-            Connect
+            Reset
           </Button>
         </Space>
       ),
