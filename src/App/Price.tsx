@@ -1340,52 +1340,73 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     <div style={{ background: t.bg, minHeight: '100vh', padding: 0 }}>
       {/* Modal Thông Tin Broker */}
       <Modal
-        width={isMobile ? '90%' : isTablet ? '80%' : '70%'}
-        open={openModalInfo}
-        onCancel={() => setOpenModalInfo(false)}
-        title={isMobile ? "Thông Tin Sàn" : "Thông Tin Các Sàn Giao Dịch Đang Kết Nối"}
-        // isDark={isDark}
-      >
+  width={isMobile ? '90%' : isTablet ? '80%' : '70%'}
+  open={openModalInfo}
+  onCancel={() => setOpenModalInfo(false)}
+  title={isMobile ? "Thông Tin Sàn" : "Thông Tin Các Sàn Giao Dịch Đang Kết Nối"}
+  footer={null}
+>
+  {/* Table - Separate container */}
+  <div style={{ overflowX: 'auto' }}>
+    <Table
+      columns={columns}
+      dataSource={Array.isArray(dataBrokerInfo) ? dataBrokerInfo : []}
+      scroll={{ x: isMobile ? 600 : 'max-content' }}
+      pagination={{ pageSize: isMobile ? 5 : 10, simple: isMobile }}
+      size={isMobile ? 'small' : 'middle'}
+    />
+  </div>
 
-        <div style={{ overflowX: 'auto',textAlign: 'center'  }}>
-          <Table
-            columns={columns}
-            dataSource={Array.isArray(dataBrokerInfo) ? dataBrokerInfo : []}
-            scroll={{ x: isMobile ? 600 : 'max-content' }}
-            pagination={{ pageSize: isMobile ? 5 : 10, simple: isMobile }}
-            size={isMobile ? 'small' : 'middle'}
-          />
-          <Button onClick={async () => {
-            try {
-              const AccessToken = localStorage.getItem('accessToken') || '';
-              if (!AccessToken) {
-                console.error('No access token found');
-                return;
-              }
-              const resp = await axios.get(
-                'http://116.105.227.149:8000/v1/api/reset-all-brokers',
-                {
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `${AccessToken}`,
-                  },
-                  timeout: 10000, // optional: giới hạn 10s
-                }
-              );
-              if (resp.data && resp.data.success) {
-                message.success("Reset ALL successful!");
-                console.log('Reset ALL response:', resp.data);
-              }else {
-                console.error('Reset ALL failed:', resp.data);
-                
-              }
-          } catch (error) {
-            console.error('Error resetting:', error);
+  {/* Button - Separate container */}
+  <div style={{ 
+    textAlign: 'center',
+    padding: '16px 0',
+    marginTop: '16px',
+    borderTop: '1px solid #e5e7eb',
+  }}>
+    <Button 
+      type="primary"
+      danger
+      size={isMobile ? 'middle' : 'large'}
+      style={{
+        width: isMobile ? '100%' : '200px',
+        minWidth: isMobile ? 'auto' : '200px',
+        height: isMobile ? '20px' : '30px',
+        fontSize: isMobile ? '14px' : '16px',
+        fontWeight: 600,
+      }}
+      onClick={async () => {
+        try {
+          const AccessToken = localStorage.getItem('accessToken') || '';
+          if (!AccessToken) {
+            console.error('No access token found');
+            return;
           }
-        }}>Reset ALL</Button>
-        </div>
-
-      </Modal>
+          const resp = await axios.get(
+            'http://116.105.227.149:8000/v1/api/reset-all-brokers',
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `${AccessToken}`,
+              },
+              timeout: 10000,
+            }
+          );
+          if (resp.data && resp.data.success) {
+            message.success("Reset ALL successful!");
+            console.log('Reset ALL response:', resp.data);
+          } else {
+            console.error('Reset ALL failed:', resp.data);
+          }
+        } catch (error) {
+          console.error('Error resetting:', error);
+        }
+      }}
+    >
+      Reset ALL
+    </Button>
+  </div>
+</Modal>
 
 
 
