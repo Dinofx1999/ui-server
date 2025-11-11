@@ -458,9 +458,36 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           <Button 
             type="primary" 
             size="small"
-            onClick={() => console.log('Setting', record)}
+            onClick={async () => {
+          const AccessToken = localStorage.getItem('accessToken') || '';
+               const resp : any = await axios.get(
+            `http://116.105.227.149:8000/v1/api/${record.broker_}/${record.symbol}/reset`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `${AccessToken}`,
+              },
+              timeout: 10000,
+            }
+          );
+          if(resp?.isPublished){
+            messageApi.open({
+              type: 'success',
+              content: `Reset ${record.symbol} -> ${record.broker} thành công!`,
+            });
+          } else {
+            messageApi.open({
+              type: 'error',
+              content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
+            });
+          }
+          messageApi.open({
+            type: 'success',
+            content: `Đã gửi yêu cầu Setting ${record.symbol} cho broker ${record.broker}!`,
+          });
+        }}
           >
-            {isMobile ? 'Set' : 'Setting'}
+            {isMobile ? 'Reset' : 'Reset'}
           </Button>
         </Space>
       ),
