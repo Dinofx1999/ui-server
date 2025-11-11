@@ -130,6 +130,9 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   const [nameDrawer, setNameDrawer] = useState('Broker Không Tồn Tại');
   const [openModalBrokerInfo, setOpenModalBrokerInfo] = useState(false);
   const [modalOpenSymbol, setModalOpenSymbol] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
+
+  
 
   // 🔥 Responsive breakpoints
   useEffect(() => {
@@ -951,24 +954,27 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 
   const t = useMemo(() => (isDark ? DARK : LIGHT), [isDark]);
 
-  const forexData = [
-    { id: 1, provider: 'IC Markets', pair: 'EURUSD', exchange: 'Pepper', followers: '1.3k', score: 12, time: '08:15:38', action: 'BUY', online: true },
-    { id: 2, provider: 'XM Global', pair: 'XAUUSD', exchange: 'Exness', followers: '3.5k', score: 25, time: '08:12:45', action: 'SELL', online: false },
-    { id: 3, provider: 'FBS', pair: 'BTCUSD', exchange: 'Binance', followers: '890', score: 8, time: '08:18:20', action: 'BUY', online: true },
-    { id: 4, provider: 'Exness', pair: 'GBPUSD', exchange: 'IC Mkts', followers: '2.1k', score: 15, time: '08:09:12', action: 'SELL', online: false },
-    { id: 5, provider: 'Pepperstone', pair: 'EURJPY', exchange: 'XM', followers: '1.9k', score: 18, time: '08:13:55', action: 'BUY', online: false },
-    { id: 6, provider: 'AvaTrade', pair: 'USDJPY', exchange: 'FBS', followers: '920', score: 10, time: '08:17:38', action: 'SELL', online: true },
-  ];
+  // type SignalItem = {
+  //   id?: number;
+  //   provider?: string;
+  //   pair?: string;
+  //   exchange?: string;
+  //   followers?: string;
+  //   score?: number;
+  //   time?: string;
+  //   action?: string;
+  //   online?: boolean;
+  //   broker?: string;
+  //   symbol?: string;
+  //   brokerCheck?: string;
+  //   distan?: string;
+  //   type?: string;
+  //   spread?: string | number;
+  // };
 
-  const stocksData = [
-    { id: 1, provider: 'Tickmill', pair: 'USDBRL', exchange: 'Sta', followers: '2.3k', score: 326, time: '08:04:56', action: 'BUY', online: true },
-    { id: 2, provider: 'AvaTrade', pair: 'US30', exchange: 'IC', followers: '1.6k', score: 45, time: '08:08:15', action: 'SELL', online: false },
-    { id: 3, provider: 'FBS', pair: 'NAS100', exchange: 'Pepper', followers: '980', score: 38, time: '08:11:22', action: 'BUY', online: true },
-    { id: 4, provider: 'Exness', pair: 'SPX500', exchange: 'XM', followers: '1.4k', score: 52, time: '08:14:08', action: 'SELL', online: false },
-    { id: 5, provider: 'Pepperstone', pair: 'DAX40', exchange: 'AVA', followers: '760', score: 28, time: '08:16:45', action: 'BUY', online: true },
-    { id: 6, provider: 'IC Markets', pair: 'FTSE100', exchange: 'FBS', followers: '1.2k', score: 42, time: '08:19:12', action: 'SELL', online: false },
-    { id: 7, provider: 'XM Global', pair: 'NIKKEI', exchange: 'Exness', followers: '2.0k', score: 55, time: '08:20:33', action: 'BUY', online: false },
-  ];
+  const forexData: any [] = analysis?.ANALYSIS?.Type_1 || [];
+
+  const stocksData : any [] = analysis?.ANALYSIS?.Type_2 || [];
 
   const renderSignalCard = (item: any) => (
     <div
@@ -998,8 +1004,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         }
       }}
     >
-      {item.online && (
-        <div style={{
+      <div style={{
           position: 'absolute',
           top: isMobile ? '10px' : '12px',
           right: isMobile ? '10px' : '12px',
@@ -1010,7 +1015,6 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           boxShadow: '0 0 10px rgba(16, 185, 129, 0.6)',
           animation: 'pulse 2s infinite',
         }} />
-      )}
 
       <div style={{
         color: t.accentPurple,
@@ -1018,7 +1022,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         fontWeight: 700,
         marginBottom: isMobile ? '6px' : '8px',
       }}>
-        {item.provider}
+        {item.Broker}
       </div>
 
       <div style={{
@@ -1027,7 +1031,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         fontWeight: 700,
         marginBottom: isMobile ? '10px' : '12px',
       }}>
-        {item.pair}
+        {item.Symbol}
       </div>
 
       <div style={{
@@ -1037,10 +1041,10 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         flexWrap: 'wrap',
         gap: '8px',
       }}>
-        <div style={{ color: t.muted, fontSize: isMobile ? '12px' : '13px' }}>{item.exchange}</div>
+        <div style={{ color: t.muted, fontSize: isMobile ? '12px' : '13px' }}>{item.Broker_Main}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: t.text, fontSize: isMobile ? '12px' : '13px' }}>
           <UserIcon muted={t.muted} />
-          {item.followers}
+          {item.KhoangCach}
         </div>
       </div>
 
@@ -1062,16 +1066,16 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           border: '1px solid rgba(16,185,129,0.25)',
         }}>
           <ArrowUpIcon />
-          <span style={{ color: '#10b981', fontSize: isMobile ? '13px' : '14px', fontWeight: 700 }}>{item.score}</span>
+          <span style={{ color: '#10b981', fontSize: isMobile ? '13px' : '14px', fontWeight: 700 }}>{item.KhoangCach}</span>
         </div>
-        <div style={{ color: t.muted, fontSize: isMobile ? '11px' : '12px' }}>{item.time}</div>
+        <div style={{ color: t.muted, fontSize: isMobile ? '11px' : '12px' }}>{item.Count}</div>
       </div>
 
       <button
         style={{
           width: '100%',
           padding: isMobile ? '10px' : '12px',
-          background: item.action === 'BUY'
+          background: item.Messenger === 'BUY'
             ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
             : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
           border: 'none',
@@ -1081,12 +1085,12 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           fontWeight: 700,
           cursor: 'pointer',
           transition: 'all 0.2s ease',
-          boxShadow: item.action === 'BUY'
+          boxShadow: item.Messenger === 'BUY'
             ? '0 4px 12px rgba(59, 130, 246, 0.3)'
             : '0 4px 12px rgba(239, 68, 68, 0.3)',
         }}
       >
-        {item.action}
+        {item.Messenger}
       </button>
     </div>
   );
@@ -1156,7 +1160,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
               }}>
-                {item.broker || item.provider}
+                {item.Broker || item.provider}
               </span>
             </div>
 
@@ -1166,15 +1170,15 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               fontWeight: 700,
               marginBottom: '4px',
             }}>
-              {item.symbol || item.pair}
+              {item.Symbol || item.pair}
             </div>
 
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '11px' }}>
-              <span style={{ color: t.muted }}>{item.brokerCheck || item.exchange}</span>
+              <span style={{ color: t.muted }}>{item.Broker_Main || item.exchange}</span>
               <span style={{ color: t.accentIndigo, fontWeight: 600 }}>
-                {item.distan || item.followers}
+                {item.KhoangCach || item.followers}
               </span>
-              <span style={{ color: t.muted }}>{item.time}</span>
+              <span style={{ color: t.muted }}>{item.Count || item.time}</span>
             </div>
           </div>
 
@@ -1182,7 +1186,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           <button
             style={{
               padding: '6px 12px',
-              background: (item.type === 'BUY' || item.action === 'BUY')
+              background: (item.type === 'BUY' || item.Messenger === 'BUY')
                 ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
                 : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
               border: 'none',
@@ -1194,7 +1198,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               whiteSpace: 'nowrap',
             }}
           >
-            {item.type || item.action}
+            {item.Messenger || item.action}
           </button>
         </>
       ) : (
@@ -1205,8 +1209,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-            {item.online && (
-              <div style={{
+            <div style={{
                 width: '8px',
                 height: '8px',
                 background: '#10b981',
@@ -1215,7 +1218,6 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                 boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
                 animation: 'pulse 2s infinite',
               }} />
-            )}
             <span style={{
               color: t.accentPurple,
               fontSize: isTablet ? '13px' : '14px',
@@ -1224,7 +1226,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               overflow: 'hidden',
               textOverflow: 'ellipsis',
             }}>
-              {item.broker || item.provider}
+              {item.Broker || item.provider}
             </span>
           </div>
 
@@ -1236,7 +1238,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}>
-            {item.symbol || item.pair}
+            {item.Symbol || item.pair}
           </div>
 
           {!isTablet && (
@@ -1257,7 +1259,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                 }}>
-                  {item.brokerCheck || item.exchange}
+                  {item.Broker_Main || item.exchange}
                 </span>
               </div>
 
@@ -1271,7 +1273,13 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                 border: '1px solid rgba(16, 185, 129, 0.25)',
               }}>
                 <span style={{ color: t.accentIndigo, fontSize: '13px', fontWeight: 700 }}>
-                  {item.distan || item.followers}
+                  {/* <Tooltip title={'Distance'}>
+                    {item.KhoangCach || item.followers}
+                  </Tooltip> */}
+
+                  <Tooltip title={'Spread'}>
+                    {item.Spread_main}
+                   </Tooltip>
                 </span>
               </div>
             </>
@@ -1283,28 +1291,32 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             justifyContent: 'center',
             gap: '6px',
             padding: '6px 10px',
-            background: item.spread === '0' || item.score < 10
+            background: item.Spread_main === '0' || item.score < 10
               ? 'rgba(16, 185, 129, 0.12)'
               : 'rgba(251, 191, 36, 0.12)',
             borderRadius: '8px',
-            border: item.spread === '0' || item.score < 10
+            border: item.Spread_main === '0' || item.score < 10
               ? '1px solid rgba(16, 185, 129, 0.25)'
               : '1px solid rgba(251, 191, 36, 0.25)',
           }}>
             <ArrowUpIcon />
             <span style={{
-              color: item.spread === '0' || item.score < 10 ? '#10b981' : t.accentYellow,
+              color: item.Spread_main === '0' || item.score < 10 ? '#10b981' : t.accentYellow,
               fontSize: isTablet ? '12px' : '13px',
               fontWeight: 700,
             }}>
-              {item.spread || item.score}
+              <Tooltip title={item.Spread_main === '0' ? 'Low Spread' : 'High Spread'}>
+                {(Number(item.Spread_main)*3) > Number(item.KhoangCach) ? 'Low' : 'High'}
+              </Tooltip>
+              &nbsp;
+              {item.KhoangCach}
             </span>
           </div>
 
           {!isTablet && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: t.muted, fontSize: '12px', fontWeight: 500 }}>
               <ClockIcon />
-              <span>{item.time}</span>
+              <span>{item.Count}</span>
             </div>
           )}
 
@@ -1312,7 +1324,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             <button
               style={{
                 padding: isTablet ? '6px 16px' : '8px 24px',
-                background: (item.type === 'BUY' || item.action === 'BUY')
+                background: (item.type === 'BUY' || item.Messenger === 'BUY')
                   ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
                   : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                 border: 'none',
@@ -1322,13 +1334,13 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
-                boxShadow: (item.type === 'BUY' || item.action === 'BUY')
+                boxShadow: (item.type === 'BUY' || item.Messenger === 'BUY')
                   ? '0 4px 12px rgba(59, 130, 246, 0.35)'
                   : '0 4px 12px rgba(239, 68, 68, 0.35)',
                 minWidth: isTablet ? '60px' : '80px',
               }}
             >
-              {item.type || item.action}
+              {item.Messenger || item.action}
             </button>
           </div>
         </>
@@ -1339,6 +1351,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   return (
     <div style={{ background: t.bg, minHeight: '100vh', padding: 0 }}>
       {/* Modal Thông Tin Broker */}
+      {contextHolder}
       <Modal
   width={isMobile ? '90%' : isTablet ? '80%' : '70%'}
   open={openModalInfo}
@@ -1377,6 +1390,12 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       }}
       onClick={async () => {
         try {
+          message.loading("Resetting...");
+          console.log('Reset ALL brokers initiated');
+          messageApi.open({
+      type: 'success',
+      content: 'Đã gửi yêu cầu Reset ALL!',
+    });
           const AccessToken = localStorage.getItem('accessToken') || '';
           if (!AccessToken) {
             console.error('No access token found');
@@ -2093,7 +2112,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                 countBorder={t.accentIndigo}
                 countColor={t.accentPurple}
               />
-              <div>{forexData.map((item, index) => renderSignalRow(item, index))}</div>
+              <div>{forexData?.map((item, index) => renderSignalRow(item, index))}</div>
             </div>
 
             {/* Right Column - Indices & Stocks */}
@@ -2167,7 +2186,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       </div>
 
       {/* Bottom Stats */}
-      <div style={{
+      {/* <div style={{
         padding: isMobile ? '0 16px 16px' : isTablet ? '0 20px 20px' : '0 24px 24px',
         display: 'grid',
         gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(4, 1fr)' : 'repeat(4, 1fr)',
@@ -2213,7 +2232,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             </div>
           </div>
         ))}
-      </div>
+      </div> */}
 
       {/* CSS Animations */}
       <style>{`

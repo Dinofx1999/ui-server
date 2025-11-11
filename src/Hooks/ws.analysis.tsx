@@ -70,9 +70,10 @@ export function useWebSocketAnalysis(
 
     ws.onclose = (evt) => {
       setConnected(false);
+
       log('❌ Disconnected', evt.code, evt.reason || '');
 
-      // Nếu đóng tay -> không reconnect
+      // Nếu đóng tay -> không reconnectß
       if (closingManuallyRef.current) {
         log('closed manually -> no reconnect');
         return;
