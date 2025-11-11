@@ -1371,7 +1371,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       style={{
         width: isMobile ? '100%' : '200px',
         minWidth: isMobile ? 'auto' : '200px',
-        height: isMobile ? '20px' : '30px',
+        height: isMobile ? '40px' : '30px',
         fontSize: isMobile ? '14px' : '16px',
         fontWeight: 600,
       }}
