@@ -882,7 +882,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         return String(value);
       };
 
-      // ✅ Case 1: trade !== "TRUE" → Hiển thị "Close", Tooltip = record.trade
+      // ✅ Case 1: trade !== "TRUE" → Hiển thị "Close"
       if (record.trade !== 'TRUE') {
         if (isMobile) {
           return (
@@ -938,11 +938,10 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         );
       }
 
-      // ✅ Case 2: trade === "TRUE" → Hiển thị timetrade có status = true
-      const sessions = Array.isArray(record.timetrade)
-        ? record.timetrade
-        : [];
-
+      // ✅ Case 2: trade === "TRUE" → Hiển thị timetrade
+      const sessions = Array.isArray(record.timetrade) ? record.timetrade : [];
+      const sessionCount = sessions.length;
+      
       const active = sessions.find(
         (s) => String(s?.status || '').toLowerCase() === 'true'
       );
@@ -954,20 +953,40 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           <Tooltip 
             title={
               hasActiveSession 
-                ? `Open: ${safeToString(active.open)} - ${safeToString(active.close)}` 
-                : 'No active session'
+                ? `Open: ${safeToString(active.open)} - ${safeToString(active.close)} (${sessionCount} sessions)` 
+                : `No active session (${sessionCount} sessions)`
             }
           >
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 600,
-                color: hasActiveSession ? '#16a34a' : '#f59e0b',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {hasActiveSession ? '✓' : '⚠️'}
-            </span>
+            <div style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: 4,
+              position: 'relative',
+            }}>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: hasActiveSession ? '#16a34a' : '#f59e0b',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {hasActiveSession ? '✓' : '⚠️'}
+              </span>
+              {/* Badge for mobile */}
+              {sessionCount > 0 && (
+                <Badge 
+                  count={sessionCount}
+                  style={{
+                    backgroundColor: hasActiveSession ? '#10b981' : '#f59e0b',
+                    fontSize: '9px',
+                    height: '16px',
+                    lineHeight: '16px',
+                    minWidth: '16px',
+                  }}
+                />
+              )}
+            </div>
           </Tooltip>
         );
       }
@@ -977,7 +996,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         ? `${safeToString(active.open)} - ${safeToString(active.close)}`
         : 'No Active Session';
 
-      // Tooltip content - Show all sessions
+      // Tooltip content
       const tooltipContent = sessions.length > 0 ? (
         <div style={{ lineHeight: 1.8, minWidth: 250 }}>
           <div style={{ 
@@ -986,8 +1005,19 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             marginBottom: 8,
             paddingBottom: 8,
             borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}>
-            📊 Trading Sessions
+            <span>📊 Trading Sessions</span>
+            {/* Badge in tooltip header */}
+            <Badge 
+              count={sessionCount}
+              style={{
+                backgroundColor: active ? '#10b981' : '#6b7280',
+                fontSize: '11px',
+              }}
+            />
           </div>
           {sessions.map((s, idx) => {
             const isActive = String(s?.status || '').toLowerCase() === 'true';
@@ -1058,6 +1088,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               border: `1.5px solid ${color}`,
               cursor: 'pointer',
               transition: 'all 0.2s ease',
+              position: 'relative',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
@@ -1092,6 +1123,24 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             >
               {label}
             </span>
+            
+            {/* ✅ Badge hiển thị số lượng sessions */}
+            {sessionCount > 0 && (
+              <Badge 
+                count={sessionCount}
+                style={{
+                  backgroundColor: active ? '#10b981' : '#f59e0b',
+                  boxShadow: active 
+                    ? '0 2px 8px rgba(16, 185, 129, 0.3)'
+                    : '0 2px 8px rgba(245, 158, 11, 0.3)',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  height: '20px',
+                  lineHeight: '20px',
+                  minWidth: '20px',
+                }}
+              />
+            )}
           </div>
         </Tooltip>
       );
@@ -1120,7 +1169,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     }
   },
   fixed: isMobile ? undefined : 'left',
-  width: isMobile ? 60 : 180,
+  width: isMobile ? 80 : 200, // ✅ Tăng width để chứa badge
 },
     {
       title: 'Action',
