@@ -15,7 +15,6 @@ import {
   MenuOutlined,
 } from '@ant-design/icons';
 import AutocompleteSearch from '../Components/Autocomplete';
-import CustomModal from './../Components/CustomModal'; 
 import type { TableProps } from 'antd';
 import { Table, Drawer ,message } from 'antd';
 
@@ -32,7 +31,7 @@ import { useWebSocketBrokers } from '../Hooks/ws.brokers';
 import { useWebSocketBrokerInfo } from '../Hooks/ws.broker.info';
 import { useWebSocketSymbols } from '../Hooks/ws.symbol.brokers';
 import axios from 'axios';
-import { Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 type ViewMode = 'grid' | 'list';
 
@@ -119,19 +118,72 @@ type PriceProps = {
 };
 
 const Price: React.FC<PriceProps> = ({ isDark }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('EURUSD');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-
   const [url_ws_brokerinfo, setUrlWsBrokerInfo] = useState('');
-  const [openModalInfo, setOpenModalInfo] = useState(false);
   const [dataBrokerInfo, setDataBrokerInfo] = useState<any>([]);
   const [nameDrawer, setNameDrawer] = useState('Broker Không Tồn Tại');
+  const [messageApi, contextHolder] = message.useMessage();
+  //Modal
+
+  const [openModalInfo, setOpenModalInfo] = useState(false);
   const [openModalBrokerInfo, setOpenModalBrokerInfo] = useState(false);
   const [modalOpenSymbol, setModalOpenSymbol] = useState(false);
-  const [messageApi, contextHolder] = message.useMessage();
+  const [modalConfig, setModalConfig] = useState(false);
+  const [modalDisconnect, setModalDisconnect] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [modalHistory, setModalHistory] = useState(false);
+
+   const { analysis, connected_analysis, connect_analysis, disconnect_analysis } =
+    useWebSocketAnalysis('ws://116.105.227.149:2003/analysis', {
+      autoConnect: true,
+      autoReconnect: true,
+      debug: true,
+    });
+
+    useEffect(() => {
+    if (connected_analysis) {
+      setIsConnected(true);
+    }
+  }, [connected_analysis]);
+
+    const { brokers, connected_brokers, connect_Brokers, disconnect_Brokers } =
+    useWebSocketBrokers('ws://116.105.227.149:2001/broker-info', {
+      autoConnect: false,
+      autoReconnect: false,
+      debug: true,
+    });
+
+  const { brokerInfo, connected_brokerInfo, connect_BrokerInfo, disconnect_BrokerInfo } =
+    useWebSocketBrokerInfo(url_ws_brokerinfo, {
+      autoConnect: false,
+      autoReconnect: false,
+      debug: true,
+    });
+
+ 
+
+  const { symbols, connected_symbols, connect_symbols, disconnect_symbols } =
+    useWebSocketSymbols(`ws://116.105.227.149:2000/symbol-brokers?symbol=${activeTab}`, {
+      autoConnect: false,
+      autoReconnect: false,
+      debug: true,
+    });
+
+
+      useEffect(() => {
+    if (!connected_analysis && isConnected) {
+      console.log('📊 Server Disconnect');
+      setModalDisconnect(true);
+    } else {
+      console.log('📊 Server Connected');
+    }
+  }, [connected_analysis]);
+
 
   
 
@@ -292,9 +344,32 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           <Button 
             type="primary" 
             size={isMobile ? 'small' : 'middle'}
-            onClick={() => console.log('Connect', record.broker, record.port)}
+            onClick={async () => {
+              const AccessToken = localStorage.getItem('accessToken') || '';
+               const resp: any = await axios.get(
+                `http://116.105.227.149:8000/v1/api/${record.broker_}/ALL/reset`,
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                'Authorization': `${AccessToken}`,
+              },
+              timeout: 10000,
+            }
+          );
+          if(resp?.data?.isPublished===true){
+            messageApi.open({ 
+              type: 'success',
+              content: `Gửi Reset Broker: ${record.broker} thành công!`,
+            });
+          } else {
+            messageApi.open({
+              type: 'error',
+              content: `Gửi yêu cầu Reset Broker: ${record.broker} thất bại!`,
+            });
+          }
+            }}
           >
-            Reset
+            Reset Broker
           </Button>
         </Space>
       ),
@@ -449,6 +524,138 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   sorter: (a: any, b: any) => Number(a.longcandle) - Number(b.longcandle),
   align: 'center' as const,
 },
+{
+  title: 'Time Cr',
+  dataIndex: 'timeCrr',
+  key: 'timeCrr',
+  render: (text: any, record: any) => {
+    const sessions = Array.isArray(record.timetrade) ? record.timetrade : [];
+    const hasActiveSessions = sessions.some((s: any) => 
+      String(s?.status || '').toLowerCase() === 'true'
+    );
+
+    const tooltipContent = (
+      <div style={{ lineHeight: 1.8, minWidth: 250 }}>
+        <div style={{ 
+          fontWeight: 700,
+          fontSize: '13px',
+          marginBottom: 8,
+          paddingBottom: 8,
+          borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <span>📊 Trading Sessions</span>
+          <span style={{
+            fontSize: '11px',
+            padding: '2px 6px',
+            borderRadius: 4,
+            background: hasActiveSessions ? '#10b981' : '#6b7280',
+            color: '#fff',
+          }}>
+            {sessions.length}
+          </span>
+        </div>
+        {sessions.length > 0 ? (
+          sessions.map((s: any, idx: number) => {
+            const isActive = String(s?.status || '').toLowerCase() === 'true';
+            return (
+              <div 
+                key={idx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 8px',
+                  marginBottom: 4,
+                  borderRadius: 4,
+                  background: isActive 
+                    ? 'rgba(16, 185, 129, 0.15)' 
+                    : 'rgba(100, 116, 139, 0.1)',
+                }}
+              >
+                <Badge status={isActive ? 'success' : 'default'} />
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? '#10b981' : '#94a3b8',
+                  flex: 1,
+                }}>
+                  {s?.open || 'N/A'} - {s?.close || 'N/A'}
+                </span>
+                {isActive && (
+                  <span style={{
+                    fontSize: '10px',
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    background: '#10b981',
+                    color: '#fff',
+                    fontWeight: 700,
+                  }}>
+                    ACTIVE
+                  </span>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '12px',
+            color: '#9ca3af',
+            fontSize: '12px',
+          }}>
+            No sessions configured
+          </div>
+        )}
+      </div>
+    );
+
+    return (
+      <Tooltip 
+        title={tooltipContent}
+        placement="topLeft"
+        overlayStyle={{ maxWidth: 400 }}
+      >
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          color: "#065ed9",
+          fontSize: '14px',
+          fontWeight: 500,
+          cursor: 'pointer',
+          padding: '4px 8px',
+          borderRadius: 4,
+          transition: 'all 0.2s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(6, 94, 217, 0.1)';
+          e.currentTarget.style.transform = 'scale(1.02)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
+        >
+          <span>{text}</span>
+          {sessions.length > 0 && (
+            <Badge 
+              count={sessions.length} 
+              style={{ 
+                backgroundColor: hasActiveSessions ? '#10b981' : '#6b7280',
+                fontSize: '10px',
+              }} 
+            />
+          )}
+        </div>
+      </Tooltip>
+    );
+  },
+  sorter: (a: any, b: any) => Number(a.timeCrr) - Number(b.timeCrr),
+  align: 'center' as const,
+},
     {
       title: 'Action',
       key: 'action',
@@ -460,20 +667,20 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             size="small"
             onClick={async () => {
           const AccessToken = localStorage.getItem('accessToken') || '';
-               const resp : any = await axios.get(
-            `http://116.105.227.149:8000/v1/api/${record.broker_}/${record.symbol}/reset`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
+              const resp: any = await axios.get(
+                `http://116.105.227.149:8000/v1/api/${record.broker_}/${record.symbol}/reset`,
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
                 'Authorization': `${AccessToken}`,
               },
               timeout: 10000,
             }
           );
-          if(resp?.isPublished){
+          if(resp?.data?.isPublished===true){
             messageApi.open({
               type: 'success',
-              content: `Reset ${record.symbol} -> ${record.broker} thành công!`,
+              content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
             });
           } else {
             messageApi.open({
@@ -481,10 +688,6 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
             });
           }
-          messageApi.open({
-            type: 'success',
-            content: `Đã gửi yêu cầu Setting ${record.symbol} cho broker ${record.broker}!`,
-          });
         }}
           >
             {isMobile ? 'Reset' : 'Reset'}
@@ -547,6 +750,21 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       fixed: isMobile ? undefined : 'left',
     },
     {
+        title: 'Bid Fix',
+        dataIndex: 'bid_mdf',
+        key: 'bid_mdf',
+        render: (text: any) => (
+          <div style={{
+            color: "#f09b55",
+            fontSize: '14px',
+            fontWeight: 500,
+          }}>
+            <span>{text}</span>
+          </div>
+        ),
+        sorter: (a: any, b: any) => a.bid_mdf.localeCompare(b.bid_mdf),
+      },
+    {
       title: 'Ask',
       dataIndex: 'ask',
       key: 'ask',
@@ -562,21 +780,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       sorter: (a: any, b: any) => a.ask.localeCompare(b.ask),
       fixed: isMobile ? undefined : 'left',
     },
-      {
-        title: 'Bid Fix',
-        dataIndex: 'bid_mdf',
-        key: 'bid_mdf',
-        render: (text: any) => (
-          <div style={{
-            color: "#f09b55",
-            fontSize: '14px',
-            fontWeight: 500,
-          }}>
-            <span>{text}</span>
-          </div>
-        ),
-        sorter: (a: any, b: any) => a.bid_mdf.localeCompare(b.bid_mdf),
-      },
+      
       {
         title: 'Ask Fix',
         dataIndex: 'ask_mdf',
@@ -591,6 +795,58 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           </div>
         ),
         sorter: (a: any, b: any) => a.ask_mdf.localeCompare(b.ask_mdf),
+      },
+      {
+        title: 'Spread',
+        dataIndex: 'spread',
+        key: 'spread',
+        render: (text: any) => (
+          <div style={{
+            color: "#ca5aef",
+            fontSize: '14px',
+            fontWeight: 500,
+          }}>
+            <span>{text}</span>
+          </div>
+        ),
+        sorter: (a: any, b: any) => a.spread.localeCompare(b.spread),
+      },
+      {
+        title: 'Delay',
+        dataIndex: 'timedelay',
+        key: 'timedelay',
+        render: (text: any) => {
+          const n = Number(text);
+          if (Number.isNaN(n)) {
+            return (
+              <div style={{
+                color: "#6b7280",
+                fontSize: '14px',
+                fontWeight: 500,
+              }}>
+                <span>{text}</span>
+              </div>
+            );
+          }
+          return n < 0 ? (
+            <div style={{
+              color: "#ef6e5a",
+              fontSize: '14px',
+              fontWeight: 500,
+            }}>
+              {n < - 3600 ? <span> Hơn 1H </span> : <span>{n} s</span>}
+            </div>
+          ) : (
+            <div style={{
+              color: "#2906d9",
+              fontSize: '14px',
+              fontWeight: 500,
+            }}>
+              <span>{text} s</span>
+            </div>
+          );
+        },
+        sorter: (a: any, b: any) => a.timedelay.localeCompare(b.timedelay),
       },
       {
         title: 'Time Current',
@@ -877,34 +1133,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     },
   ];
 
-  const { brokers, connected_brokers, connect_Brokers, disconnect_Brokers } =
-    useWebSocketBrokers('ws://116.105.227.149:2001/broker-info', {
-      autoConnect: false,
-      autoReconnect: false,
-      debug: true,
-    });
-
-  const { brokerInfo, connected_brokerInfo, connect_BrokerInfo, disconnect_BrokerInfo } =
-    useWebSocketBrokerInfo(url_ws_brokerinfo, {
-      autoConnect: false,
-      autoReconnect: false,
-      debug: true,
-    });
-
-  const { analysis, connected_analysis, connect_analysis, disconnect_analysis } =
-    useWebSocketAnalysis('ws://116.105.227.149:2003/analysis', {
-      autoConnect: true,
-      autoReconnect: false,
-      debug: true,
-    });
-
-  const { symbols, connected_symbols, connect_symbols, disconnect_symbols } =
-    useWebSocketSymbols(`ws://116.105.227.149:2000/symbol-brokers?symbol=${activeTab}`, {
-      autoConnect: false,
-      autoReconnect: false,
-      debug: true,
-    });
-
+  
   const handle_setModalSymbols = (symbol: string | null) => {
     setActiveTab(symbol || '');
     setModalOpenSymbol(prev => !prev);
@@ -966,11 +1195,6 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   //   }
   // }, [symbols]);
 
-  // useEffect(() => {
-  //   if (brokerInfo) {
-  //     console.log('📊 Brokers data updated 71238:', brokerInfo);
-  //   }
-  // }, [brokerInfo]);
 
   const handleClickInfo = () => {
     setOpenModalInfo(prev => !prev);
@@ -982,23 +1206,6 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 
   const t = useMemo(() => (isDark ? DARK : LIGHT), [isDark]);
 
-  // type SignalItem = {
-  //   id?: number;
-  //   provider?: string;
-  //   pair?: string;
-  //   exchange?: string;
-  //   followers?: string;
-  //   score?: number;
-  //   time?: string;
-  //   action?: string;
-  //   online?: boolean;
-  //   broker?: string;
-  //   symbol?: string;
-  //   brokerCheck?: string;
-  //   distan?: string;
-  //   type?: string;
-  //   spread?: string | number;
-  // };
 
   const forexData: any [] = analysis?.ANALYSIS?.Type_1 || [];
 
@@ -1381,12 +1588,46 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       {/* Modal Thông Tin Broker */}
       {contextHolder}
       <Modal
-  width={isMobile ? '90%' : isTablet ? '80%' : '70%'}
-  open={openModalInfo}
-  onCancel={() => setOpenModalInfo(false)}
-  title={isMobile ? "Thông Tin Sàn" : "Thông Tin Các Sàn Giao Dịch Đang Kết Nối"}
-  footer={null}
->
+        title="Server Disconnect"
+        style={{ top: 20 }}
+        open={modalDisconnect}
+        okText="Re Load"
+        onOk={() => {
+          setModalDisconnect(false);
+          navigate('http://116.105.227.149:3000/price');
+        }}
+        onCancel={() => setModalDisconnect(false)}
+      >
+        <p>Disconnected server at {new Date().toLocaleTimeString()} </p>
+      </Modal>
+
+      <Modal
+        title="Config"
+        width={'800px'}
+        style={{ top: 20 }}
+        open={modalConfig}
+        onCancel={() => setModalConfig(false)}
+      >
+        <p>Config Comming soon....</p>
+      </Modal>
+
+      <Modal
+        title="History Logs"
+        width={'800px'}
+        style={{ top: 20 }}
+        open={modalHistory}
+        onCancel={() => setModalHistory(false)}
+      >
+        <p>History Logs Comming soon....</p>
+      </Modal>
+
+      <Modal
+        width={isMobile ? '90%' : isTablet ? '80%' : '70%'}
+        open={openModalInfo}
+        onCancel={() => setOpenModalInfo(false)}
+        title={isMobile ? "Thông Tin Sàn" : "Thông Tin Các Sàn Giao Dịch Đang Kết Nối"}
+        footer={null}
+      >
   {/* Table - Separate container */}
   <div style={{ overflowX: 'auto' }}>
     <Table
@@ -1792,6 +2033,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               onMouseUp={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px) scale(1)';
               }}
+              onClick={() => setModalConfig(true)}
             >
               <SettingOutlined />
               Config
@@ -1831,6 +2073,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               onMouseUp={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px) scale(1)';
               }}
+              onClick={() => setModalHistory(true)}
             >
               <HistoryOutlined />
               History
@@ -2117,105 +2360,140 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   `}</style>
 </div>
 
-      {/* Main Content */}
+     {/* Main Content */}
+<div style={{
+  padding: isMobile ? '12px' : isTablet ? '16px' : '24px',
+}}>
+  {viewMode === 'list' ? (
+    // ===== LIST VIEW =====
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: isMobile 
+        ? '1fr' // Mobile: 1 column
+        : isTablet 
+          ? '1fr' // Tablet: 1 column (stack vertically)
+          : 'repeat(2, 1fr)', // Desktop: 2 columns side by side
+      gap: isMobile ? '16px' : isTablet ? '20px' : '24px',
+    }}>
+      {/* Left Column - FX, XAU, Crypto */}
       <div style={{
-        padding: isMobile ? '16px' : isTablet ? '20px' : '24px',
-        display: viewMode === 'grid' ? 'block' : 'grid',
-        gridTemplateColumns: viewMode === 'list' ? (isMobile ? '1fr' : isTablet ? '1fr 1fr' : '1fr 1fr') : '1fr',
-        gap: isMobile ? '16px' : '24px',
+        background: t.panelBg,
+        borderRadius: isMobile ? '12px' : isTablet ? '14px' : '16px',
+        padding: isMobile ? '12px' : isTablet ? '16px' : '20px',
+        border: `1px solid ${t.border}`,
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
       }}>
-        {viewMode === 'list' ? (
-          <>
-            {/* Left Column - FX, XAU, Crypto */}
-            <div style={{
-              background: t.panelBg,
-              borderRadius: isMobile ? '12px' : '16px',
-              padding: isMobile ? '16px' : '20px',
-              border: `1px solid ${t.border}`,
-            }}>
-              <SectionTitle
-                t={t}
-                isMobile={isMobile}
-                iconBg={t.accentPurpleGradient}
-                title="FX, XAU, Crypto"
-                subtitle="Forex & Commodities"
-                count={forexData.length}
-                countBg="rgba(16, 185, 129, 0.12)"
-                countBorder={t.accentIndigo}
-                countColor={t.accentPurple}
-              />
-              <div>{forexData?.map((item, index) => renderSignalRow(item, index))}</div>
-            </div>
-
-            {/* Right Column - Indices & Stocks */}
-            <div style={{
-              background: t.panelBg,
-              borderRadius: isMobile ? '12px' : '16px',
-              padding: isMobile ? '16px' : '20px',
-              border: `1px solid ${t.border}`,
-            }}>
-              <SectionTitle
-                t={t}
-                isMobile={isMobile}
-                iconBg="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-                title="Chỉ Số, Chứng Khoán"
-                subtitle="Indices & Stocks"
-                count={stocksData.length}
-                countBg="rgba(245,158,11,0.12)"
-                countBorder={t.accentYellowBorder}
-                countColor={t.accentYellow}
-              />
-              <div>{stocksData.map((item, index) => renderSignalRow(item, index))}</div>
-            </div>
-          </>
-        ) : (
-          <div>
-            {/* Forex Section */}
-            <div style={{ marginBottom: isMobile ? '24px' : '32px' }}>
-              <SectionHeader
-                t={t}
-                isMobile={isMobile}
-                iconBg={t.accentPurpleGradient}
-                title="FX, XAU, Crypto"
-                subtitle="Forex & Commodities"
-                count={forexData.length}
-                countBg="rgba(16, 185, 129, 0.12)"
-                countBorder={t.accentIndigo}
-                countColor={t.accentPurple}
-              />
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: isMobile ? '12px' : '16px'
-              }}>
-                {forexData.map((item) => renderSignalCard(item))}
-              </div>
-            </div>
-
-            {/* Stocks Section */}
-            <div>
-              <SectionHeader
-                t={t}
-                isMobile={isMobile}
-                iconBg="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-                title="Chỉ Số, Chứng Khoán"
-                subtitle="Indices & Stocks"
-                count={stocksData.length}
-                countBg="rgba(245,158,11,0.12)"
-                countBorder={t.accentYellowBorder}
-                countColor={t.accentYellow}
-              />
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: isMobile ? '12px' : '16px'
-              }}>
-                {stocksData.map((item) => renderSignalCard(item))}
-              </div>
-            </div>
-          </div>
-        )}
+        <SectionTitle
+          t={t}
+          isMobile={isMobile}
+          iconBg={t.accentPurpleGradient}
+          title="FX, XAU, Crypto"
+          subtitle="Forex & Commodities"
+          count={forexData.length}
+          countBg="rgba(16, 185, 129, 0.12)"
+          countBorder={t.accentIndigo}
+          countColor={t.accentPurple}
+        />
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: isMobile ? '8px' : '10px',
+          marginTop: isMobile ? '12px' : '16px',
+        }}>
+          {forexData?.map((item, index) => renderSignalRow(item, index))}
+        </div>
       </div>
+
+      {/* Right Column - Indices & Stocks */}
+      <div style={{
+        background: t.panelBg,
+        borderRadius: isMobile ? '12px' : isTablet ? '14px' : '16px',
+        padding: isMobile ? '12px' : isTablet ? '16px' : '20px',
+        border: `1px solid ${t.border}`,
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+      }}>
+        <SectionTitle
+          t={t}
+          isMobile={isMobile}
+          iconBg="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+          title="Chỉ Số, Chứng Khoán"
+          subtitle="Indices & Stocks"
+          count={stocksData.length}
+          countBg="rgba(245,158,11,0.12)"
+          countBorder={t.accentYellowBorder}
+          countColor={t.accentYellow}
+        />
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: isMobile ? '8px' : '10px',
+          marginTop: isMobile ? '12px' : '16px',
+        }}>
+          {stocksData.map((item, index) => renderSignalRow(item, index))}
+        </div>
+      </div>
+    </div>
+  ) : (
+    // ===== GRID VIEW =====
+    <div>
+      {/* Forex Section */}
+      <div style={{ 
+        marginBottom: isMobile ? '20px' : isTablet ? '28px' : '32px',
+      }}>
+        <SectionHeader
+          t={t}
+          isMobile={isMobile}
+          iconBg={t.accentPurpleGradient}
+          title="FX, XAU, Crypto"
+          subtitle="Forex & Commodities"
+          count={forexData.length}
+          countBg="rgba(16, 185, 129, 0.12)"
+          countBorder={t.accentIndigo}
+          countColor={t.accentPurple}
+        />
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile 
+            ? '1fr' // Mobile: 1 column
+            : isTablet 
+              ? 'repeat(2, 1fr)' // Tablet: 2 columns
+              : 'repeat(auto-fill, minmax(300px, 1fr))', // Desktop: Auto-fit với min 300px
+          gap: isMobile ? '12px' : isTablet ? '16px' : '20px',
+          marginTop: isMobile ? '12px' : '16px',
+        }}>
+          {forexData.map((item) => renderSignalCard(item))}
+        </div>
+      </div>
+
+      {/* Stocks Section */}
+      <div>
+        <SectionHeader
+          t={t}
+          isMobile={isMobile}
+          iconBg="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+          title="Chỉ Số, Chứng Khoán"
+          subtitle="Indices & Stocks"
+          count={stocksData.length}
+          countBg="rgba(245,158,11,0.12)"
+          countBorder={t.accentYellowBorder}
+          countColor={t.accentYellow}
+        />
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile 
+            ? '1fr' // Mobile: 1 column
+            : isTablet 
+              ? 'repeat(2, 1fr)' // Tablet: 2 columns
+              : 'repeat(auto-fill, minmax(300px, 1fr))', // Desktop: Auto-fit
+          gap: isMobile ? '12px' : isTablet ? '16px' : '20px',
+          marginTop: isMobile ? '12px' : '16px',
+        }}>
+          {stocksData.map((item) => renderSignalCard(item))}
+        </div>
+      </div>
+    </div>
+  )}
+</div>
 
       {/* Bottom Stats */}
       {/* <div style={{
