@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Modal, Space, Tag, Tooltip, Alert } from "antd";
+import { Badge, Button, Modal, Space, Tag, Tooltip, Alert ,Progress } from "antd";
+import { green, red } from '@ant-design/colors';
+import {calculatePercentage} from "../Helpers/text";
 import {
   SearchOutlined,
   AppstoreOutlined,
@@ -323,7 +325,12 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             style={{ width: isMobile ? 80 : 140, textAlign: "center" }}
             color={r.status === "True" ? "green" : "red"}
           >
-            {r.status === "True" ? "Connected" : r.status}
+            {r.status === "True" ? "Connected" : (
+              <Tooltip title={r.status}>  
+                {/* <Progress  /> */}
+                <Progress size="small" percent={Number(calculatePercentage(r.status))} steps={20} strokeColor={[green[5], green[5], red[5]]} />
+              </Tooltip>
+            )}
           </Tag>
         </div>
       ),
