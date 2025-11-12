@@ -118,6 +118,12 @@ type PriceProps = {
 };
 
 const Price: React.FC<PriceProps> = ({ isDark }) => {
+
+  useEffect(() => {
+    // ✅ Thay đổi title động
+    document.title = 'Price Delay - Dashboard';
+  }, []);
+  
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('EURUSD');
   const [viewMode, setViewMode] = useState<ViewMode>('list');

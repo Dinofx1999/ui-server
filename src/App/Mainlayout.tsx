@@ -99,7 +99,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
   const navItems = [
     { key: 'home', label: 'Home', icon: <HomeOutlined /> },
     { key: 'price', label: 'Price', icon: <DollarOutlined /> },
-    { key: 'candle', label: 'Candle', icon: <LineChartOutlined /> },
+    // { key: 'candle', label: 'Candle', icon: <LineChartOutlined /> },
   ];
 
   return (
