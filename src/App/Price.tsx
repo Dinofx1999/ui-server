@@ -1838,6 +1838,12 @@ if (!isMobile) {
                 overflow: "hidden",
                 textOverflow: "ellipsis",
               }}
+              onClick={() => {
+                console.log("Clicked symbol", item.Symbol);
+                setActiveTab(item.Symbol || item.pair);
+                setModalOpenSymbol(true);
+
+              }}
             >
               {item.Symbol || item.pair}
             </div>
@@ -2126,7 +2132,28 @@ if (!isMobile) {
       <Modal
         width={isMobile ? "90%" : isTablet ? "80%" : "70%"}
         open={modalOpenSymbol}
+        okText ="Reset ALL"
         onCancel={() => setModalOpenSymbol(false)}
+        onOk={ async () => {
+          // setModalOpenSymbol(false)
+                const AccessToken = localStorage.getItem("accessToken") || "";
+          const resp = await axios.get(
+                  `http://116.105.227.149:9000/v1/api/${activeTab}/reset`,
+                  {
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `${AccessToken}`,
+                    },
+                    timeout: 10000,
+                  }
+                );
+                if (resp.data && resp.data.success) {
+                  message.success("Reset ALL successful!");
+                  console.log("Reset ALL response:", resp.data);
+                } else {
+                  console.error("Reset ALL failed:", resp.data);
+                }
+        }}
         title={
           isMobile
             ? `CHI TIẾT SYMBOL: ${activeTab}`
