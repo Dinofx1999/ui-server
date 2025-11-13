@@ -328,7 +328,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             {r.status === "True" ? "Connected" : (
               <Tooltip title={r.status}>  
                 {/* <Progress  /> */}
-                <Progress size="small" percent={Number(calculatePercentage(r.status))} steps={20} strokeColor={[green[5], green[5], red[5]]} />
+                <Progress size="small" percent={Number(calculatePercentage(r.status))} steps={20} strokeColor={[red[5] ,red[5], green[5] ]} />
               </Tooltip>
             )}
           </Tag>
@@ -383,9 +383,10 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             type="primary"
             size={isMobile ? "small" : "middle"}
             onClick={async () => {
-              const AccessToken = localStorage.getItem("accessToken") || "";
+              try {
+                const AccessToken = localStorage.getItem("accessToken") || "";
               const resp: any = await axios.get(
-                `http://116.105.227.149:8000/v1/api/${record.broker_}/ALL/reset`,
+                `http://116.105.227.149:9000/v1/api/${record.broker_}/ALL/reset`,
                 {
                   headers: {
                     "Content-Type": "application/json",
@@ -403,6 +404,13 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                 messageApi.open({
                   type: "error",
                   content: `Gửi yêu cầu Reset Broker: ${record.broker} thất bại!`,
+                });
+              }
+              } catch (error : any) {
+                console.log("Error resetting broker:", error.message);
+                messageApi.open({
+                  type: "error",
+                  content: error.message,
                 });
               }
             }}
@@ -745,7 +753,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             onClick={async () => {
               const AccessToken = localStorage.getItem("accessToken") || "";
               const resp: any = await axios.get(
-                `http://116.105.227.149:8000/v1/api/${record.broker_}/${record.symbol}/reset`,
+                `http://116.105.227.149:9000/v1/api/${record.broker_}/${record.symbol}/reset`,
                 {
                   headers: {
                     "Content-Type": "application/json",
@@ -2089,7 +2097,7 @@ if (!isMobile) {
                   content: "Đã gửi yêu cầu Reset ALL!",
                 });
                 const resp = await axios.get(
-                  "http://116.105.227.149:8000/v1/api/reset-all-brokers",
+                  "http://116.105.227.149:9000/v1/api/reset-all-brokers",
                   {
                     headers: {
                       "Content-Type": "application/json",
