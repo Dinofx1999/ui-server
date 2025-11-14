@@ -25,7 +25,7 @@ type MainLayoutProps = {
 const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [darkMode, setDarkMode] = useState<boolean>(localStorage.getItem('darkMode') === 'true');
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

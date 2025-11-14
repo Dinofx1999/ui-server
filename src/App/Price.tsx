@@ -1,5 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Modal, Space, Tag, Tooltip, Alert ,Progress } from "antd";
+import { Badge, Button, Modal, Space, Tag, Tooltip, Alert ,Progress ,Row, InputNumber,Form ,AutoComplete} from "antd";
+import {
+  Pagination,
+  Spin,
+  Layout,
+  Input,
+  Card,
+  Col,
+  TimePicker,
+  Select,
+  
+} from "antd";
 import { green, red } from '@ant-design/colors';
 import {calculatePercentage} from "../Helpers/text";
 import {
@@ -148,6 +159,21 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   const [modalDisconnect, setModalDisconnect] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [modalHistory, setModalHistory] = useState(false);
+  const [modalSpreadConfig, setModalSpreadConfig] = useState(false);
+
+  const [form_Add_Symbol, setForm_Add_Symbol] = useState(false);
+  const [button_Add_Form_Symbol, setButton_Add_Form_Symbol] = useState("Thêm Mới");
+  const [form_] = Form.useForm(); 
+  const [form_spread] = Form.useForm(); 
+   const [modal_Symbol, setModal_Symbol] = useState(false);
+  const [spreadPlus, setSpreadPlus] = useState(1);
+  const [form_update_Symbol, setForm_update_Symbol] = useState(false);
+  const [form] = Form.useForm(); 
+  const [symbol_config, setSymbol_config] = useState([]);
+  const [brokerCheck, setbrokerCheck] = useState("");
+  
+
+  
 
   const {
     analysis,
@@ -1362,8 +1388,12 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   const handleSelect = (value: string) => {
     console.log("Selected:", value);
     handle_setModalSymbols(value);
-  };
 
+   HandleSymbol(value);
+  };
+const handleSelect_symbolConfig = (value: string) => {
+   HandleSymbol(value);
+  };
   useEffect(() => {
     if (brokers) {
       setDataBrokerInfo(brokers);
@@ -1371,19 +1401,402 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     }
   }, [brokers]);
 
-  // useEffect(() => {
-  //   if (symbols) {
-  //     console.log('📊 Symbols data updated:', symbols);
-  //   }
-  // }, [symbols]);
-
   const handleClickInfo = () => {
     setOpenModalInfo((prev) => !prev);
   };
 
+
+   const handleSpreadSTDChange = (value:any) => {
+    form_.setFieldsValue({
+      Spread_ECN: value
+    });
+  };
+
+
+  const onFinish_add_Spread = (values:any) => {
+    console.log(values);
+    const Payload = {
+      name_Setting : "Spread_Plus",
+      value :  values.spread,
+    }
+
+    axios.post('http://116.105.227.149:3001/symbol/spread', Payload)
+      .then(response => {
+        if(response.data){
+          console.log('Success:', response);
+          // success(response.data.mess);
+          HandleSymbol("ALL");
+        }else{
+          // Eror_(response.data.mess);
+          HandleSymbol("ALL");
+        }
+        // HandleSymbol();
+        // success(`${values.Symbol} thêm mới thành công`);
+        // form.resetFields(); // Reset form sau khi submit thành công
+      })
+      .catch(error => {
+        // if(error.response.data.code === 0)Eror_("Symbol đã tồn tại");
+        
+      });
+  }
+
+    const onFinish_add = (values:any) => {
+    console.log( values);
+     // Ví dụ gửi lên server:
+     const AccessToken = localStorage.getItem("accessToken") || "";
+    axios.post('http://116.105.227.149:9000/v1/api/symbol/config', values ,{
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${AccessToken}`,
+      },
+    })
+      .then(response => {
+        // console.log('Success:', response);
+        HandleSymbol("ALL");
+        // success(`${values.Symbol} thêm mới thành công`);
+        messageApi.open({
+          type: 'success',
+          content: `${values.Symbol} thêm mới thành công`,
+        });
+        // form.resetFields(); // Reset form sau khi submit thành công
+      })
+      .catch(error => {
+        // if(error.response.data.code === 0)Error_("Symbol đã tồn tại");
+        messageApi.open({
+          type: 'error',
+          content: `${values.Symbol} đã tồn tại`,
+        });
+
+      });
+
+  }
+
+   const themmoiSymbol = () => {
+    if(form_Add_Symbol){
+      setForm_Add_Symbol(false);
+    }else{
+      setForm_Add_Symbol(true);
+    }
+  }
+
+  const HandleSymbol = async (symbol: string) =>{
+    setModalSpreadConfig(true);
+    try {
+      const AccessToken = localStorage.getItem("accessToken") || "";
+              const resp: any = await axios.get(
+                `http://116.105.227.149:9000/v1/api/symbol/config/${symbol || "ALL"}`,
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `${AccessToken}`,
+                  },
+                  timeout: 10000,
+                }
+              );
+      console.log('Symbol Config Data:', resp.data);
+      setSymbol_config(resp?.data.data);
+      // setModalSpreadConfig(false);
+      // setSymbol_Config(response.data.Data);
+      // setSpreadPlus(response.data.Spread_Plus.value);
+    } catch (error:any) {
+      console.error('API request failed:', error.message);
+      throw error;
+    }
+  }
+
   const handleClickInfo_Broker = () => {
     setOpenModalBrokerInfo((prev) => !prev);
   };
+
+   const onFinish_update = (values:any) => {
+    console.log(values);  
+    // values._id = _id;
+     // Ví dụ gửi lên server:
+    axios.post('http://116.105.227.149:3001/symbol/update', values)
+      .then(response => {
+        if(response.data){
+          // success(`${values.Symbol} Update Thành Công`);
+          HandleSymbol("ALL");
+        }else{
+          // Eror_(`${values.Symbol} Không Tồn Tại`);
+          HandleSymbol("ALL");
+        }
+        // HandleSymbol();
+        // success(`${values.Symbol} thêm mới thành công`);
+        // form.resetFields(); // Reset form sau khi submit thành công
+      })
+      .catch(error => {
+        // if(error.response.data.code === 0)Eror_("Symbol đã tồn tại");
+        
+      });
+
+  }
+
+  const columns_SymbolConfig: TableProps<any>["columns"] = [
+    {
+      title: "#",
+      dataIndex: "Index",
+      fixed: "left",
+      width: "10px",
+      key: "Index",
+      render: (text:any) => {
+        return (
+          <span
+            style={{
+              color: "#1e90ff",
+              fontWeight: "500",
+              fontFamily: "inherit",
+            }}
+          >
+            {text}
+          </span>
+        );
+      },
+    },
+    {
+      title: <span>SẢN PHẨM</span>,
+      dataIndex: "Symbol",
+      fixed: "left",
+      className: "blue-column",
+      key: "Symbol",
+      render: (text: any, record: any) => {
+        const shortText = text.length > 7 ? text.substring(0, 7) + "..." : text;
+        if (text === brokerCheck) {
+          return (
+            <span
+              style={{
+                color: "#ff1e1e",
+                fontWeight: "500",
+                fontFamily: "inherit",
+              }}
+            >
+              {shortText}
+            </span>
+          );
+        } else {
+          return (
+            <span
+              style={{
+                color: "#1e90ff",
+                fontWeight: "500",
+                fontFamily: "inherit",
+              }}
+            >
+              {shortText}
+            </span>
+          );
+        }
+      },
+    },
+    {
+      title: "SPREAD STD",
+      dataIndex: "Spread_STD",
+      width: "500",
+      key: "Spread_STD",
+      sorter: {
+        compare: (a:any, b:any) => parseFloat(a.PriceBid) - parseFloat(b.PriceBid),
+        multiple: 3,
+      },
+      render: (text:any ) => {
+        return (
+          <span
+            style={{
+              color: "tomato",
+              width: "75px",
+              display: "inline-block",
+              fontWeight: "400",
+              fontFamily: "inherit",
+            }}
+          >
+            {text}
+          </span>
+        );
+      },
+    },
+    {
+      title: "SPREAD_ECN",
+      dataIndex: "Spread_ECN",
+      key: "Spread_ECN",
+      sorter: {
+        compare: (a:any, b:any) => parseFloat(a.PriceBid_modify) - parseFloat(b.PriceBid_modify),
+        multiple: 3,
+      },
+      render: (text:any) => {
+        return (
+          <span
+            style={{
+              color: "red",
+              width: "75px",
+              display: "inline-block",
+              fontWeight: "500",
+              fontFamily: "inherit",
+            }}
+          >
+            {text}
+          </span>
+        );
+      },
+    },
+    {
+      title: "SYDNEY",
+      dataIndex: "Sydney",
+      key: "Sydney",
+      sorter: {
+        compare: (a:any, b:any) => parseFloat(a.Spread) - parseFloat(b.Spread),
+        multiple: 1,
+      },
+      render: (text:any) => {
+        return (
+          <span
+            style={{ color: "blue", fontWeight: "400", fontFamily: "inherit" }}
+          >
+            {text}
+          </span>
+        );
+      },
+    },
+    {
+      title: "TOKYO",
+      dataIndex: "Tokyo",
+      key: "Tokyo",
+      sorter: {
+        compare: (a:any, b:any) => parseFloat(a.High_Candle) - parseFloat(b.High_Candle),
+        multiple: 1,
+      },
+      render: (text:any) => {
+        return (
+          <span
+            style={{ color: "blue", fontWeight: "400", fontFamily: "inherit" }}
+          >
+            {text}
+          </span>
+        );
+      },
+    },
+    {
+      title: "LONDON",
+      dataIndex: "London",
+      key: "London",
+      sorter: {
+        compare: (a:any, b:any) => parseFloat(a.PriceAsk) - parseFloat(b.PriceAsk),
+        multiple: 2,
+      },
+      render: (text:any) => {
+        return (
+          <span
+            style={{
+              color: "Green",
+              width: "75px",
+              display: "inline-block",
+              fontWeight: "400",
+              fontFamily: "inherit",
+            }}
+          >
+            {text}
+          </span>
+        );
+      },
+    },
+    {
+      title: "NEWYORK",
+      dataIndex: "NewYork",
+      key: "NewYork",
+      sorter: {
+        compare: (a:any, b:any) => parseFloat(a.PriceAsk_modify) - parseFloat(b.PriceAsk_modify),
+        multiple: 2,
+      },
+      render: (text:any) => {
+        return (
+          <span
+            style={{
+              color: "Green",
+              width: "75px",
+              display: "inline-block",
+              fontWeight: "500",
+              fontFamily: "inherit",
+            }}
+          >
+            {text}
+          </span>
+        );
+      },
+    },
+    {
+      title: "ACTION",
+      dataIndex: "actions",
+      render: (text: any, record: any, index: number) => {
+        return (
+          <Space>
+            <Button
+            type="primary"
+            onClick={() => {
+              const values = {
+                _id: record._id,
+              };
+               
+              axios.post('http://116.105.227.149:9001/v1/api/symbol/config', values)
+              .then(response => {
+                if(response.data !== null){
+                  // set_Id(response.data._id);
+                  console.log(response.data);
+                  form.setFieldsValue(response.data);
+                  setForm_update_Symbol(true);
+                  // seForm_Add_Symbol(false);
+                }else{
+                  // Eror_(`${record.Symbol} không tồn tại`);
+                  HandleSymbol(record.Symbol);
+
+                }
+                // setInfoSymbol()
+                // success(`${values.Symbol} thêm mới thành công`);
+                // form.resetFields(); // Reset form sau khi submit thành công
+              })
+              .catch(error => {
+                // if(error.response.data.code === 0)Eror_("Symbol đã tồn tại");
+                
+              });
+              // ws_3?.send(JSON.stringify([mes]));
+              // success(" Reset -> " + record.Broker + " Success 2");
+              // console.log(mes);
+            }}
+          >
+            Sửa
+          </Button>
+          <Button
+          danger
+            type="primary"
+            onClick={() => {
+              const values = {
+                _id: record._id,
+              };
+
+              axios.post('http://116.105.227.149:9001/v1/api/symbol/delete', values)
+              .then(response => {
+                console.log(response);
+                if(response.data !== null){
+                  // success(`Xóa Sản Phẩm "${record.Symbol}" thành công`);
+                  HandleSymbol("ALL");
+                }else{
+                  // Eror_(`${record.Symbol} không tồn tại`);
+                  HandleSymbol("ALL");
+                }
+                // setInfoSymbol()
+                // success(`${values.Symbol} thêm mới thành công`);
+                // form.resetFields(); // Reset form sau khi submit thành công
+              })
+              .catch(error => {
+                // if(error.response.data.code === 0)Eror_("Symbol đã tồn tại");
+                
+              });
+            }}
+          >
+            Xóa
+          </Button>
+          </Space>
+        );
+      },
+    },
+  ];
 
   const t = useMemo(() => (isDark ? DARK : LIGHT), [isDark]);
 
@@ -2028,10 +2441,288 @@ if (!isMobile) {
         width={"800px"}
         style={{ top: 20 }}
         open={modalConfig}
-        onCancel={() => setModalConfig(false)}
+        onCancel={() => HandleSymbol("ALL")}
       >
         <p>Config Comming soon....</p>
       </Modal>
+
+       {/* <Modal
+        title="Config"
+        width={"800px"}
+        style={{ top: 20 }}
+        open={modalSpreadConfig}
+        onCancel={() => setModalSpreadConfig(false)}
+      >
+        <p>Spread Config Comming soon....</p>
+      </Modal> */}
+
+      <Modal
+          title="Thông Số SPREAD Sản Phẩm"
+          open={modalSpreadConfig}
+          onCancel={() => setModalSpreadConfig(false)}
+          cancelText="Đóng"
+          width={1200}
+          // className={styles.modalResponsive}
+        >
+          <Space
+            direction="vertical"
+            size="middle"
+            style={{ display: "flex", whiteSpace: "nowrap" }}
+            // className={styles.spaceContainer}
+          >
+            <Row>
+            <AutocompleteSearch
+              suggestions={analysis?.symbols || []}
+              placeholder="Search..."
+              onSearch={handleSearch}
+              onSelect={handleSelect_symbolConfig}
+              theme={t}
+            />
+            <Button danger type="primary" onClick={themmoiSymbol} style={{width:100 , marginLeft: 20}}>
+                        {button_Add_Form_Symbol}
+                      </Button>
+                      <Button danger type="primary" onClick={() => HandleSymbol("ALL")} style={{width:100 , marginLeft: 20 , marginRight:20}}>
+                        Tải Lại
+                      </Button>
+                      <Form layout="vertical"
+                    form={form_spread}
+                 onFinish={onFinish_add_Spread}
+                > {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
+                <Row gutter={[16, 16]} style={{ width: '100%' }}>
+                  <Col xs={24} sm={20} md={20} lg={20}>
+                  <Form.Item
+                      name="spread"
+                      initialValue={1}
+                    >
+                      <Space>
+                        <span style={{ fontSize: "16px" }}>SPREAD</span>
+                      <InputNumber min={1} style={{ width: '100%' }}/>
+                      <Button type="primary" htmlType="submit" style={{width: '100%'}}>
+                        SETTING SPREAD
+                      </Button>
+                      <span style={{ fontSize: "16px" }}> Spread Plus Hiện Tại: {spreadPlus}</span>
+                      </Space>
+                      
+                    </Form.Item>
+                    
+                  </Col>
+                </Row>
+              </Form>
+            </Row>
+            
+
+              {form_Add_Symbol === true && (
+                <Card title="Thêm Mới" style={{ width: "100%" }}>
+                  <Form layout="vertical"
+                    form={form_}
+                    onFinish={onFinish_add}
+                > {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
+                <Row gutter={[16, 16]} style={{ width: '100%' }}>
+                  <Col xs={24} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="SYMBOL"
+                      name="Symbol"
+                      rules={[{ required: true, message: 'Please input symbol!' }]}
+                    >
+                       {/* <Input /> */}
+                       <AutoComplete
+                        options={
+                        Array.isArray(analysis?.symbols)
+                          ? analysis.symbols.map((sym: string) => ({ value: sym }))
+                          : []
+                      }
+                        onSearch={(value) => {
+                          // onSearch_symbol_api(value);
+                          console.log("Search Value:", value);
+                        }}
+                        style={{ width: '100%', maxWidth: '200px' }}
+                      >
+                        {/* <Search
+                          placeholder="Tìm Sản Phẩm"
+                          allowClear
+                          onSearch={onSearch_symbol_api}
+                        /> */}
+                      </AutoComplete>
+                    </Form.Item>
+                  </Col>
+                  
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="SPREAD STD"
+                      name="Spread_STD"
+                      initialValue={1}
+                    >
+                      <InputNumber min={1} style={{ width: '100%' }}  onChange={handleSpreadSTDChange} />
+                    </Form.Item>
+                  </Col>
+                  
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="SPREAD ECN"
+                      name="Spread_ECN"
+                      initialValue={1}
+                    >
+                      <InputNumber min={1} style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label=" " // Thêm label trống để căn chỉnh với các input khác
+                    >
+                      <Button danger type="primary" htmlType="submit" style={{width: '100%'}}>
+                        Thêm Mới
+                      </Button>
+                    </Form.Item>
+                  </Col>
+                </Row>
+              
+                <Row gutter={[16, 16]} style={{ width: '100%' }}>
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="SYDNEY"
+                      name="Sydney"
+                      //initialValue={1}
+                    >
+                      <InputNumber style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="TOKYO"
+                      name="Tokyo"
+                      //initialValue={1}
+                    >
+                      <InputNumber  style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="LONDON"
+                      name="London"
+                     // initialValue={1}
+                    >
+                      <InputNumber  style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="NEWYORK"
+                      name="NewYork"
+                     // initialValue={1}
+                    >
+                      <InputNumber style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Form>
+              </Card>
+              )}
+              {form_update_Symbol === true && (
+                <Card title="Update" style={{ width: "100%" }}>
+                  <Form
+                form={form}
+                layout="vertical"
+                 onFinish={onFinish_update}
+                > {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
+                <Row gutter={[16, 16]} style={{ width: '100%' }}>
+                  <Col xs={24} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="SYMBOL"
+                      name="Symbol"
+                      
+                      rules={[{ required: true, message: 'Please input symbol!' }]}
+                    >
+                      <Input disabled />
+                      
+                    </Form.Item>
+                  </Col>
+                  
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="SPREAD STD"
+                      name="Spread_STD"
+                      initialValue={1}
+                    >
+                      <InputNumber  style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="SPREAD ECN"
+                      name="Spread_ECN"
+                      initialValue={1}
+                    >
+                      <InputNumber min={1} style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label=" " // Thêm label trống để căn chỉnh với các input khác
+                    >
+                      <Button type="primary" htmlType="submit" style={{width: '100%'}}>
+                        Update
+                      </Button>
+                    </Form.Item>
+                  </Col>
+                </Row>
+              
+                <Row gutter={[16, 16]} style={{ width: '100%' }}>
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="SYDNEY"
+                      name="Sydney"
+                     // initialValue={1}
+                    >
+                      <InputNumber  style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="TOKYO"
+                      name="Tokyo"
+                     // initialValue={1}
+                    >
+                      <InputNumber  style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="LONDON"
+                      name="London"
+                      //initialValue={1}
+                    >
+                      <InputNumber style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={12} sm={12} md={6} lg={6}>
+                    <Form.Item
+                      label="NEWYORK"
+                      name="NewYork"
+                      //initialValue={1}
+                    >
+                      <InputNumber  style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Form>
+                </Card>
+                
+              )}
+
+
+            
+            <Table
+              rowKey={(record) => `${record.IndexSymbol}-${record.Symbol}-${record.Broker}`}
+              columns={columns_SymbolConfig}
+              dataSource={symbol_config}
+              // onChange={onChange}
+              pagination={{ pageSize: 50 }}
+              // loading={load_symbol}
+              scroll={{ x: "max-content" }}
+            />
+          </Space>
+        </Modal>
 
       <Modal
         title="History Logs"
@@ -2661,9 +3352,10 @@ if (!isMobile) {
                       e.currentTarget.style.transform =
                         "translateY(-2px) scale(1.05)";
                     }}
+                    onClick={() => HandleSymbol("ALL")}
                   >
                     <ThunderboltOutlined />
-                    Spread 0
+                    Spread Config
                   </button>
                 </>
               )}
