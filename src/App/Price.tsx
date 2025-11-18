@@ -439,6 +439,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                   type: "error",
                   content: error.message,
                 });
+                // navigate("/login");
+                handleLogout();
               }
             }}
           >
@@ -449,6 +451,12 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       width: isMobile ? 80 : 140,
     },
   ];
+
+   const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
   const columns_symbols: TableProps["columns"] = [
     {
@@ -782,7 +790,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             type="primary"
             size="small"
             onClick={async () => {
-              const AccessToken = localStorage.getItem("accessToken") || "";
+              try {
+                const AccessToken = localStorage.getItem("accessToken") || "";
               const resp: any = await axios.get(
                 `http://116.105.227.149:9000/v1/api/${record.broker_}/${record.symbol}/reset`,
                 {
@@ -804,6 +813,16 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                   content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
                 });
               }
+              } catch (error) {
+                // console.log("Error resetting symbol:", error);
+                messageApi.open({
+                  type: "error",
+                  content: (error as Error).message,
+                });
+                // navigate("/login");  
+                handleLogout();
+              } 
+              
             }}
           >
             {isMobile ? "Reset" : "Reset"}
