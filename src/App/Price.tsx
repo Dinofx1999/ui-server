@@ -142,6 +142,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("EURUSD");
+  const [activeBroker, setActiveBroker] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
@@ -459,20 +460,24 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       width: isMobile ? 50 : 60,
     },
     {
-      title: "Broker",
-      dataIndex: "broker",
-      key: "broker",
-      render: (text: any, record: any) => (
-        <Space size={6}>
-          <Badge status="processing" />
-          <a onClick={() => console.log("Open broker:", record.broker)}>
-            {text}
-          </a>
-        </Space>
-      ),
-      sorter: (a: any, b: any) => a.broker.localeCompare(b.broker),
-      fixed: isMobile ? undefined : "left",
-    },
+  title: "Broker",
+  dataIndex: "broker",
+  key: "broker",
+  render: (text: any, record: any) => (
+    <Space size={6}>
+      <Badge status="processing" />
+      {activeBroker === record.broker ? (
+        <span style={{ fontWeight: "bold", color: "green" }}>{text}</span>
+      ) : (
+        <span onClick={() => console.log("Open broker:", record.broker)}>
+          {text}
+        </span>
+      )}
+    </Space>
+  ),
+  sorter: (a: any, b: any) => a.broker.localeCompare(b.broker),
+  fixed: isMobile ? undefined : "left",
+},
     {
       title: "Symbol",
       dataIndex: "symbol",
@@ -2253,6 +2258,7 @@ if (!isMobile) {
               }}
               onClick={() => {
                 console.log("Clicked symbol", item.Symbol);
+                setActiveBroker(item.Broker || item.provider);
                 setActiveTab(item.Symbol || item.pair);
                 setModalOpenSymbol(true);
 
@@ -2737,7 +2743,10 @@ if (!isMobile) {
       <Modal
         width={isMobile ? "90%" : isTablet ? "80%" : "70%"}
         open={openModalInfo}
-        onCancel={() => setOpenModalInfo(false)}
+        onCancel={() => {
+          setOpenModalInfo(false);
+          setActiveBroker("");
+        }}
         title={
           isMobile
             ? "Thông Tin Sàn"
@@ -2857,6 +2866,9 @@ if (!isMobile) {
             dataSource={Array.isArray(symbols) ? symbols : []}
             scroll={{ x: isMobile ? 500 : "max-content" }}
             pagination={{ pageSize: isMobile ? 5 : 10, simple: isMobile }}
+            rowClassName={(record) =>
+              activeBroker === record.broker ? "active-row" : ""
+            }
             size={isMobile ? "small" : "middle"}
           />
         </div>
@@ -3807,6 +3819,16 @@ if (!isMobile) {
 
       {/* CSS Animations */}
       <style>{`
+
+       .active-row > td {
+    background-color: #d4f8d0 !important; /* Màu xanh nhạt */
+    font-weight: bold;
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .active-row:hover > td {
+    background-color: #c6f3c2 !important; /* Hover màu đậm hơn */
+  }
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
