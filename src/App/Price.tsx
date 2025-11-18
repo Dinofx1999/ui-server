@@ -1480,21 +1480,21 @@ const handleSelect_symbolConfig = (value: string) => {
   }
 
   const HandleSymbol = async (symbol: string) =>{
-    setModalSpreadConfig(true);
+    // setModalSpreadConfig(true);
     try {
-      const AccessToken = localStorage.getItem("accessToken") || "";
-              const resp: any = await axios.get(
-                `http://116.105.227.149:9000/v1/api/symbol/config/${symbol || "ALL"}`,
-                {
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `${AccessToken}`,
-                  },
-                  timeout: 10000,
-                }
-              );
-      console.log('Symbol Config Data:', resp.data);
-      setSymbol_config(resp?.data.data);
+      // const AccessToken = localStorage.getItem("accessToken") || "";
+      //         const resp: any = await axios.get(
+      //           `http://116.105.227.149:9000/v1/api/symbol/config/${symbol || "ALL"}`,
+      //           {
+      //             headers: {
+      //               "Content-Type": "application/json",
+      //               Authorization: `${AccessToken}`,
+      //             },
+      //             timeout: 10000,
+      //           }
+      //         );
+      // console.log('Symbol Config Data:', resp.data);
+      // setSymbol_config(resp?.data.data);
       // setModalSpreadConfig(false);
       // setSymbol_Config(response.data.Data);
       // setSpreadPlus(response.data.Spread_Plus.value);
