@@ -2779,7 +2779,7 @@ if (!isMobile) {
             columns={columns}
             dataSource={Array.isArray(dataBrokerInfo) ? dataBrokerInfo : []}
             scroll={{ x: isMobile ? 600 : "max-content" }}
-            pagination={{ pageSize: isMobile ? 5 : 10, simple: isMobile }}
+            pagination={{ pageSize: isMobile ? 100 : 100, simple: isMobile }}
             size={isMobile ? "small" : "middle"}
           />
         </div>
@@ -2884,7 +2884,7 @@ if (!isMobile) {
             columns={columns_symbols}
             dataSource={Array.isArray(symbols) ? symbols : []}
             scroll={{ x: isMobile ? 500 : "max-content" }}
-            pagination={{ pageSize: isMobile ? 5 : 10, simple: isMobile }}
+            pagination={{ pageSize: isMobile ? 100 : 100, simple: isMobile }}
             rowClassName={(record) =>
               activeBroker === record.broker ? "active-row" : ""
             }

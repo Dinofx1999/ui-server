@@ -33,6 +33,8 @@ export default function ForexLogin() {
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('accessToken', 'Bearer ' + resp.data.accessToken);
             localStorage.setItem('refreshToken', 'Bearer ' + resp.data.refreshToken);
+            localStorage.setItem('fullname',resp.data.user.fullname);
+            localStorage.setItem('role',resp.data.user.role);
             // Chuyển hướng hoặc tải lại trang
             window.location.href = '/';
         } else {
