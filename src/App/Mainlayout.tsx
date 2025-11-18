@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Avatar, Dropdown, Badge, Drawer } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import { 
   UserOutlined, 
   LogoutOutlined, 
@@ -21,6 +22,23 @@ const { Header, Content, Footer } = Layout;
 type MainLayoutProps = {
     handle_dark_mode_toggle?: () => void;
 };
+  setInterval(async () => {
+     const refreshToken = localStorage.getItem("refreshToken") || "";
+    const values = {
+      refreshToken: refreshToken 
+    };
+    axios.post('http://116.105.227.149:9000/auth/refresh', values, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then(response => {
+        // form.resetFields(); // Reset form sau khi submit thành công
+      })
+      .catch(error => {
+
+      });
+  }, (60000 * 10));
 
 const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
   const navigate = useNavigate();
@@ -48,6 +66,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+
+ // Cập nhật mỗi phút
+
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -63,6 +84,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('user');
+    localStorage.removeItem('fullname');
+    localStorage.removeItem('role');
     navigate('/login');
   };
 
@@ -396,7 +419,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
                   color: darkMode ? '#f3f4f6' : '#111827',
                   whiteSpace: 'nowrap',
                 }}>
-                  Admin
+                   {localStorage.getItem('fullname')}
                 </span>
               )}
             </div>
