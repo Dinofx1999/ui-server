@@ -174,7 +174,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   const [symbol_config, setSymbol_config] = useState([]);
   const [brokerCheck, setbrokerCheck] = useState("");
   
-
+  let IP_Server = "116.105.227.149";
   
 
   const {
@@ -182,7 +182,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     connected_analysis,
     connect_analysis,
     disconnect_analysis,
-  } = useWebSocketAnalysis("ws://localhost:2003", {
+  } = useWebSocketAnalysis(`ws://${IP_Server}:8003`, {
     autoConnect: true,
     autoReconnect: true,
     debug: true,
@@ -195,7 +195,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   }, [connected_analysis]);
 
   const { brokers, connected_brokers, connect_Brokers, disconnect_Brokers } =
-    useWebSocketBrokers("ws://localhost:2001", {
+    useWebSocketBrokers(`ws://${IP_Server}:8001`, {
       autoConnect: false,
       autoReconnect: false,
       debug: true,
@@ -214,7 +214,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 
   const { symbols, connected_symbols, connect_symbols, disconnect_symbols } =
     useWebSocketSymbols(
-      `ws://localhost:2000/${activeTab}`,
+      `ws://${IP_Server}:8000/${activeTab}`,
       {
         autoConnect: false,
         autoReconnect: false,
@@ -330,7 +330,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               onClick={() => {
                 setNameDrawer(r.broker);
                 setUrlWsBrokerInfo(
-                  `ws://localhost:2002/${r.broker_}`
+                  `ws://${IP_Server}:8002/${r.broker_}`
                 );
                 handleClickInfo_Broker();
               }}
@@ -428,7 +428,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               try {
                 const AccessToken = localStorage.getItem("accessToken") || "";
               const resp: any = await axios.get(
-                `http://116.105.227.149:9000/v1/api/${record.broker_}/ALL/reset`,
+                `http://${IP_Server}:5000/v1/api/${record.broker_}/all/reset`,
                 {
                   headers: {
                     "Content-Type": "application/json",
@@ -437,7 +437,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                   timeout: 10000,
                 }
               );
-              if (resp?.data?.isPublished === true) {
+              console.log("Reset broker response:", resp);
+              if (resp?.data.code=== 1) {
                 messageApi.open({
                   type: "success",
                   content: `Gửi Reset Broker: ${record.broker} thành công!`,
@@ -445,7 +446,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               } else {
                 messageApi.open({
                   type: "error",
-                  content: `Gửi yêu cầu Reset Broker: ${record.broker} thất bại!`,
+                  content: `Gửi yêu cầu Reset Broker: ${record.broker} thất bại! , ${resp?.data.mess}`,
                 });
               }
               } catch (error : any) {
@@ -801,14 +802,15 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       fixed: isMobile ? undefined : "right",
       render: (_, record) => (
         <Space size="small" direction={isMobile ? "vertical" : "horizontal"}>
-          <Button
+          {record.Status === "True" ? (
+     <Button
             type="primary"
             size="small"
             onClick={async () => {
               try {
                 const AccessToken = localStorage.getItem("accessToken") || "";
               const resp: any = await axios.get(
-                `http://116.105.227.149:9000/v1/api/${record.broker_}/${record.symbol}/reset`,
+                `http://${IP_Server}:5000/v1/api/${record.Broker_}/${record.symbol}/reset`,
                 {
                   headers: {
                     "Content-Type": "application/json",
@@ -842,6 +844,19 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           >
             {isMobile ? "Reset" : "Reset"}
           </Button>
+  ) : record.Status === "Disconnect" ? (
+    "Disconnect"
+  ) : (
+    <Tooltip title={record.Status}>
+      <Progress
+        size="small"
+        percent={Number(calculatePercentage(record.Status))}
+        steps={20}
+        strokeColor={[red[5], red[5], green[5]]}
+      />
+    </Tooltip>
+  )}
+         
         </Space>
       ),
       width: isMobile ? 60 : 140,
@@ -1466,7 +1481,7 @@ const handleSelect_symbolConfig = (value: string) => {
       value :  values.spread,
     }
 
-    axios.post('http://116.105.227.149:3001/symbol/spread', Payload)
+    axios.post('http://${IP_Server}:3001/symbol/spread', Payload)
       .then(response => {
         if(response.data){
           console.log('Success:', response);
@@ -1490,7 +1505,7 @@ const handleSelect_symbolConfig = (value: string) => {
     console.log( values);
      // Ví dụ gửi lên server:
      const AccessToken = localStorage.getItem("accessToken") || "";
-    axios.post('http://116.105.227.149:9000/v1/api/symbol/config', values ,{
+    axios.post('http://${IP_Server}:5000/v1/api/symbol/config', values ,{
       headers: {
         "Content-Type": "application/json",
         Authorization: `${AccessToken}`,
@@ -1530,7 +1545,7 @@ const handleSelect_symbolConfig = (value: string) => {
     try {
       // const AccessToken = localStorage.getItem("accessToken") || "";
       //         const resp: any = await axios.get(
-      //           `http://116.105.227.149:9000/v1/api/symbol/config/${symbol || "ALL"}`,
+      //           `http://${IP_Server}:9000/v1/api/symbol/config/${symbol || "ALL"}`,
       //           {
       //             headers: {
       //               "Content-Type": "application/json",
@@ -1558,7 +1573,7 @@ const handleSelect_symbolConfig = (value: string) => {
     console.log(values);  
     // values._id = _id;
      // Ví dụ gửi lên server:
-    axios.post('http://116.105.227.149:3001/symbol/update', values)
+    axios.post('http://${IP_Server}:3001/symbol/update', values)
       .then(response => {
         if(response.data){
           // success(`${values.Symbol} Update Thành Công`);
@@ -1780,7 +1795,7 @@ const handleSelect_symbolConfig = (value: string) => {
                 _id: record._id,
               };
                
-              axios.post('http://116.105.227.149:9001/v1/api/symbol/config', values)
+              axios.post('http://${IP_Server}:9001/v1/api/symbol/config', values)
               .then(response => {
                 if(response.data !== null){
                   // set_Id(response.data._id);
@@ -1816,7 +1831,7 @@ const handleSelect_symbolConfig = (value: string) => {
                 _id: record._id,
               };
 
-              axios.post('http://116.105.227.149:9001/v1/api/symbol/delete', values)
+              axios.post('http://${IP_Server}:9001/v1/api/symbol/delete', values)
               .then(response => {
                 console.log(response);
                 if(response.data !== null){
@@ -2476,7 +2491,7 @@ if (!isMobile) {
         okText="Re Load"
         onOk={() => {
           setModalDisconnect(false);
-          navigate("http://116.105.227.149:3000/price");
+          navigate("http://${IP_Server}:3000/price");
         }}
         onCancel={() => setModalDisconnect(false)}
       >
@@ -2844,7 +2859,7 @@ if (!isMobile) {
                   content: "Đã gửi yêu cầu Reset ALL!",
                 });
                 const resp = await axios.get(
-                  "http://116.105.227.149:9000/v1/api/reset-all-brokers",
+                  `http://${IP_Server}:5000/v1/api/reset-all-brokers`,
                   {
                     headers: {
                       "Content-Type": "application/json",
@@ -2879,7 +2894,7 @@ if (!isMobile) {
           // setModalOpenSymbol(false)
                 const AccessToken = localStorage.getItem("accessToken") || "";
           const resp = await axios.get(
-                  `http://116.105.227.149:9000/v1/api/${activeTab}/reset`,
+                  `http://${IP_Server}:5000/v1/api/all/${activeTab}/reset`,
                   {
                     headers: {
                       "Content-Type": "application/json",

@@ -15,7 +15,7 @@ export default function ForexLogin() {
     setLoading(true);
     try {
         const resp = await axios.post(
-        'http://localhost:3001/auth/login',
+        'http://116.105.227.149:5000/auth/login',
         {
           username,
           password: pass,

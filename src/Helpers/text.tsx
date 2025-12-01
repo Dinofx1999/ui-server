@@ -1,5 +1,7 @@
-export function calculatePercentage(str : any) { //Tính phần trăm từ chuỗi [x / y]
-  const match = str.match(/\[(\d+)\s*\/\s*(\d+)\]/);
+export function calculatePercentage(str: string | null | undefined) {
+  if (!str) return null;
+  
+  const match = str.match(/(\d+)\s*\/\s*(\d+)/);
   if (!match) return null;
   
   const percentage = (parseInt(match[1]) / parseInt(match[2])) * 100;
