@@ -11,6 +11,7 @@ import {
   Select,
   
 } from "antd";
+import { ClockCircleOutlined , HourglassOutlined  } from "@ant-design/icons";
 import { green, red } from '@ant-design/colors';
 import {calculatePercentage} from "../Helpers/text";
 import {
@@ -181,7 +182,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     connected_analysis,
     connect_analysis,
     disconnect_analysis,
-  } = useWebSocketAnalysis("ws://116.105.227.149:2003/analysis", {
+  } = useWebSocketAnalysis("ws://localhost:2003", {
     autoConnect: true,
     autoReconnect: true,
     debug: true,
@@ -194,7 +195,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   }, [connected_analysis]);
 
   const { brokers, connected_brokers, connect_Brokers, disconnect_Brokers } =
-    useWebSocketBrokers("ws://116.105.227.149:2001/broker-info", {
+    useWebSocketBrokers("ws://localhost:2001", {
       autoConnect: false,
       autoReconnect: false,
       debug: true,
@@ -213,7 +214,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 
   const { symbols, connected_symbols, connect_symbols, disconnect_symbols } =
     useWebSocketSymbols(
-      `ws://116.105.227.149:2000/symbol-brokers?symbol=${activeTab}`,
+      `ws://localhost:2000/${activeTab}`,
       {
         autoConnect: false,
         autoReconnect: false,
@@ -329,17 +330,17 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               onClick={() => {
                 setNameDrawer(r.broker);
                 setUrlWsBrokerInfo(
-                  `ws://116.105.227.149:2002/symbols-broker-info?broker=${r.broker_}`
+                  `ws://localhost:2002/${r.broker_}`
                 );
                 handleClickInfo_Broker();
               }}
             >
-              {numberFmt(r.symbolCount)}
+              {numberFmt(r.totalsymbol)}
             </Tag>
           </Tooltip>
         </div>
       ),
-      sorter: (a, b) => a.symbolCount - b.symbolCount,
+      sorter: (a, b) => a.totalsymbol - b.totalsymbol,
     },
     {
       title: "Status",
@@ -349,16 +350,30 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       render: (_, r) => (
         <div style={{ textAlign: "center" }}>
           <Tag
-            style={{ width: isMobile ? 80 : 140, textAlign: "center" }}
-            color={r.status === "True" ? "green" : "red"}
-          >
-            {r.status === "True" ? "Connected" : (
-              <Tooltip title={r.status}>  
-                {/* <Progress  /> */}
-                <Progress size="small" percent={Number(calculatePercentage(r.status))} steps={20} strokeColor={[red[5] ,red[5], green[5] ]} />
-              </Tooltip>
-            )}
-          </Tag>
+  style={{ width: isMobile ? 80 : 140, textAlign: "center" }}
+  color={
+    r.status === "True"
+      ? "green"
+      : r.status === "Disconnect"
+      ? "red"
+      : "orange"
+  }
+>
+  {r.status === "True" ? (
+    "Connected"
+  ) : r.status === "Disconnect" ? (
+    "Disconnect"
+  ) : (
+    <Tooltip title={r.status}>
+      <Progress
+        size="small"
+        percent={Number(calculatePercentage(r.status))}
+        steps={20}
+        strokeColor={[red[5], red[5], green[5]]}
+      />
+    </Tooltip>
+  )}
+</Tag>
         </div>
       ),
       sorter: (a, b) => a.symbolCount - b.symbolCount,
@@ -469,21 +484,21 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     },
     {
   title: "Broker",
-  dataIndex: "broker",
-  key: "broker",
+  dataIndex: "Broker",
+  key: "Broker",
   render: (text: any, record: any) => (
     <Space size={6}>
       <Badge status="processing" />
-      {activeBroker === record.broker ? (
+      {activeBroker === record.Broker ? (
         <span style={{ fontWeight: "bold", color: "green" }}>{text}</span>
       ) : (
-        <span onClick={() => console.log("Open broker:", record.broker)}>
+        <span onClick={() => console.log("Open broker:", record.Broker)}>
           {text}
         </span>
       )}
     </Space>
   ),
-  sorter: (a: any, b: any) => a.broker.localeCompare(b.broker),
+  sorter: (a: any, b: any) => a.Broker.localeCompare(b.Broker),
   fixed: isMobile ? undefined : "left",
 },
     {
@@ -993,7 +1008,14 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               fontWeight: 500,
             }}
           >
-            {n < -3600 ? <span> Hơn 1H </span> : <span>{n} s</span>}
+            {n < -3600 ? (
+  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+    <ClockCircleOutlined style={{ color: "red" }} />
+    1H
+  </span>
+) : (
+  <span><ClockCircleOutlined style={{ color: "green" }} /> {n} s</span>
+)}
           </div>
         ) : (
           <div
@@ -1420,7 +1442,7 @@ const handleSelect_symbolConfig = (value: string) => {
   };
   useEffect(() => {
     if (brokers) {
-      setDataBrokerInfo(brokers);
+      setDataBrokerInfo(brokers.data || []);
       // console.log('📊 Brokers data updated:', brokers);
     }
   }, [brokers]);
@@ -2918,8 +2940,8 @@ if (!isMobile) {
           <Table
             columns={columns_broker_info}
             dataSource={
-              Array.isArray(brokerInfo?.OHLC_Symbols)
-                ? brokerInfo?.OHLC_Symbols
+              Array.isArray(brokerInfo?.data?.OHLC_Symbols)
+                ? brokerInfo?.data?.OHLC_Symbols
                 : []
             }
             scroll={{ x: isMobile ? 500 : "max-content" }}
