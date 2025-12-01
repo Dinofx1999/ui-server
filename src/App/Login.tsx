@@ -9,6 +9,9 @@ export default function ForexLogin() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{type: 'success' | 'error'; text: string} | null>(null);
 
+  // State cho Modal đăng ký
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
@@ -24,30 +27,20 @@ export default function ForexLogin() {
           headers: {
             'Content-Type': 'application/json',
           },
-    timeout: 10000, // optional: giới hạn 10s
+    timeout: 10000,
   }
 );
         if (resp.data.success) {
             setMsg({ type: 'success', text: 'Đăng nhập thành công!' });
-            // Lưu trạng thái đăng nhập vào localStorage
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('accessToken', 'Bearer ' + resp.data.accessToken);
             localStorage.setItem('refreshToken', resp.data.refreshToken);
             localStorage.setItem('fullname',resp.data.user.fullname);
             localStorage.setItem('role',resp.data.user.role);
-            // Chuyển hướng hoặc tải lại trang
             window.location.href = '/';
         } else {
             throw new Error(resp.data.message || 'Email hoặc mật khẩu không hợp lệ.');
         }
-    //   if (!username || !pass) throw new Error('Vui lòng nhập đầy đủ thông tin.');
-    //   if (username.includes('@') && pass.length >= 6) {
-    //     setMsg({ type: 'success', text: 'Đăng nhập thành công!' });
-    //     localStorage.setItem('isLoggedIn', 'true');
-    //      window.location.href = '/';
-    //   } else {
-    //     throw new Error('Email hoặc mật khẩu không hợp lệ.');
-    //   }
     } catch (err: any) {
       setMsg({ type: 'error', text: err?.message || 'Có lỗi xảy ra.' });
     } finally {
@@ -84,7 +77,6 @@ export default function ForexLogin() {
                   <span className={i.ch.startsWith('+') ? 'text-emerald-400' : 'text-red-400'}>{i.ch}</span>
                 </li>
               ))}
-              {/* clone để loop mượt */}
               {[
                 {s:'EURUSD', p:'1.0843', ch:'+0.21%'},
                 {s:'GBPUSD', p:'1.2761', ch:'-0.08%'},
@@ -123,7 +115,6 @@ export default function ForexLogin() {
               'Watchlist nhiều sản phẩm của các sàn Forex hàng đầu',
               'Quản lý lợi nhuận',
               'Auto Trade với MT4/MT5',
-              // 'Copy Trade chuyên nghiệp',
             ].map((t, i)=>(
               <li key={i} className="flex items-center gap-2">
                 <CheckIcon />
@@ -255,7 +246,12 @@ export default function ForexLogin() {
 
             <div className="mt-6 text-center text-sm text-gray-400">
               Chưa có tài khoản?{' '}
-              <a href="#" className="text-emerald-400 hover:text-emerald-300">Tạo tài khoản</a>
+              <button 
+                onClick={() => setShowRegisterModal(true)}
+                className="text-emerald-400 hover:text-emerald-300 cursor-pointer"
+              >
+                Tạo tài khoản
+              </button>
             </div>
 
             {/* Terms */}
@@ -267,7 +263,311 @@ export default function ForexLogin() {
           </div>
         </div>
       </section>
+
+      {/* Modal Đăng ký */}
+      <RegisterModal 
+        isOpen={showRegisterModal} 
+        onClose={() => setShowRegisterModal(false)} 
+      />
     </main>
+  );
+}
+
+/* ---------- Register Modal Component ---------- */
+function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    confirmPassword: '',
+    name: '',
+    email: '',
+    rule: 'User'
+  });
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<{type: 'success' | 'error'; text: string} | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMsg(null);
+
+    // Validate
+    if (formData.password !== formData.confirmPassword) {
+      setMsg({ type: 'error', text: 'Mật khẩu xác nhận không khớp!' });
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setMsg({ type: 'error', text: 'Mật khẩu phải có ít nhất 6 ký tự!' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const resp = await axios.post(
+        'http://116.105.227.149:5000/auth/register',
+        {
+          username: formData.username,
+          password: formData.password,
+          name: formData.name,
+          email: formData.email,
+          rule: formData.rule
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+        }
+      );
+
+      if (resp.data.success) {
+        setMsg({ type: 'success', text: 'Đăng ký thành công! Vui lòng đăng nhập.' });
+        // Reset form
+        setFormData({
+          username: '',
+          password: '',
+          confirmPassword: '',
+          name: '',
+          email: '',
+          rule: 'User'
+        });
+        // Đóng modal sau 2 giây
+        setTimeout(() => {
+          onClose();
+          setMsg(null);
+        }, 2000);
+      } else {
+        throw new Error(resp.data.message || 'Đăng ký thất bại.');
+      }
+    } catch (err: any) {
+      setMsg({ type: 'error', text: err?.response?.data?.message || err?.message || 'Có lỗi xảy ra.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Modal Content */}
+      <div className="relative z-10 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="rounded-2xl border border-white/10 bg-[#0a1118] p-6 shadow-2xl md:p-8">
+          {/* Header */}
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <LogoFX />
+              <div>
+                <h2 className="text-xl font-bold text-white">Tạo tài khoản</h2>
+                <p className="text-sm text-gray-400">Đăng ký tài khoản Trader Hub</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white transition"
+            >
+              <CloseIcon />
+            </button>
+          </div>
+
+          {/* Message */}
+          {msg && (
+            <div
+              className={`mb-4 rounded-lg border px-3 py-2 text-sm ${
+                msg.type === 'success'
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                  : 'border-red-500/30 bg-red-500/10 text-red-300'
+              }`}
+            >
+              {msg.text}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username */}
+            <div>
+              <label className="mb-1 block text-sm text-gray-300" htmlFor="reg-username">
+                Tên đăng nhập <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="reg-username"
+                  name="username"
+                  type="text"
+                  placeholder="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none ring-emerald-500/30 placeholder:text-gray-500 focus:border-emerald-500/40 focus:ring"
+                  required
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-50">
+                  <UserIcon />
+                </span>
+              </div>
+            </div>
+
+            {/* Full Name */}
+            <div>
+              <label className="mb-1 block text-sm text-gray-300" htmlFor="reg-name">
+                Họ và tên <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="reg-name"
+                  name="name"
+                  type="text"
+                  placeholder="Nguyen Van A"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none ring-emerald-500/30 placeholder:text-gray-500 focus:border-emerald-500/40 focus:ring"
+                  required
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-50">
+                  <UserIcon />
+                </span>
+              </div>
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="mb-1 block text-sm text-gray-300" htmlFor="reg-email">
+                Email <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="reg-email"
+                  name="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none ring-emerald-500/30 placeholder:text-gray-500 focus:border-emerald-500/40 focus:ring"
+                  required
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-50">
+                  <MailIcon />
+                </span>
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="mb-1 block text-sm text-gray-300" htmlFor="reg-password">
+                Mật khẩu <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="reg-password"
+                  name="password"
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-12 text-white outline-none ring-emerald-500/30 placeholder:text-gray-500 focus:border-emerald-500/40 focus:ring"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(s => !s)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-gray-200"
+                >
+                  {showPass ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="mb-1 block text-sm text-gray-300" htmlFor="reg-confirm-password">
+                Xác nhận mật khẩu <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="reg-confirm-password"
+                  name="confirmPassword"
+                  type={showConfirmPass ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-12 text-white outline-none ring-emerald-500/30 placeholder:text-gray-500 focus:border-emerald-500/40 focus:ring"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPass(s => !s)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-gray-200"
+                >
+                  {showConfirmPass ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+            </div>
+
+            {/* Role */}
+            <div>
+              <label className="mb-1 block text-sm text-gray-300" htmlFor="reg-rule">
+                Vai trò
+              </label>
+              <select
+                id="reg-rule"
+                name="rule"
+                value={formData.rule}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none ring-emerald-500/30 focus:border-emerald-500/40 focus:ring appearance-none cursor-pointer"
+              >
+                <option value="User" className="bg-[#0a1118]">User</option>
+                <option value="Admin" className="bg-[#0a1118]">Admin</option>
+                <option value="Moderator" className="bg-[#0a1118]">Moderator</option>
+              </select>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {loading ? (
+                <>
+                  <Spinner />
+                  Đang đăng ký...
+                </>
+              ) : (
+                <>
+                  <UserPlusIcon />
+                  Đăng ký
+                </>
+              )}
+              <span className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10" />
+            </button>
+          </form>
+
+          {/* Footer */}
+          <p className="mt-4 text-center text-[11px] leading-5 text-gray-500">
+            Bằng việc đăng ký, bạn đồng ý với{' '}
+            <a href="#" className="text-gray-400 underline hover:text-gray-300">Điều khoản</a> &{' '}
+            <a href="#" className="text-gray-400 underline hover:text-gray-300">Chính sách bảo mật</a>.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -310,6 +610,7 @@ function EyeIcon() {
     </svg>
   );
 }
+
 function EyeOffIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
@@ -317,6 +618,7 @@ function EyeOffIcon() {
     </svg>
   );
 }
+
 function LockIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4">
@@ -324,6 +626,7 @@ function LockIcon() {
     </svg>
   );
 }
+
 function MailIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
@@ -331,6 +634,7 @@ function MailIcon() {
     </svg>
   );
 }
+
 function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4 text-emerald-400">
@@ -338,6 +642,7 @@ function CheckIcon() {
     </svg>
   );
 }
+
 function LogoFX() {
   return (
     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 ring-1 ring-inset ring-emerald-400/30">
@@ -352,11 +657,34 @@ function LogoFX() {
   );
 }
 
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5">
+      <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z"/>
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5">
+      <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4s-4 1.79-4 4s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+    </svg>
+  );
+}
+
+function UserPlusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4">
+      <path fill="currentColor" d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4s-4 1.79-4 4s1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+    </svg>
+  );
+}
+
 function CandlesBackdrop() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
       <svg className="absolute inset-0 h-full w-full opacity-[0.15]" viewBox="0 0 1000 600" preserveAspectRatio="none">
-        {/* grid */}
         <defs>
           <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
             <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeOpacity="0.06" strokeWidth="1"/>
@@ -365,7 +693,6 @@ function CandlesBackdrop() {
         <rect width="100%" height="100%" fill="url(#grid)" />
       </svg>
 
-      {/* random candles */}
       <div className="absolute inset-0">
         {Array.from({length: 22}).map((_, i) => (
           <Candle key={i} left={`${(i*4.5)%100}%`} />
