@@ -1,5 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Modal, Space, Tag, Tooltip, Alert ,Progress ,Row, InputNumber,Form ,AutoComplete} from "antd";
+import {
+  Badge,
+  Button,
+  Modal,
+  Space,
+  Tag,
+  Tooltip,
+  Alert,
+  Progress,
+  Row,
+  InputNumber,
+  Form,
+  AutoComplete,
+} from "antd";
 import {
   Pagination,
   Spin,
@@ -9,11 +22,10 @@ import {
   Col,
   TimePicker,
   Select,
-  
 } from "antd";
-import { ClockCircleOutlined , HourglassOutlined  } from "@ant-design/icons";
-import { green, red } from '@ant-design/colors';
-import {calculatePercentage} from "../Helpers/text";
+import { ClockCircleOutlined, HourglassOutlined } from "@ant-design/icons";
+import { green, red } from "@ant-design/colors";
+import { calculatePercentage } from "../Helpers/text";
 import {
   SearchOutlined,
   AppstoreOutlined,
@@ -164,18 +176,18 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   const [modalSpreadConfig, setModalSpreadConfig] = useState(false);
 
   const [form_Add_Symbol, setForm_Add_Symbol] = useState(false);
-  const [button_Add_Form_Symbol, setButton_Add_Form_Symbol] = useState("Thêm Mới");
-  const [form_] = Form.useForm(); 
-  const [form_spread] = Form.useForm(); 
-   const [modal_Symbol, setModal_Symbol] = useState(false);
+  const [button_Add_Form_Symbol, setButton_Add_Form_Symbol] =
+    useState("Thêm Mới");
+  const [form_] = Form.useForm();
+  const [form_spread] = Form.useForm();
+  const [modal_Symbol, setModal_Symbol] = useState(false);
   const [spreadPlus, setSpreadPlus] = useState(1);
   const [form_update_Symbol, setForm_update_Symbol] = useState(false);
-  const [form] = Form.useForm(); 
+  const [form] = Form.useForm();
   const [symbol_config, setSymbol_config] = useState([]);
   const [brokerCheck, setbrokerCheck] = useState("");
-  
+
   let IP_Server = "116.105.227.149";
-  
 
   const {
     analysis,
@@ -213,14 +225,11 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   });
 
   const { symbols, connected_symbols, connect_symbols, disconnect_symbols } =
-    useWebSocketSymbols(
-      `ws://${IP_Server}:8000/${activeTab}`,
-      {
-        autoConnect: false,
-        autoReconnect: false,
-        debug: true,
-      }
-    );
+    useWebSocketSymbols(`ws://${IP_Server}:8000/${activeTab}`, {
+      autoConnect: false,
+      autoReconnect: false,
+      debug: true,
+    });
 
   useEffect(() => {
     if (!connected_analysis && isConnected) {
@@ -329,9 +338,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               color="tomato"
               onClick={() => {
                 setNameDrawer(r.broker);
-                setUrlWsBrokerInfo(
-                  `ws://${IP_Server}:8002/${r.broker_}`
-                );
+                setUrlWsBrokerInfo(`ws://${IP_Server}:8002/${r.broker_}`);
                 handleClickInfo_Broker();
               }}
             >
@@ -350,30 +357,30 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       render: (_, r) => (
         <div style={{ textAlign: "center" }}>
           <Tag
-  style={{ width: isMobile ? 80 : 140, textAlign: "center" }}
-  color={
-    r.status === "True"
-      ? "green"
-      : r.status === "Disconnect"
-      ? "red"
-      : "orange"
-  }
->
-  {r.status === "True" ? (
-    "Connected"
-  ) : r.status === "Disconnect" ? (
-    "Disconnect"
-  ) : (
-    <Tooltip title={r.status}>
-      <Progress
-        size="small"
-        percent={Number(calculatePercentage(r.status))}
-        steps={20}
-        strokeColor={[red[5], red[5], green[5]]}
-      />
-    </Tooltip>
-  )}
-</Tag>
+            style={{ width: isMobile ? 80 : 140, textAlign: "center" }}
+            color={
+              r.status === "True"
+                ? "green"
+                : r.status === "Disconnect"
+                ? "red"
+                : "orange"
+            }
+          >
+            {r.status === "True" ? (
+              "Connected"
+            ) : r.status === "Disconnect" ? (
+              "Disconnect"
+            ) : (
+              <Tooltip title={r.status}>
+                <Progress
+                  size="small"
+                  percent={Number(calculatePercentage(r.status))}
+                  steps={20}
+                  strokeColor={[red[5], red[5], green[5]]}
+                />
+              </Tooltip>
+            )}
+          </Tag>
         </div>
       ),
       sorter: (a, b) => a.symbolCount - b.symbolCount,
@@ -416,62 +423,62 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           },
         ]),
     {
-      title: "Action",
-      key: "action",
-      fixed: isMobile ? undefined : "right",
-      render: (_, record) => (
-        <Space size="middle" direction={isMobile ? "vertical" : "horizontal"}>
-          <Button
-            type="primary"
-            size={isMobile ? "small" : "middle"}
-            onClick={async () => {
-              try {
-                const AccessToken = localStorage.getItem("accessToken") || "";
-              const resp: any = await axios.get(
-                `http://${IP_Server}:5000/v1/api/${record.broker_}/all/reset`,
-                {
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `${AccessToken}`,
-                  },
-                  timeout: 10000,
-                }
-              );
-              console.log("Reset broker response:", resp);
-              if (resp?.data.code=== 1) {
-                messageApi.open({
-                  type: "success",
-                  content: `Gửi Reset Broker: ${record.broker} thành công!`,
-                });
-              } else {
-                messageApi.open({
-                  type: "error",
-                  content: `Gửi yêu cầu Reset Broker: ${record.broker} thất bại! , ${resp?.data.mess}`,
-                });
+  title: "Action",
+  key: "action",
+  fixed: isMobile ? undefined : "right",
+  render: (_, record) => (
+    <Space size="middle" direction={isMobile ? "vertical" : "horizontal"}>
+      <Button
+        type="primary"
+        size={isMobile ? "small" : "middle"}
+        disabled={record.index === "0" || record.index === 0}  // ✅ Disable khi index = 0
+        onClick={async () => {
+          try {
+            const AccessToken = localStorage.getItem("accessToken") || "";
+            const resp: any = await axios.get(
+              `http://${IP_Server}:5000/v1/api/${record.broker_}/all/reset`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `${AccessToken}`,
+                },
+                timeout: 10000,
               }
-              } catch (error : any) {
-                console.log("Error resetting broker:", error.message);
-                messageApi.open({
-                  type: "error",
-                  content: error.message,
-                });
-                // navigate("/login");
-                handleLogout();
-              }
-            }}
-          >
-            Reset Broker
-          </Button>
-        </Space>
-      ),
-      width: isMobile ? 80 : 140,
-    },
+            );
+            console.log("Reset broker response:", resp);
+            if (resp?.data.code === 1) {
+              messageApi.open({
+                type: "success",
+                content: `Gửi Reset Broker: ${record.broker} thành công!`,
+              });
+            } else {
+              messageApi.open({
+                type: "error",
+                content: `Gửi yêu cầu Reset Broker: ${record.broker} thất bại! , ${resp?.data.mess}`,
+              });
+            }
+          } catch (error: any) {
+            console.log("Error resetting broker:", error.message);
+            messageApi.open({
+              type: "error",
+              content: error.message,
+            });
+            handleLogout();
+          }
+        }}
+      >
+        Reset Broker
+      </Button>
+    </Space>
+  ),
+  width: isMobile ? 80 : 140,
+},
   ];
 
-   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('user');
-    navigate('/login');
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("user");
+    navigate("/login");
   };
 
   const columns_symbols: TableProps["columns"] = [
@@ -484,24 +491,24 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       width: isMobile ? 50 : 60,
     },
     {
-  title: "Broker",
-  dataIndex: "Broker",
-  key: "Broker",
-  render: (text: any, record: any) => (
-    <Space size={6}>
-      <Badge status="processing" />
-      {activeBroker === record.Broker ? (
-        <span style={{ fontWeight: "bold", color: "green" }}>{text}</span>
-      ) : (
-        <span onClick={() => console.log("Open broker:", record.Broker)}>
-          {text}
-        </span>
-      )}
-    </Space>
-  ),
-  sorter: (a: any, b: any) => a.Broker.localeCompare(b.Broker),
-  fixed: isMobile ? undefined : "left",
-},
+      title: "Broker",
+      dataIndex: "Broker",
+      key: "Broker",
+      render: (text: any, record: any) => (
+        <Space size={6}>
+          <Badge status="processing" />
+          {activeBroker === record.Broker ? (
+            <span style={{ fontWeight: "bold", color: "green" }}>{text}</span>
+          ) : (
+            <span onClick={() => console.log("Open broker:", record.Broker)}>
+              {text}
+            </span>
+          )}
+        </Space>
+      ),
+      sorter: (a: any, b: any) => a.Broker.localeCompare(b.Broker),
+      fixed: isMobile ? undefined : "left",
+    },
     {
       title: "Symbol",
       dataIndex: "symbol",
@@ -605,8 +612,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     },
     {
       title: "Spread",
-      dataIndex: "spread",
-      key: "spread",
+      dataIndex: "spread_mdf",
+      key: "spread_mdf",
       render: (text: any) => (
         <div
           style={{
@@ -619,7 +626,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           <span>{text}</span>
         </div>
       ),
-      sorter: (a: any, b: any) => Number(a.spread) - Number(b.spread),
+      sorter: (a: any, b: any) => Number(a.spread_mdf) - Number(b.spread_mdf),
     },
     {
       title: "Long Candle",
@@ -803,60 +810,58 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       render: (_, record) => (
         <Space size="small" direction={isMobile ? "vertical" : "horizontal"}>
           {record.Status === "True" ? (
-     <Button
-            type="primary"
-            size="small"
-            onClick={async () => {
-              try {
-                const AccessToken = localStorage.getItem("accessToken") || "";
-              const resp: any = await axios.get(
-                `http://${IP_Server}:5000/v1/api/${record.Broker_}/${record.symbol}/reset`,
-                {
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `${AccessToken}`,
-                  },
-                  timeout: 10000,
+            <Button
+              type="primary"
+              size="small"
+              onClick={async () => {
+                try {
+                  const AccessToken = localStorage.getItem("accessToken") || "";
+                  const resp: any = await axios.get(
+                    `http://${IP_Server}:5000/v1/api/${record.Broker_}/${record.symbol}/reset`,
+                    {
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `${AccessToken}`,
+                      },
+                      timeout: 10000,
+                    }
+                  );
+                  if (resp?.data?.isPublished === true) {
+                    messageApi.open({
+                      type: "success",
+                      content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
+                    });
+                  } else {
+                    messageApi.open({
+                      type: "error",
+                      content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
+                    });
+                  }
+                } catch (error) {
+                  // console.log("Error resetting symbol:", error);
+                  messageApi.open({
+                    type: "error",
+                    content: (error as Error).message,
+                  });
+                  // navigate("/login");
+                  handleLogout();
                 }
-              );
-              if (resp?.data?.isPublished === true) {
-                messageApi.open({
-                  type: "success",
-                  content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
-                });
-              } else {
-                messageApi.open({
-                  type: "error",
-                  content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
-                });
-              }
-              } catch (error) {
-                // console.log("Error resetting symbol:", error);
-                messageApi.open({
-                  type: "error",
-                  content: (error as Error).message,
-                });
-                // navigate("/login");  
-                handleLogout();
-              } 
-              
-            }}
-          >
-            {isMobile ? "Reset" : "Reset"}
-          </Button>
-  ) : record.Status === "Disconnect" ? (
-    "Disconnect"
-  ) : (
-    <Tooltip title={record.Status}>
-      <Progress
-        size="small"
-        percent={Number(calculatePercentage(record.Status))}
-        steps={20}
-        strokeColor={[red[5], red[5], green[5]]}
-      />
-    </Tooltip>
-  )}
-         
+              }}
+            >
+              {isMobile ? "Reset" : "Reset"}
+            </Button>
+          ) : record.Status === "Disconnect" ? (
+            "Disconnect"
+          ) : (
+            <Tooltip title={record.Status}>
+              <Progress
+                size="small"
+                percent={Number(calculatePercentage(record.Status))}
+                steps={20}
+                strokeColor={[red[5], red[5], green[5]]}
+              />
+            </Tooltip>
+          )}
         </Space>
       ),
       width: isMobile ? 60 : 140,
@@ -1024,13 +1029,15 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             }}
           >
             {n < -3600 ? (
-  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-    <ClockCircleOutlined style={{ color: "red" }} />
-    1H
-  </span>
-) : (
-  <span><ClockCircleOutlined style={{ color: "green" }} /> {n} s</span>
-)}
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <ClockCircleOutlined style={{ color: "red" }} />
+                1H
+              </span>
+            ) : (
+              <span>
+                <ClockCircleOutlined style={{ color: "green" }} /> {n} s
+              </span>
+            )}
           </div>
         ) : (
           <div
@@ -1450,10 +1457,10 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     console.log("Selected:", value);
     handle_setModalSymbols(value);
 
-   HandleSymbol(value);
+    HandleSymbol(value);
   };
-const handleSelect_symbolConfig = (value: string) => {
-   HandleSymbol(value);
+  const handleSelect_symbolConfig = (value: string) => {
+    HandleSymbol(value);
   };
   useEffect(() => {
     if (brokers) {
@@ -1466,28 +1473,27 @@ const handleSelect_symbolConfig = (value: string) => {
     setOpenModalInfo((prev) => !prev);
   };
 
-
-   const handleSpreadSTDChange = (value:any) => {
+  const handleSpreadSTDChange = (value: any) => {
     form_.setFieldsValue({
-      Spread_ECN: value
+      Spread_ECN: value,
     });
   };
 
-
-  const onFinish_add_Spread = (values:any) => {
+  const onFinish_add_Spread = (values: any) => {
     console.log(values);
     const Payload = {
-      name_Setting : "Spread_Plus",
-      value :  values.spread,
-    }
+      name_Setting: "Spread_Plus",
+      value: values.spread,
+    };
 
-    axios.post('http://${IP_Server}:3001/symbol/spread', Payload)
-      .then(response => {
-        if(response.data){
-          console.log('Success:', response);
+    axios
+      .post("http://${IP_Server}:3001/symbol/spread", Payload)
+      .then((response) => {
+        if (response.data) {
+          console.log("Success:", response);
           // success(response.data.mess);
           HandleSymbol("ALL");
-        }else{
+        } else {
           // Eror_(response.data.mess);
           HandleSymbol("ALL");
         }
@@ -1495,52 +1501,50 @@ const handleSelect_symbolConfig = (value: string) => {
         // success(`${values.Symbol} thêm mới thành công`);
         // form.resetFields(); // Reset form sau khi submit thành công
       })
-      .catch(error => {
+      .catch((error) => {
         // if(error.response.data.code === 0)Eror_("Symbol đã tồn tại");
-        
       });
-  }
+  };
 
-    const onFinish_add = (values:any) => {
-    console.log( values);
-     // Ví dụ gửi lên server:
-     const AccessToken = localStorage.getItem("accessToken") || "";
-    axios.post('http://${IP_Server}:5000/v1/api/symbol/config', values ,{
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `${AccessToken}`,
-      },
-    })
-      .then(response => {
+  const onFinish_add = (values: any) => {
+    console.log(values);
+    // Ví dụ gửi lên server:
+    const AccessToken = localStorage.getItem("accessToken") || "";
+    axios
+      .post("http://${IP_Server}:5000/v1/api/symbol/config", values, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${AccessToken}`,
+        },
+      })
+      .then((response) => {
         // console.log('Success:', response);
         HandleSymbol("ALL");
         // success(`${values.Symbol} thêm mới thành công`);
         messageApi.open({
-          type: 'success',
+          type: "success",
           content: `${values.Symbol} thêm mới thành công`,
         });
         // form.resetFields(); // Reset form sau khi submit thành công
       })
-      .catch(error => {
+      .catch((error) => {
         // if(error.response.data.code === 0)Error_("Symbol đã tồn tại");
         messageApi.open({
-          type: 'error',
+          type: "error",
           content: `${values.Symbol} đã tồn tại`,
         });
-
       });
+  };
 
-  }
-
-   const themmoiSymbol = () => {
-    if(form_Add_Symbol){
+  const themmoiSymbol = () => {
+    if (form_Add_Symbol) {
       setForm_Add_Symbol(false);
-    }else{
+    } else {
       setForm_Add_Symbol(true);
     }
-  }
+  };
 
-  const HandleSymbol = async (symbol: string) =>{
+  const HandleSymbol = async (symbol: string) => {
     // setModalSpreadConfig(true);
     try {
       // const AccessToken = localStorage.getItem("accessToken") || "";
@@ -1559,26 +1563,27 @@ const handleSelect_symbolConfig = (value: string) => {
       // setModalSpreadConfig(false);
       // setSymbol_Config(response.data.Data);
       // setSpreadPlus(response.data.Spread_Plus.value);
-    } catch (error:any) {
-      console.error('API request failed:', error.message);
+    } catch (error: any) {
+      console.error("API request failed:", error.message);
       throw error;
     }
-  }
+  };
 
   const handleClickInfo_Broker = () => {
     setOpenModalBrokerInfo((prev) => !prev);
   };
 
-   const onFinish_update = (values:any) => {
-    console.log(values);  
+  const onFinish_update = (values: any) => {
+    console.log(values);
     // values._id = _id;
-     // Ví dụ gửi lên server:
-    axios.post('http://${IP_Server}:3001/symbol/update', values)
-      .then(response => {
-        if(response.data){
+    // Ví dụ gửi lên server:
+    axios
+      .post("http://${IP_Server}:3001/symbol/update", values)
+      .then((response) => {
+        if (response.data) {
           // success(`${values.Symbol} Update Thành Công`);
           HandleSymbol("ALL");
-        }else{
+        } else {
           // Eror_(`${values.Symbol} Không Tồn Tại`);
           HandleSymbol("ALL");
         }
@@ -1586,12 +1591,10 @@ const handleSelect_symbolConfig = (value: string) => {
         // success(`${values.Symbol} thêm mới thành công`);
         // form.resetFields(); // Reset form sau khi submit thành công
       })
-      .catch(error => {
+      .catch((error) => {
         // if(error.response.data.code === 0)Eror_("Symbol đã tồn tại");
-        
       });
-
-  }
+  };
 
   const columns_SymbolConfig: TableProps<any>["columns"] = [
     {
@@ -1600,7 +1603,7 @@ const handleSelect_symbolConfig = (value: string) => {
       fixed: "left",
       width: "10px",
       key: "Index",
-      render: (text:any) => {
+      render: (text: any) => {
         return (
           <span
             style={{
@@ -1655,10 +1658,11 @@ const handleSelect_symbolConfig = (value: string) => {
       width: "500",
       key: "Spread_STD",
       sorter: {
-        compare: (a:any, b:any) => parseFloat(a.PriceBid) - parseFloat(b.PriceBid),
+        compare: (a: any, b: any) =>
+          parseFloat(a.PriceBid) - parseFloat(b.PriceBid),
         multiple: 3,
       },
-      render: (text:any ) => {
+      render: (text: any) => {
         return (
           <span
             style={{
@@ -1679,10 +1683,11 @@ const handleSelect_symbolConfig = (value: string) => {
       dataIndex: "Spread_ECN",
       key: "Spread_ECN",
       sorter: {
-        compare: (a:any, b:any) => parseFloat(a.PriceBid_modify) - parseFloat(b.PriceBid_modify),
+        compare: (a: any, b: any) =>
+          parseFloat(a.PriceBid_modify) - parseFloat(b.PriceBid_modify),
         multiple: 3,
       },
-      render: (text:any) => {
+      render: (text: any) => {
         return (
           <span
             style={{
@@ -1703,10 +1708,11 @@ const handleSelect_symbolConfig = (value: string) => {
       dataIndex: "Sydney",
       key: "Sydney",
       sorter: {
-        compare: (a:any, b:any) => parseFloat(a.Spread) - parseFloat(b.Spread),
+        compare: (a: any, b: any) =>
+          parseFloat(a.Spread) - parseFloat(b.Spread),
         multiple: 1,
       },
-      render: (text:any) => {
+      render: (text: any) => {
         return (
           <span
             style={{ color: "blue", fontWeight: "400", fontFamily: "inherit" }}
@@ -1721,10 +1727,11 @@ const handleSelect_symbolConfig = (value: string) => {
       dataIndex: "Tokyo",
       key: "Tokyo",
       sorter: {
-        compare: (a:any, b:any) => parseFloat(a.High_Candle) - parseFloat(b.High_Candle),
+        compare: (a: any, b: any) =>
+          parseFloat(a.High_Candle) - parseFloat(b.High_Candle),
         multiple: 1,
       },
-      render: (text:any) => {
+      render: (text: any) => {
         return (
           <span
             style={{ color: "blue", fontWeight: "400", fontFamily: "inherit" }}
@@ -1739,10 +1746,11 @@ const handleSelect_symbolConfig = (value: string) => {
       dataIndex: "London",
       key: "London",
       sorter: {
-        compare: (a:any, b:any) => parseFloat(a.PriceAsk) - parseFloat(b.PriceAsk),
+        compare: (a: any, b: any) =>
+          parseFloat(a.PriceAsk) - parseFloat(b.PriceAsk),
         multiple: 2,
       },
-      render: (text:any) => {
+      render: (text: any) => {
         return (
           <span
             style={{
@@ -1763,10 +1771,11 @@ const handleSelect_symbolConfig = (value: string) => {
       dataIndex: "NewYork",
       key: "NewYork",
       sorter: {
-        compare: (a:any, b:any) => parseFloat(a.PriceAsk_modify) - parseFloat(b.PriceAsk_modify),
+        compare: (a: any, b: any) =>
+          parseFloat(a.PriceAsk_modify) - parseFloat(b.PriceAsk_modify),
         multiple: 2,
       },
-      render: (text:any) => {
+      render: (text: any) => {
         return (
           <span
             style={{
@@ -1789,70 +1798,69 @@ const handleSelect_symbolConfig = (value: string) => {
         return (
           <Space>
             <Button
-            type="primary"
-            onClick={() => {
-              const values = {
-                _id: record._id,
-              };
-               
-              axios.post('http://${IP_Server}:9001/v1/api/symbol/config', values)
-              .then(response => {
-                if(response.data !== null){
-                  // set_Id(response.data._id);
-                  console.log(response.data);
-                  form.setFieldsValue(response.data);
-                  setForm_update_Symbol(true);
-                  // seForm_Add_Symbol(false);
-                }else{
-                  // Eror_(`${record.Symbol} không tồn tại`);
-                  HandleSymbol(record.Symbol);
+              type="primary"
+              onClick={() => {
+                const values = {
+                  _id: record._id,
+                };
 
-                }
-                // setInfoSymbol()
-                // success(`${values.Symbol} thêm mới thành công`);
-                // form.resetFields(); // Reset form sau khi submit thành công
-              })
-              .catch(error => {
-                // if(error.response.data.code === 0)Eror_("Symbol đã tồn tại");
-                
-              });
-              // ws_3?.send(JSON.stringify([mes]));
-              // success(" Reset -> " + record.Broker + " Success 2");
-              // console.log(mes);
-            }}
-          >
-            Sửa
-          </Button>
-          <Button
-          danger
-            type="primary"
-            onClick={() => {
-              const values = {
-                _id: record._id,
-              };
+                axios
+                  .post("http://${IP_Server}:9001/v1/api/symbol/config", values)
+                  .then((response) => {
+                    if (response.data !== null) {
+                      // set_Id(response.data._id);
+                      console.log(response.data);
+                      form.setFieldsValue(response.data);
+                      setForm_update_Symbol(true);
+                      // seForm_Add_Symbol(false);
+                    } else {
+                      // Eror_(`${record.Symbol} không tồn tại`);
+                      HandleSymbol(record.Symbol);
+                    }
+                    // setInfoSymbol()
+                    // success(`${values.Symbol} thêm mới thành công`);
+                    // form.resetFields(); // Reset form sau khi submit thành công
+                  })
+                  .catch((error) => {
+                    // if(error.response.data.code === 0)Eror_("Symbol đã tồn tại");
+                  });
+                // ws_3?.send(JSON.stringify([mes]));
+                // success(" Reset -> " + record.Broker + " Success 2");
+                // console.log(mes);
+              }}
+            >
+              Sửa
+            </Button>
+            <Button
+              danger
+              type="primary"
+              onClick={() => {
+                const values = {
+                  _id: record._id,
+                };
 
-              axios.post('http://${IP_Server}:9001/v1/api/symbol/delete', values)
-              .then(response => {
-                console.log(response);
-                if(response.data !== null){
-                  // success(`Xóa Sản Phẩm "${record.Symbol}" thành công`);
-                  HandleSymbol("ALL");
-                }else{
-                  // Eror_(`${record.Symbol} không tồn tại`);
-                  HandleSymbol("ALL");
-                }
-                // setInfoSymbol()
-                // success(`${values.Symbol} thêm mới thành công`);
-                // form.resetFields(); // Reset form sau khi submit thành công
-              })
-              .catch(error => {
-                // if(error.response.data.code === 0)Eror_("Symbol đã tồn tại");
-                
-              });
-            }}
-          >
-            Xóa
-          </Button>
+                axios
+                  .post("http://${IP_Server}:9001/v1/api/symbol/delete", values)
+                  .then((response) => {
+                    console.log(response);
+                    if (response.data !== null) {
+                      // success(`Xóa Sản Phẩm "${record.Symbol}" thành công`);
+                      HandleSymbol("ALL");
+                    } else {
+                      // Eror_(`${record.Symbol} không tồn tại`);
+                      HandleSymbol("ALL");
+                    }
+                    // setInfoSymbol()
+                    // success(`${values.Symbol} thêm mới thành công`);
+                    // form.resetFields(); // Reset form sau khi submit thành công
+                  })
+                  .catch((error) => {
+                    // if(error.response.data.code === 0)Eror_("Symbol đã tồn tại");
+                  });
+              }}
+            >
+              Xóa
+            </Button>
           </Space>
         );
       },
@@ -2020,279 +2028,310 @@ const handleSelect_symbolConfig = (value: string) => {
   );
 
   const renderSignalRow = (item: any, index: number) => {
-    // ✅ Check isTrust status
-    const isTrusted = item.IsStable === "True" || item.IsStable === true;
+  // ✅ Check isTrust status
+  const isTrusted = item.IsStable === "True" || item.IsStable === true;
 
-    return (
-      <div
-        key={item.id}
-        style={{
-          display: "grid",
-          gridTemplateColumns: isMobile
-            ? "30px 1fr 70px"
-            : isTablet
-            ? "20px minmax(80px, 1fr) minmax(60px, 1fr) 70px 80px 90px"
-            : "20px minmax(100px, 1fr) minmax(80px, 1fr) minmax(50px, 1fr) 90px 90px 100px 100px",
-          alignItems: "center",
-          gap: isMobile ? "8px" : "12px",
-          padding: isMobile ? "12px" : isTablet ? "12px 16px" : "14px 20px",
+  // ✅ Check Type - có thể là "GOLD", "FOREX", "CRYPTO", etc.
+  const itemType = item.Type || null;
+  
+  // ✅ Màu sắc theo Type
+  const getTypeColor = (type: string) => {
+    switch (type?.toUpperCase()) {
+      case "DELAY PRICE":
+        return {
+          bg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+          shadow: "rgba(245, 158, 11, 0.3)",
+        };
+      case "DELAY PRICE STOP":
+        return {
+          bg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+          shadow: "rgba(59, 130, 246, 0.3)",
+        };
+      case "CRYPTO":
+        return {
+          bg: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
+          shadow: "rgba(139, 92, 246, 0.3)",
+        };
+      case "STOCK":
+        return {
+          bg: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+          shadow: "rgba(16, 185, 129, 0.3)",
+        };
+      case "INDEX":
+        return {
+          bg: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)",
+          shadow: "rgba(236, 72, 153, 0.3)",
+        };
+      default:
+        return {
+          bg: "linear-gradient(135deg, #6b7280 0%, #4b5563 100%)",
+          shadow: "rgba(107, 114, 128, 0.3)",
+        };
+    }
+  };
 
-          // ✅ Đổi màu background sang ĐỎ khi isTrust = True
-background: isTrusted
-  ? isDark
-    ? "linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.08) 100%)"
-    : "linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, rgba(220, 38, 38, 0.03) 100%)"
-  : index % 2 === 0
-  ? t.rowEven
-  : t.rowOdd,
-border: isTrusted
-  ? `2px solid rgba(239, 68, 68, 0.3)`
-  : `1px solid ${t.border}`,
-boxShadow: isTrusted ? "0 4px 12px rgba(239, 68, 68, 0.1)" : "none",
+  const typeColor = getTypeColor(itemType);
 
-borderRadius: isMobile ? "8px" : "10px",
-marginBottom: isMobile ? "8px" : "6px",
-transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-cursor: "pointer",
+  return (
+    <div
+      key={item.id}
+      style={{
+        display: "grid",
+        gridTemplateColumns: isMobile
+          ? "30px 1fr 70px"
+          : isTablet
+          ? "20px minmax(80px, 1fr) minmax(60px, 1fr) 70px 80px 90px"
+          : "20px minmax(100px, 1fr) minmax(80px, 1fr) minmax(50px, 1fr) 90px 90px 100px 100px",
+        alignItems: "center",
+        gap: isMobile ? "8px" : "12px",
+        padding: isMobile ? "12px" : isTablet ? "12px 16px" : "14px 20px",
 
-// ✅ Position relative để đặt badge
-position: "relative",
-}}
-onMouseEnter={(e) => {
-if (!isMobile) {
-  e.currentTarget.style.background = isTrusted
-    ? isDark
-      ? "linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.2) 100%)"
-      : "linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%)"
-    : t.rowHover;
-  e.currentTarget.style.borderColor = isTrusted
-    ? "rgba(239, 68, 68, 0.6)"
-    : t.accentIndigo;
-  e.currentTarget.style.transform = "translateX(4px)";
-  e.currentTarget.style.boxShadow = isTrusted
-    ? "0 8px 20px rgba(239, 68, 68, 0.25)"
-    : "0 4px 12px rgba(16, 185, 129, 0.25)";
-}
-}}
-onMouseLeave={(e) => {
-if (!isMobile) {
-  e.currentTarget.style.background = isTrusted
-    ? isDark
-      ? "linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.08) 100%)"
-      : "linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, rgba(220, 38, 38, 0.03) 100%)"
-    : index % 2 === 0
-    ? t.rowEven
-    : t.rowOdd;
-  e.currentTarget.style.borderColor = isTrusted
-    ? "rgba(239, 68, 68, 0.3)"
-    : t.border;
-  e.currentTarget.style.transform = "translateX(0)";
-  e.currentTarget.style.boxShadow = isTrusted
-    ? "0 4px 12px rgba(239, 68, 68, 0.1)"
-    : "none";
-}
-}}
-      >
-        {/* ✅ Trusted Badge - Góc trên bên phải */}
-        {/* ✅ Trusted Badge - Góc trên bên TRÁI (cao hơn) */}
-        {isTrusted && (
-          <div
+        // ✅ Đổi màu background sang ĐỎ khi isTrust = True
+        background: isTrusted
+          ? isDark
+            ? "linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.08) 100%)"
+            : "linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, rgba(220, 38, 38, 0.03) 100%)"
+          : index % 2 === 0
+          ? t.rowEven
+          : t.rowOdd,
+        border: isTrusted
+          ? `2px solid rgba(239, 68, 68, 0.3)`
+          : `1px solid ${t.border}`,
+        boxShadow: isTrusted ? "0 4px 12px rgba(239, 68, 68, 0.1)" : "none",
+
+        borderRadius: isMobile ? "8px" : "10px",
+        marginBottom: isMobile ? "8px" : "6px",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        cursor: "pointer",
+
+        // ✅ Position relative để đặt badge
+        position: "relative",
+      }}
+      onMouseEnter={(e) => {
+        if (!isMobile) {
+          e.currentTarget.style.background = isTrusted
+            ? isDark
+              ? "linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.2) 100%)"
+              : "linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%)"
+            : t.rowHover;
+          e.currentTarget.style.borderColor = isTrusted
+            ? "rgba(239, 68, 68, 0.6)"
+            : t.accentIndigo;
+          e.currentTarget.style.transform = "translateX(4px)";
+          e.currentTarget.style.boxShadow = isTrusted
+            ? "0 8px 20px rgba(239, 68, 68, 0.25)"
+            : "0 4px 12px rgba(16, 185, 129, 0.25)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isMobile) {
+          e.currentTarget.style.background = isTrusted
+            ? isDark
+              ? "linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.08) 100%)"
+              : "linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, rgba(220, 38, 38, 0.03) 100%)"
+            : index % 2 === 0
+            ? t.rowEven
+            : t.rowOdd;
+          e.currentTarget.style.borderColor = isTrusted
+            ? "rgba(239, 68, 68, 0.3)"
+            : t.border;
+          e.currentTarget.style.transform = "translateX(0)";
+          e.currentTarget.style.boxShadow = isTrusted
+            ? "0 4px 12px rgba(239, 68, 68, 0.1)"
+            : "none";
+        }
+      }}
+    >
+      {/* ✅ Trusted Badge - Góc trên bên TRÁI */}
+      {isTrusted && (
+        <div
+          style={{
+            position: "absolute",
+            top: isMobile ? -10 : -12,
+            left: isMobile ? 4 : 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            padding: isMobile ? "2px 6px" : "3px 8px",
+            background: "linear-gradient(135deg, #e22d2d 0%, #df1d1d 100%)",
+            borderRadius: isMobile ? 8 : 10,
+            boxShadow: "0 2px 8px rgba(255, 92, 92, 0.3)",
+            zIndex: 10,
+          }}
+        >
+          <svg
+            width={isMobile ? 10 : 12}
+            height={isMobile ? 10 : 12}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#fff"
+            strokeWidth="3"
+          >
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          <span
             style={{
-              position: "absolute",
-              top: isMobile ? -10 : -12, // ✅ Cao hơn (số âm = vượt ra ngoài)
-              left: isMobile ? 4 : 8, // ✅ Góc trái
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              padding: isMobile ? "2px 6px" : "3px 8px",
-              background: "linear-gradient(135deg, #e22d2d 0%, #df1d1d 100%)",
-              borderRadius: isMobile ? 8 : 10,
-              boxShadow: "0 2px 8px rgba(255, 92, 92, 0.3)",
-              zIndex: 10,
+              fontSize: "10px",
+              fontWeight: 700,
+              color: "#fff",
+              letterSpacing: "0.5px",
             }}
           >
+            TRUSTED
+          </span>
+        </div>
+      )}
+
+      {/* ✅ Type Badge - Góc trên bên PHẢI */}
+      {itemType && (
+        <div
+          style={{
+            position: "absolute",
+            top: isMobile ? -10 : -12,
+            right: isMobile ? 4 : 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            padding: isMobile ? "2px 6px" : "3px 8px",
+            background: typeColor.bg,
+            borderRadius: isMobile ? 8 : 10,
+            boxShadow: `0 2px 8px ${typeColor.shadow}`,
+            zIndex: 10,
+          }}
+        >
+          {/* Icon theo Type */}
+          {itemType?.toUpperCase() === "Delay Price" && (
             <svg
               width={isMobile ? 10 : 12}
               height={isMobile ? 10 : 12}
               viewBox="0 0 24 24"
-              fill="none"
-              stroke="#fff"
-              strokeWidth="3"
+              fill="#fff"
             >
-              <path d="M20 6L9 17l-5-5" />
+              <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.18l6 3.72v7.2l-6 3.72-6-3.72v-7.2l6-3.72z" />
             </svg>
-              <span
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  color: "#fff",
-                  letterSpacing: "0.5px",
-                }}
-              >
-                TRUSTED
-              </span>
+          )}
+          {itemType?.toUpperCase() === "Delay Price Stop" && (
+            <svg
+              width={isMobile ? 10 : 12}
+              height={isMobile ? 10 : 12}
+              viewBox="0 0 24 24"
+              fill="#fff"
+            >
+              <path d="M12.89 11.1c-1.78-.59-2.64-.96-2.64-1.9 0-1.02 1.11-1.39 1.81-1.39 1.31 0 1.79.99 1.9 1.34l1.58-.67c-.15-.44-.82-1.91-2.66-2.23V5h-1.75v1.26c-2.6.56-2.62 2.85-2.62 2.96 0 2.27 2.25 2.91 3.35 3.31 1.58.56 2.28 1.07 2.28 2.03 0 1.13-1.05 1.61-1.98 1.61-1.82 0-2.34-1.87-2.4-2.09l-1.66.67c.63 2.19 2.28 2.78 3.02 2.96V19h1.75v-1.24c.52-.09 3.02-.59 3.02-3.22.01-1.39-.6-2.61-3-3.44z" />
+            </svg>
+          )}
+          {itemType?.toUpperCase() === "CRYPTO" && (
+            <svg
+              width={isMobile ? 10 : 12}
+              height={isMobile ? 10 : 12}
+              viewBox="0 0 24 24"
+              fill="#fff"
+            >
+              <path d="M11.5 11.5v-6h1v6h6v1h-6v6h-1v-6h-6v-1z" />
+              <circle cx="12" cy="12" r="10" fill="none" stroke="#fff" strokeWidth="2" />
+            </svg>
+          )}
+          {itemType?.toUpperCase() === "STOCK" && (
+            <svg
+              width={isMobile ? 10 : 12}
+              height={isMobile ? 10 : 12}
+              viewBox="0 0 24 24"
+              fill="#fff"
+            >
+              <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z" />
+            </svg>
+          )}
+          {itemType?.toUpperCase() === "INDEX" && (
+            <svg
+              width={isMobile ? 10 : 12}
+              height={isMobile ? 10 : 12}
+              viewBox="0 0 24 24"
+              fill="#fff"
+            >
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
+            </svg>
+          )}
+          {/* Default icon nếu không match */}
+          {!["Delay Price", "Delay Price Stop", "CRYPTO", "STOCK", "INDEX"].includes(
+            itemType?.toUpperCase()
+          ) && (
+            <svg
+              width={isMobile ? 10 : 12}
+              height={isMobile ? 10 : 12}
+              viewBox="0 0 24 24"
+              fill="#fff"
+            >
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+            </svg>
+          )}
+          <span
+            style={{
+              fontSize: "10px",
+              fontWeight: 700,
+              color: "#fff",
+              letterSpacing: "0.5px",
+              textTransform: "uppercase",
+            }}
+          >
+            {itemType}
+          </span>
+        </div>
+      )}
+
+      {isMobile ? (
+        <>
+          {/* STT */}
+          <div
+            style={{
+              color: isTrusted ? "#10b981" : t.muted,
+              fontSize: "13px",
+              fontWeight: isTrusted ? 700 : 600,
+              textAlign: "center",
+            }}
+          >
+            {index + 1}
           </div>
-        )}
 
-        {isMobile ? (
-          <>
-            {/* STT */}
-            <div
-              style={{
-                color: isTrusted ? "#10b981" : t.muted,
-                fontSize: "13px",
-                fontWeight: isTrusted ? 700 : 600,
-                textAlign: "center",
-              }}
-            >
-              {index + 1}
-            </div>
-
-            {/* Info Column */}
-            <div style={{ minWidth: 0 }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  marginBottom: "4px",
-                }}
-              >
-                {/* ✅ Trusted indicator */}
-                {isTrusted && (
-                  <div
-                    style={{
-                      width: "6px",
-                      height: "6px",
-                      background: "#10b981",
-                      borderRadius: "50%",
-                      flexShrink: 0,
-                      boxShadow: "0 0 8px rgba(16, 185, 129, 0.8)",
-                      animation: "pulse 2s infinite",
-                    }}
-                  />
-                )}
-                {item.online && !isTrusted && (
-                  <div
-                    style={{
-                      width: "6px",
-                      height: "6px",
-                      background: "#10b981",
-                      borderRadius: "50%",
-                      flexShrink: 0,
-                      boxShadow: "0 0 6px rgba(16, 185, 129, 0.6)",
-                    }}
-                  />
-                )}
-                <span
-                  style={{
-                    color: isTrusted ? "#10b981" : t.accentPurple,
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {item.Broker || item.provider}
-                </span>
-              </div>
-
-              <div
-                style={{
-                  color: isTrusted ? "#10b981" : t.title,
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  marginBottom: "4px",
-                }}
-              >
-                {item.Symbol || item.pair}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: "8px",
-                  flexWrap: "wrap",
-                  fontSize: "11px",
-                }}
-              >
-                <span style={{ color: t.muted }}>
-                  {item.Broker_Main || item.exchange}
-                </span>
-                <span
-                  style={{
-                    color: isTrusted ? "#10b981" : t.accentIndigo,
-                    fontWeight: 600,
-                  }}
-                >
-                  {item.KhoangCach || item.followers}
-                </span>
-                <span style={{ color: t.muted }}>
-                  {item.Count || item.time}
-                </span>
-              </div>
-            </div>
-
-            {/* Action Button */}
-            <button
-              style={{
-                padding: "6px 12px",
-                background:
-                  item.type === "BUY" || item.Messenger === "BUY"
-                    ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
-                    : "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-                border: "none",
-                borderRadius: "6px",
-                color: "#fff",
-                fontSize: "11px",
-                fontWeight: 700,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {item.Messenger || item.action}
-            </button>
-          </>
-        ) : (
-          <>
-            {/* Desktop/Tablet layout */}
-            <div
-              style={{
-                color: isTrusted ? "#10b981" : t.muted,
-                fontSize: "15px",
-                fontWeight: isTrusted ? 700 : 600,
-                textAlign: "center",
-              }}
-            >
-              {index + 1}
-            </div>
-
+          {/* Info Column */}
+          <div style={{ minWidth: 0 }}>
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
-                minWidth: 0,
+                gap: "6px",
+                marginBottom: "4px",
               }}
             >
-              <div
-                style={{
-                  width: "8px",
-                  height: "8px",
-                  background: isTrusted ? "#10b981" : "#10b981",
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                  boxShadow: isTrusted
-                    ? "0 0 12px rgba(16, 185, 129, 1)"
-                    : "0 0 8px rgba(16, 185, 129, 0.6)",
-                  animation: "pulse 2s infinite",
-                }}
-              />
+              {/* ✅ Trusted indicator */}
+              {isTrusted && (
+                <div
+                  style={{
+                    width: "6px",
+                    height: "6px",
+                    background: "#10b981",
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    boxShadow: "0 0 8px rgba(16, 185, 129, 0.8)",
+                    animation: "pulse 2s infinite",
+                  }}
+                />
+              )}
+              {item.online && !isTrusted && (
+                <div
+                  style={{
+                    width: "6px",
+                    height: "6px",
+                    background: "#10b981",
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    boxShadow: "0 0 6px rgba(16, 185, 129, 0.6)",
+                  }}
+                />
+              )}
               <span
                 style={{
                   color: isTrusted ? "#10b981" : t.accentPurple,
-                  fontSize: isTablet ? "13px" : "14px",
+                  fontSize: "13px",
                   fontWeight: 700,
                   whiteSpace: "nowrap",
                   overflow: "hidden",
@@ -2306,179 +2345,279 @@ if (!isMobile) {
             <div
               style={{
                 color: isTrusted ? "#10b981" : t.title,
-                fontSize: isTablet ? "14px" : "15px",
+                fontSize: "14px",
                 fontWeight: 700,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-              onClick={() => {
-                console.log("Clicked symbol", item.Symbol);
-                setActiveBroker(item.Broker || item.provider);
-                setActiveTab(item.Symbol || item.pair);
-                setModalOpenSymbol(true);
-
+                marginBottom: "4px",
               }}
             >
               {item.Symbol || item.pair}
             </div>
 
-            {!isTablet && (
-              <>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    minWidth: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "6px",
-                      height: "6px",
-                      background: item.brokerCheck ? "#10b981" : "#ef4444",
-                      borderRadius: "50%",
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span
-                    style={{
-                      color: t.muted,
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {item.Broker_Main || item.exchange}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "6px 10px",
-                    background: isTrusted
-                      ? "rgba(16, 185, 129, 0.2)"
-                      : "rgba(16, 185, 129, 0.12)",
-                    borderRadius: "8px",
-                    border: isTrusted
-                      ? "1px solid rgba(16, 185, 129, 0.4)"
-                      : "1px solid rgba(16, 185, 129, 0.25)",
-                  }}
-                >
-                  <span
-                    style={{
-                      color: isTrusted ? "#10b981" : t.accentIndigo,
-                      fontSize: "13px",
-                      fontWeight: 700,
-                    }}
-                  >
-                    <Tooltip title={"Spread"}>{item.Spread_main}</Tooltip>
-                  </span>
-                </div>
-              </>
-            )}
-
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-                padding: "6px 10px",
-                background:
-                  item.Spread_main === "0" || item.score < 10
-                    ? isTrusted
-                      ? "rgba(16, 185, 129, 0.2)"
-                      : "rgba(16, 185, 129, 0.12)"
-                    : "rgba(251, 191, 36, 0.12)",
-                borderRadius: "8px",
-                border:
-                  item.Spread_main === "0" || item.score < 10
-                    ? isTrusted
-                      ? "1px solid rgba(16, 185, 129, 0.4)"
-                      : "1px solid rgba(16, 185, 129, 0.25)"
-                    : "1px solid rgba(251, 191, 36, 0.25)",
+                gap: "8px",
+                flexWrap: "wrap",
+                fontSize: "11px",
               }}
             >
-              <ArrowUpIcon />
+              <span style={{ color: t.muted }}>
+                {item.Broker_Main || item.exchange}
+              </span>
               <span
                 style={{
-                  color:
-                    item.Spread_main === "0" || item.score < 10
-                      ? isTrusted
-                        ? "#10b981"
-                        : "#10b981"
-                      : t.accentYellow,
-                  fontSize: isTablet ? "12px" : "13px",
-                  fontWeight: 700,
+                  color: isTrusted ? "#10b981" : t.accentIndigo,
+                  fontWeight: 600,
                 }}
               >
-                <Tooltip
-                  title={
-                    item.Spread_main === "0" ? "Low Spread" : "High Spread"
-                  }
-                >
-                  {Number(item.Spread_main) * 3 > Number(item.KhoangCach)
-                    ? "Low"
-                    : "High"}
-                </Tooltip>
-                &nbsp;
-                {item.KhoangCach}
+                {item.KhoangCach || item.followers}
               </span>
+              <span style={{ color: t.muted }}>{item.Count || item.time}</span>
             </div>
+          </div>
 
-            {!isTablet && (
+          {/* Action Button */}
+          <button
+            style={{
+              padding: "6px 12px",
+              background:
+                item.type === "BUY" || item.Messenger === "BUY"
+                  ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
+                  : "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+              border: "none",
+              borderRadius: "6px",
+              color: "#fff",
+              fontSize: "11px",
+              fontWeight: 700,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {item.Messenger || item.action}
+          </button>
+        </>
+      ) : (
+        <>
+          {/* Desktop/Tablet layout */}
+          <div
+            style={{
+              color: isTrusted ? "#10b981" : t.muted,
+              fontSize: "15px",
+              fontWeight: isTrusted ? 700 : 600,
+              textAlign: "center",
+            }}
+          >
+            {index + 1}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              minWidth: 0,
+            }}
+          >
+            <div
+              style={{
+                width: "8px",
+                height: "8px",
+                background: isTrusted ? "#10b981" : "#10b981",
+                borderRadius: "50%",
+                flexShrink: 0,
+                boxShadow: isTrusted
+                  ? "0 0 12px rgba(16, 185, 129, 1)"
+                  : "0 0 8px rgba(16, 185, 129, 0.6)",
+                animation: "pulse 2s infinite",
+              }}
+            />
+            <span
+              style={{
+                color: isTrusted ? "#10b981" : t.accentPurple,
+                fontSize: isTablet ? "13px" : "14px",
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {item.Broker || item.provider}
+            </span>
+          </div>
+
+          <div
+            style={{
+              color: isTrusted ? "#10b981" : t.title,
+              fontSize: isTablet ? "14px" : "15px",
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+            onClick={() => {
+              console.log("Clicked symbol", item.Symbol);
+              setActiveBroker(item.Broker || item.provider);
+              setActiveTab(item.Symbol || item.pair);
+              setModalOpenSymbol(true);
+            }}
+          >
+            {item.Symbol || item.pair}
+          </div>
+
+          {!isTablet && (
+            <>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
-                  color: isTrusted ? "#10b981" : t.muted,
-                  fontSize: "12px",
-                  fontWeight: 500,
+                  minWidth: 0,
                 }}
               >
-                <ClockIcon />
-                <span>{item.Count}</span>
+                <div
+                  style={{
+                    width: "6px",
+                    height: "6px",
+                    background: item.brokerCheck ? "#10b981" : "#ef4444",
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                  }}
+                />
+                <span
+                  style={{
+                    color: t.muted,
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {item.Broker_Main || item.exchange}
+                </span>
               </div>
-            )}
 
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <button
+              <div
                 style={{
-                  padding: isTablet ? "6px 16px" : "8px 24px",
-                  background:
-                    item.type === "BUY" || item.Messenger === "BUY"
-                      ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
-                      : "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-                  border: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "6px 10px",
+                  background: isTrusted
+                    ? "rgba(16, 185, 129, 0.2)"
+                    : "rgba(16, 185, 129, 0.12)",
                   borderRadius: "8px",
-                  color: "#fff",
-                  fontSize: isTablet ? "12px" : "13px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  boxShadow:
-                    item.type === "BUY" || item.Messenger === "BUY"
-                      ? "0 4px 12px rgba(59, 130, 246, 0.35)"
-                      : "0 4px 12px rgba(239, 68, 68, 0.35)",
-                  minWidth: isTablet ? "60px" : "80px",
+                  border: isTrusted
+                    ? "1px solid rgba(16, 185, 129, 0.4)"
+                    : "1px solid rgba(16, 185, 129, 0.25)",
                 }}
               >
-                {item.Messenger || item.action}
-              </button>
+                <span
+                  style={{
+                    color: isTrusted ? "#10b981" : t.accentIndigo,
+                    fontSize: "13px",
+                    fontWeight: 700,
+                  }}
+                >
+                  <Tooltip title={"Spread"}>{item.Spread_main}</Tooltip>
+                </span>
+              </div>
+            </>
+          )}
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              padding: "6px 10px",
+              background:
+                item.Spread_main === "0" || item.score < 10
+                  ? isTrusted
+                    ? "rgba(16, 185, 129, 0.2)"
+                    : "rgba(16, 185, 129, 0.12)"
+                  : "rgba(251, 191, 36, 0.12)",
+              borderRadius: "8px",
+              border:
+                item.Spread_main === "0" || item.score < 10
+                  ? isTrusted
+                    ? "1px solid rgba(16, 185, 129, 0.4)"
+                    : "1px solid rgba(16, 185, 129, 0.25)"
+                  : "1px solid rgba(251, 191, 36, 0.25)",
+            }}
+          >
+            <ArrowUpIcon />
+            <span
+              style={{
+                color:
+                  item.Spread_main === "0" || item.score < 10
+                    ? isTrusted
+                      ? "#10b981"
+                      : "#10b981"
+                    : t.accentYellow,
+                fontSize: isTablet ? "12px" : "13px",
+                fontWeight: 700,
+              }}
+            >
+              <Tooltip
+                title={item.Spread_main === "0" ? "Low Spread" : "High Spread"}
+              >
+                {Number(item.Spread_main) * 3 > Number(item.KhoangCach)
+                  ? "Low"
+                  : "High"}
+              </Tooltip>
+              &nbsp;
+              {item.KhoangCach}
+            </span>
+          </div>
+
+          {!isTablet && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                color: isTrusted ? "#10b981" : t.muted,
+                fontSize: "12px",
+                fontWeight: 500,
+              }}
+            >
+              <ClockIcon />
+              <span>{item.Count}</span>
             </div>
-          </>
-        )}
-      </div>
-    );
-  };
+          )}
+
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <button
+              style={{
+                padding: isTablet ? "6px 16px" : "8px 24px",
+                background:
+                  item.type === "BUY" || item.Messenger === "BUY"
+                    ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
+                    : "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                border: "none",
+                borderRadius: "8px",
+                color: "#fff",
+                fontSize: isTablet ? "12px" : "13px",
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                boxShadow:
+                  item.type === "BUY" || item.Messenger === "BUY"
+                    ? "0 4px 12px rgba(59, 130, 246, 0.35)"
+                    : "0 4px 12px rgba(239, 68, 68, 0.35)",
+                minWidth: isTablet ? "60px" : "80px",
+              }}
+            >
+              {item.Messenger || item.action}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
   return (
     <div style={{ background: t.bg, minHeight: "100vh", padding: 0 }}>
@@ -2491,7 +2630,7 @@ if (!isMobile) {
         okText="Re Load"
         onOk={() => {
           setModalDisconnect(false);
-          navigate("http://${IP_Server}:3000/price");
+          navigate(`http://${IP_Server}:3000/price`);
         }}
         onCancel={() => setModalDisconnect(false)}
       >
@@ -2508,7 +2647,7 @@ if (!isMobile) {
         <p>Config Comming soon....</p>
       </Modal>
 
-       {/* <Modal
+      {/* <Modal
         title="Config"
         width={"800px"}
         style={{ top: 20 }}
@@ -2519,20 +2658,20 @@ if (!isMobile) {
       </Modal> */}
 
       <Modal
-          title="Thông Số SPREAD Sản Phẩm"
-          open={modalSpreadConfig}
-          onCancel={() => setModalSpreadConfig(false)}
-          cancelText="Đóng"
-          width={1200}
-          // className={styles.modalResponsive}
+        title="Thông Số SPREAD Sản Phẩm"
+        open={modalSpreadConfig}
+        onCancel={() => setModalSpreadConfig(false)}
+        cancelText="Đóng"
+        width={1200}
+        // className={styles.modalResponsive}
+      >
+        <Space
+          direction="vertical"
+          size="middle"
+          style={{ display: "flex", whiteSpace: "nowrap" }}
+          // className={styles.spaceContainer}
         >
-          <Space
-            direction="vertical"
-            size="middle"
-            style={{ display: "flex", whiteSpace: "nowrap" }}
-            // className={styles.spaceContainer}
-          >
-            <Row>
+          <Row>
             <AutocompleteSearch
               suggestions={analysis?.symbols || []}
               placeholder="Search..."
@@ -2540,64 +2679,81 @@ if (!isMobile) {
               onSelect={handleSelect_symbolConfig}
               theme={t}
             />
-            <Button danger type="primary" onClick={themmoiSymbol} style={{width:100 , marginLeft: 20}}>
-                        {button_Add_Form_Symbol}
-                      </Button>
-                      <Button danger type="primary" onClick={() => HandleSymbol("ALL")} style={{width:100 , marginLeft: 20 , marginRight:20}}>
-                        Tải Lại
-                      </Button>
-                      <Form layout="vertical"
-                    form={form_spread}
-                 onFinish={onFinish_add_Spread}
-                > {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
-                <Row gutter={[16, 16]} style={{ width: '100%' }}>
-                  <Col xs={24} sm={20} md={20} lg={20}>
-                  <Form.Item
-                      name="spread"
-                      initialValue={1}
-                    >
-                      <Space>
-                        <span style={{ fontSize: "16px" }}>SPREAD</span>
-                      <InputNumber min={1} style={{ width: '100%' }}/>
-                      <Button type="primary" htmlType="submit" style={{width: '100%'}}>
+            <Button
+              danger
+              type="primary"
+              onClick={themmoiSymbol}
+              style={{ width: 100, marginLeft: 20 }}
+            >
+              {button_Add_Form_Symbol}
+            </Button>
+            <Button
+              danger
+              type="primary"
+              onClick={() => HandleSymbol("ALL")}
+              style={{ width: 100, marginLeft: 20, marginRight: 20 }}
+            >
+              Tải Lại
+            </Button>
+            <Form
+              layout="vertical"
+              form={form_spread}
+              onFinish={onFinish_add_Spread}
+            >
+              {" "}
+              {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
+              <Row gutter={[16, 16]} style={{ width: "100%" }}>
+                <Col xs={24} sm={20} md={20} lg={20}>
+                  <Form.Item name="spread" initialValue={1}>
+                    <Space>
+                      <span style={{ fontSize: "16px" }}>SPREAD</span>
+                      <InputNumber min={1} style={{ width: "100%" }} />
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        style={{ width: "100%" }}
+                      >
                         SETTING SPREAD
                       </Button>
-                      <span style={{ fontSize: "16px" }}> Spread Plus Hiện Tại: {spreadPlus}</span>
-                      </Space>
-                      
-                    </Form.Item>
-                    
-                  </Col>
-                </Row>
-              </Form>
-            </Row>
-            
+                      <span style={{ fontSize: "16px" }}>
+                        {" "}
+                        Spread Plus Hiện Tại: {spreadPlus}
+                      </span>
+                    </Space>
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Form>
+          </Row>
 
-              {form_Add_Symbol === true && (
-                <Card title="Thêm Mới" style={{ width: "100%" }}>
-                  <Form layout="vertical"
-                    form={form_}
-                    onFinish={onFinish_add}
-                > {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
-                <Row gutter={[16, 16]} style={{ width: '100%' }}>
+          {form_Add_Symbol === true && (
+            <Card title="Thêm Mới" style={{ width: "100%" }}>
+              <Form layout="vertical" form={form_} onFinish={onFinish_add}>
+                {" "}
+                {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
+                <Row gutter={[16, 16]} style={{ width: "100%" }}>
                   <Col xs={24} sm={12} md={6} lg={6}>
                     <Form.Item
                       label="SYMBOL"
                       name="Symbol"
-                      rules={[{ required: true, message: 'Please input symbol!' }]}
+                      rules={[
+                        { required: true, message: "Please input symbol!" },
+                      ]}
                     >
-                       {/* <Input /> */}
-                       <AutoComplete
+                      {/* <Input /> */}
+                      <AutoComplete
                         options={
-                        Array.isArray(analysis?.symbols)
-                          ? analysis.symbols.map((sym: string) => ({ value: sym }))
-                          : []
-                      }
+                          Array.isArray(analysis?.symbols)
+                            ? analysis.symbols.map((sym: string) => ({
+                                value: sym,
+                              }))
+                            : []
+                        }
                         onSearch={(value) => {
                           // onSearch_symbol_api(value);
                           console.log("Search Value:", value);
                         }}
-                        style={{ width: '100%', maxWidth: '200px' }}
+                        style={{ width: "100%", maxWidth: "200px" }}
                       >
                         {/* <Search
                           placeholder="Tìm Sản Phẩm"
@@ -2607,45 +2763,53 @@ if (!isMobile) {
                       </AutoComplete>
                     </Form.Item>
                   </Col>
-                  
+
                   <Col xs={12} sm={12} md={6} lg={6}>
                     <Form.Item
                       label="SPREAD STD"
                       name="Spread_STD"
                       initialValue={1}
                     >
-                      <InputNumber min={1} style={{ width: '100%' }}  onChange={handleSpreadSTDChange} />
+                      <InputNumber
+                        min={1}
+                        style={{ width: "100%" }}
+                        onChange={handleSpreadSTDChange}
+                      />
                     </Form.Item>
                   </Col>
-                  
+
                   <Col xs={12} sm={12} md={6} lg={6}>
                     <Form.Item
                       label="SPREAD ECN"
                       name="Spread_ECN"
                       initialValue={1}
                     >
-                      <InputNumber min={1} style={{ width: '100%' }} />
+                      <InputNumber min={1} style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                   <Col xs={24} sm={12} md={6} lg={6}>
                     <Form.Item
                       label=" " // Thêm label trống để căn chỉnh với các input khác
                     >
-                      <Button danger type="primary" htmlType="submit" style={{width: '100%'}}>
+                      <Button
+                        danger
+                        type="primary"
+                        htmlType="submit"
+                        style={{ width: "100%" }}
+                      >
                         Thêm Mới
                       </Button>
                     </Form.Item>
                   </Col>
                 </Row>
-              
-                <Row gutter={[16, 16]} style={{ width: '100%' }}>
+                <Row gutter={[16, 16]} style={{ width: "100%" }}>
                   <Col xs={12} sm={12} md={6} lg={6}>
                     <Form.Item
                       label="SYDNEY"
                       name="Sydney"
                       //initialValue={1}
                     >
-                      <InputNumber style={{ width: '100%' }} />
+                      <InputNumber style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                   <Col xs={12} sm={12} md={6} lg={6}>
@@ -2654,98 +2818,99 @@ if (!isMobile) {
                       name="Tokyo"
                       //initialValue={1}
                     >
-                      <InputNumber  style={{ width: '100%' }} />
+                      <InputNumber style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                   <Col xs={12} sm={12} md={6} lg={6}>
                     <Form.Item
                       label="LONDON"
                       name="London"
-                     // initialValue={1}
+                      // initialValue={1}
                     >
-                      <InputNumber  style={{ width: '100%' }} />
+                      <InputNumber style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                   <Col xs={12} sm={12} md={6} lg={6}>
                     <Form.Item
                       label="NEWYORK"
                       name="NewYork"
-                     // initialValue={1}
+                      // initialValue={1}
                     >
-                      <InputNumber style={{ width: '100%' }} />
+                      <InputNumber style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                 </Row>
               </Form>
-              </Card>
-              )}
-              {form_update_Symbol === true && (
-                <Card title="Update" style={{ width: "100%" }}>
-                  <Form
-                form={form}
-                layout="vertical"
-                 onFinish={onFinish_update}
-                > {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
-                <Row gutter={[16, 16]} style={{ width: '100%' }}>
+            </Card>
+          )}
+          {form_update_Symbol === true && (
+            <Card title="Update" style={{ width: "100%" }}>
+              <Form form={form} layout="vertical" onFinish={onFinish_update}>
+                {" "}
+                {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
+                <Row gutter={[16, 16]} style={{ width: "100%" }}>
                   <Col xs={24} sm={12} md={6} lg={6}>
                     <Form.Item
                       label="SYMBOL"
                       name="Symbol"
-                      
-                      rules={[{ required: true, message: 'Please input symbol!' }]}
+                      rules={[
+                        { required: true, message: "Please input symbol!" },
+                      ]}
                     >
                       <Input disabled />
-                      
                     </Form.Item>
                   </Col>
-                  
+
                   <Col xs={12} sm={12} md={6} lg={6}>
                     <Form.Item
                       label="SPREAD STD"
                       name="Spread_STD"
                       initialValue={1}
                     >
-                      <InputNumber  style={{ width: '100%' }} />
+                      <InputNumber style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
-                  
+
                   <Col xs={12} sm={12} md={6} lg={6}>
                     <Form.Item
                       label="SPREAD ECN"
                       name="Spread_ECN"
                       initialValue={1}
                     >
-                      <InputNumber min={1} style={{ width: '100%' }} />
+                      <InputNumber min={1} style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                   <Col xs={24} sm={12} md={6} lg={6}>
                     <Form.Item
                       label=" " // Thêm label trống để căn chỉnh với các input khác
                     >
-                      <Button type="primary" htmlType="submit" style={{width: '100%'}}>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        style={{ width: "100%" }}
+                      >
                         Update
                       </Button>
                     </Form.Item>
                   </Col>
                 </Row>
-              
-                <Row gutter={[16, 16]} style={{ width: '100%' }}>
+                <Row gutter={[16, 16]} style={{ width: "100%" }}>
                   <Col xs={12} sm={12} md={6} lg={6}>
                     <Form.Item
                       label="SYDNEY"
                       name="Sydney"
-                     // initialValue={1}
+                      // initialValue={1}
                     >
-                      <InputNumber  style={{ width: '100%' }} />
+                      <InputNumber style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                   <Col xs={12} sm={12} md={6} lg={6}>
                     <Form.Item
                       label="TOKYO"
                       name="Tokyo"
-                     // initialValue={1}
+                      // initialValue={1}
                     >
-                      <InputNumber  style={{ width: '100%' }} />
+                      <InputNumber style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                   <Col xs={12} sm={12} md={6} lg={6}>
@@ -2754,7 +2919,7 @@ if (!isMobile) {
                       name="London"
                       //initialValue={1}
                     >
-                      <InputNumber style={{ width: '100%' }} />
+                      <InputNumber style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                   <Col xs={12} sm={12} md={6} lg={6}>
@@ -2763,28 +2928,27 @@ if (!isMobile) {
                       name="NewYork"
                       //initialValue={1}
                     >
-                      <InputNumber  style={{ width: '100%' }} />
+                      <InputNumber style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                 </Row>
               </Form>
-                </Card>
-                
-              )}
+            </Card>
+          )}
 
-
-            
-            <Table
-              rowKey={(record) => `${record.IndexSymbol}-${record.Symbol}-${record.Broker}`}
-              columns={columns_SymbolConfig}
-              dataSource={symbol_config}
-              // onChange={onChange}
-              pagination={{ pageSize: 50 }}
-              // loading={load_symbol}
-              scroll={{ x: "max-content" }}
-            />
-          </Space>
-        </Modal>
+          <Table
+            rowKey={(record) =>
+              `${record.IndexSymbol}-${record.Symbol}-${record.Broker}`
+            }
+            columns={columns_SymbolConfig}
+            dataSource={symbol_config}
+            // onChange={onChange}
+            pagination={{ pageSize: 50 }}
+            // loading={load_symbol}
+            scroll={{ x: "max-content" }}
+          />
+        </Space>
+      </Modal>
 
       <Modal
         title="History Logs"
@@ -2888,27 +3052,27 @@ if (!isMobile) {
       <Modal
         width={isMobile ? "90%" : isTablet ? "80%" : "70%"}
         open={modalOpenSymbol}
-        okText ="Reset ALL"
+        okText="Reset ALL"
         onCancel={() => setModalOpenSymbol(false)}
-        onOk={ async () => {
+        onOk={async () => {
           // setModalOpenSymbol(false)
-                const AccessToken = localStorage.getItem("accessToken") || "";
+          const AccessToken = localStorage.getItem("accessToken") || "";
           const resp = await axios.get(
-                  `http://${IP_Server}:5000/v1/api/all/${activeTab}/reset`,
-                  {
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `${AccessToken}`,
-                    },
-                    timeout: 10000,
-                  }
-                );
-                if (resp.data && resp.data.success) {
-                  message.success("Reset ALL successful!");
-                  console.log("Reset ALL response:", resp.data);
-                } else {
-                  console.error("Reset ALL failed:", resp.data);
-                }
+            `http://${IP_Server}:5000/v1/api/all/${activeTab}/reset`,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `${AccessToken}`,
+              },
+              timeout: 10000,
+            }
+          );
+          if (resp.data && resp.data.success) {
+            message.success("Reset ALL successful!");
+            console.log("Reset ALL response:", resp.data);
+          } else {
+            console.error("Reset ALL failed:", resp.data);
+          }
         }}
         title={
           isMobile
