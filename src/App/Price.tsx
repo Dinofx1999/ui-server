@@ -306,7 +306,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       key: "version",
       render: (v) => (
         <div style={{ textAlign: "center" }}>
-          <Tag color="geekblue">v{v}</Tag>
+          <Tag color="cyan">v{v}</Tag>
         </div>
       ),
       width: isMobile ? 80 : 100,
@@ -431,7 +431,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       <Button
         type="primary"
         size={isMobile ? "small" : "middle"}
-        disabled={record.index === "0" || record.index === 0}  // ✅ Disable khi index = 0
+        disabled={record.index === "0" || record.status !== "True"}  // ✅ Disable khi index = 0
         onClick={async () => {
           try {
             const AccessToken = localStorage.getItem("accessToken") || "";
@@ -484,9 +484,9 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   const columns_symbols: TableProps["columns"] = [
     {
       title: "STT",
-      dataIndex: "index",
-      key: "index",
-      render: (text: any, record: any) => <a>{record.index}</a>,
+      dataIndex: "Index",
+      key: "Index",
+      render: (text: any, record: any) => <a>{record.Index}</a>,
       fixed: isMobile ? undefined : "left",
       width: isMobile ? 50 : 60,
     },
@@ -495,16 +495,20 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       dataIndex: "Broker",
       key: "Broker",
       render: (text: any, record: any) => (
-        <Space size={6}>
-          <Badge status="processing" />
-          {activeBroker === record.Broker ? (
-            <span style={{ fontWeight: "bold", color: "green" }}>{text}</span>
-          ) : (
-            <span onClick={() => console.log("Open broker:", record.Broker)}>
-              {text}
-            </span>
-          )}
-        </Space>
+        <div
+          style={{
+            color: "#a00101",
+            fontSize: isMobile ? "13px" : "14px",
+            fontWeight: 900,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            padding: isMobile ? "2px 4px" : "4px 8px",
+            borderRadius: "4px",
+          }}
+        >
+            <span>{text}</span>
+        </div>
       ),
       sorter: (a: any, b: any) => a.Broker.localeCompare(b.Broker),
       fixed: isMobile ? undefined : "left",
@@ -544,6 +548,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       title: "Bid",
       dataIndex: "bid",
       key: "bid",
+      width: isMobile ? 50 : 120,
       render: (text: any) => (
         <div
           style={{
@@ -561,6 +566,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       title: "Bid Fix",
       dataIndex: "bid_mdf",
       key: "bid_mdf",
+      width: isMobile ? 50 : 120,
       render: (text: any) => (
         <div
           style={{
@@ -578,6 +584,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       title: "Ask",
       dataIndex: "ask",
       key: "ask",
+      width: isMobile ? 50 : 120,
       render: (text: any) => (
         <div
           style={{
@@ -596,6 +603,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       title: "Ask Fix",
       dataIndex: "ask_mdf",
       key: "ask_mdf",
+      width: isMobile ? 50 : 120,
       render: (text: any) => (
         <div
           style={{
