@@ -23,7 +23,8 @@ import {
   TimePicker,
   Select,
 } from "antd";
-import { ClockCircleOutlined, HourglassOutlined } from "@ant-design/icons";
+import { ClockCircleOutlined} from "@ant-design/icons";
+import { ReloadOutlined, DeleteOutlined } from "@ant-design/icons";
 import { green, red } from "@ant-design/colors";
 import { calculatePercentage } from "../Helpers/text";
 import {
@@ -37,7 +38,6 @@ import {
   SettingOutlined,
   HistoryOutlined,
   ThunderboltOutlined,
-  ReloadOutlined,
   MenuOutlined,
 } from "@ant-design/icons";
 import AutocompleteSearch from "../Components/Autocomplete";
@@ -428,48 +428,93 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   fixed: isMobile ? undefined : "right",
   render: (_, record) => (
     <Space size="middle" direction={isMobile ? "vertical" : "horizontal"}>
-      <Button
-        type="primary"
-        size={isMobile ? "small" : "middle"}
-        disabled={record.index === "0" || record.status !== "True"}  // ✅ Disable khi index = 0
-        onClick={async () => {
-          try {
-            const AccessToken = localStorage.getItem("accessToken") || "";
-            const resp: any = await axios.get(
-              `http://${IP_Server}:5000/v1/api/${record.broker_}/all/reset`,
-              {
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `${AccessToken}`,
-                },
-                timeout: 10000,
-              }
-            );
-            console.log("Reset broker response:", resp);
-            if (resp?.data.code === 1) {
-              messageApi.open({
-                type: "success",
-                content: `Gửi Reset Broker: ${record.broker} thành công!`,
-              });
-            } else {
-              messageApi.open({
-                type: "error",
-                content: `Gửi yêu cầu Reset Broker: ${record.broker} thất bại! , ${resp?.data.mess}`,
-              });
-            }
-          } catch (error: any) {
-            console.log("Error resetting broker:", error.message);
-            messageApi.open({
-              type: "error",
-              content: error.message,
-            });
-            handleLogout();
+  <Button
+    type="primary"
+    icon={<ReloadOutlined />}  // ✅ Icon Reset
+    size={isMobile ? "small" : "middle"}
+    disabled={record.index === "0" || record.status !== "True"}
+    onClick={async () => {
+      try {
+        const AccessToken = localStorage.getItem("accessToken") || "";
+        const resp: any = await axios.get(
+          `http://${IP_Server}:5000/v1/api/${record.broker_}/all/reset`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${AccessToken}`,
+            },
+            timeout: 10000,
           }
-        }}
-      >
-        Reset Broker
-      </Button>
-    </Space>
+        );
+        console.log("Reset broker response:", resp);
+        if (resp?.data.code === 1) {
+          messageApi.open({
+            type: "success",
+            content: `Gửi Reset Broker: ${record.broker} thành công!`,
+          });
+        } else {
+          messageApi.open({
+            type: "error",
+            content: `Gửi yêu cầu Reset Broker: ${record.broker} thất bại! , ${resp?.data.mess}`,
+          });
+        }
+      } catch (error: any) {
+        console.log("Error resetting broker:", error.message);
+        messageApi.open({
+          type: "error",
+          content: error.message,
+        });
+        handleLogout();
+      }
+    }}
+  >
+    Reset Broker
+  </Button>
+
+  <Button
+    type="default"
+    icon={<DeleteOutlined />}  // ✅ Icon Delete
+    disabled={record.status !== "True"}
+    danger
+    size={isMobile ? "small" : "middle"}
+    onClick={async () => {
+      try {
+        const AccessToken = localStorage.getItem("accessToken") || "";
+        const resp: any = await axios.get(
+          `http://${IP_Server}:5000/v1/api/${record.broker_}/destroy`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${AccessToken}`,
+            },
+            timeout: 10000,
+          }
+        );
+        console.log("Reset broker response:", resp);
+        if (resp?.data.code === 1) {
+          messageApi.open({
+            type: "success",
+            content: `Gửi Reset Broker: ${record.broker} thành công!`,
+          });
+        } else {
+          messageApi.open({
+            type: "error",
+            content: `Gửi yêu cầu Reset Broker: ${record.broker} thất bại! , ${resp?.data.mess}`,
+          });
+        }
+      } catch (error: any) {
+        console.log("Error resetting broker:", error.message);
+        messageApi.open({
+          type: "error",
+          content: error.message,
+        });
+        handleLogout();
+      }
+    }}
+  >
+    Delete Broker
+  </Button>
+</Space>
   ),
   width: isMobile ? 80 : 140,
 },
