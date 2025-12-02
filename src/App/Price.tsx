@@ -13,6 +13,9 @@ import {
   Form,
   AutoComplete,
 } from "antd";
+
+import { RefreshCcw, Trash2 } from "lucide-react";
+
 import {
   Pagination,
   Spin,
@@ -428,11 +431,13 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   fixed: isMobile ? undefined : "right",
   render: (_, record) => (
     <Space size="middle" direction={isMobile ? "vertical" : "horizontal"}>
-  <Button
-    type="primary"
-    icon={<ReloadOutlined />}  // ✅ Icon Reset
-    size={isMobile ? "small" : "middle"}
-    disabled={record.index === "0" || record.status !== "True"}
+      <Tooltip title="Đồng Bộ Giá Broker">
+        <Button
+     type="primary"
+     style={{width:50}}
+  icon={<RefreshCcw size={16} />}
+  size={isMobile ? "small" : "middle"}
+  disabled={record.index === "0" || record.status !== "True"}
     onClick={async () => {
       try {
         const AccessToken = localStorage.getItem("accessToken") || "";
@@ -468,15 +473,17 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       }
     }}
   >
-    Reset Broker
   </Button>
-
-  <Button
+      </Tooltip>
+  
+  <Tooltip title="Xóa Broker">
+    <Button
     type="default"
-    icon={<DeleteOutlined />}  // ✅ Icon Delete
-    disabled={record.status !== "True"}
-    danger
-    size={isMobile ? "small" : "middle"}
+  icon={<Trash2 size={16} />}
+  disabled={record.status !== "True"}
+  danger
+  size={isMobile ? "small" : "middle"}
+  style={{width:50}}
     onClick={async () => {
       try {
         const AccessToken = localStorage.getItem("accessToken") || "";
@@ -512,8 +519,9 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       }
     }}
   >
-    Delete Broker
   </Button>
+  </Tooltip>
+  
 </Space>
   ),
   width: isMobile ? 80 : 140,
