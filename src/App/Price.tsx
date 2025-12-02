@@ -552,7 +552,11 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             borderRadius: "4px",
           }}
         >
-            <span>{text}</span>
+            {activeBroker === record.Broker ? (
+              <Tag color="green">{text}</Tag>
+            ) : (
+              <span>{text}</span>
+            )}
         </div>
       ),
       sorter: (a: any, b: any) => a.Broker.localeCompare(b.Broker),
@@ -2090,15 +2094,10 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   // ✅ Màu sắc theo Type
   const getTypeColor = (type: string) => {
     switch (type?.toUpperCase()) {
-      case "DELAY PRICE":
-        return {
-          bg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-          shadow: "rgba(245, 158, 11, 0.3)",
-        };
       case "DELAY PRICE STOP":
         return {
-          bg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-          shadow: "rgba(59, 130, 246, 0.3)",
+          bg: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+          shadow: "rgba(16, 185, 129, 0.3)",
         };
       case "CRYPTO":
         return {
@@ -2253,16 +2252,6 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           }}
         >
           {/* Icon theo Type */}
-          {itemType?.toUpperCase() === "Delay Price" && (
-            <svg
-              width={isMobile ? 10 : 12}
-              height={isMobile ? 10 : 12}
-              viewBox="0 0 24 24"
-              fill="#fff"
-            >
-              <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.18l6 3.72v7.2l-6 3.72-6-3.72v-7.2l6-3.72z" />
-            </svg>
-          )}
           {itemType?.toUpperCase() === "Delay Price Stop" && (
             <svg
               width={isMobile ? 10 : 12}
@@ -2305,7 +2294,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             </svg>
           )}
           {/* Default icon nếu không match */}
-          {!["Delay Price", "Delay Price Stop", "CRYPTO", "STOCK", "INDEX"].includes(
+          {![ "DELAY PRICE STOP", "CRYPTO", "STOCK", "INDEX"].includes(
             itemType?.toUpperCase()
           ) && (
             <svg
@@ -3022,8 +3011,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   }}
   title={
     isMobile
-      ? "Thông Tin Sàn"
-      : `Thông Tin Các Sàn Giao Dịch (${dataBrokerInfo.length} Sàn Đã Kết Nối)`
+      ? `Thông Tin Sàn (${dataBrokerInfo.length} Sàn Đã Kết Nối - ${analysis?.symbols.length} Sản Phẩm)`
+      : `Thông Tin Các Sàn Giao Dịch (${dataBrokerInfo.length} Sàn Đã Kết Nối - ${analysis?.symbols.length} Sản Phẩm)`
   }
   footer={null}
   styles={{
