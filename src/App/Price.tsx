@@ -909,7 +909,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                       timeout: 10000,
                     }
                   );
-                  if (resp?.data?.isPublished === true) {
+                  if (resp?.data.code === 1) {
                     messageApi.open({
                       type: "success",
                       content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
