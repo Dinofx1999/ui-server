@@ -3014,19 +3014,25 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       </Modal>
 
       <Modal
-        width={isMobile ? "90%" : isTablet ? "80%" : "70%"}
-        open={openModalInfo}
-        onCancel={() => {
-          setOpenModalInfo(false);
-          setActiveBroker("");
-        }}
-        title={
-          isMobile
-            ? "Thông Tin Sàn"
-            : "Thông Tin Các Sàn Giao Dịch Đang Kết Nối"
-        }
-        footer={null}
-      >
+  width={isMobile ? "90%" : isTablet ? "80%" : "70%"}
+  open={openModalInfo}
+  onCancel={() => {
+    setOpenModalInfo(false);
+    setActiveBroker("");
+  }}
+  title={
+    isMobile
+      ? "Thông Tin Sàn"
+      : `Thông Tin Các Sàn Giao Dịch (${dataBrokerInfo.length} Sàn Đã Kết Nối)`
+  }
+  footer={null}
+  styles={{
+    body: {
+      maxHeight: "70vh",      // Chiều cao tối đa
+      overflowY: "auto",      // Thanh cuộn dọc
+    },
+  }}
+>
         {/* Table - Separate container */}
         <div style={{ overflowX: "auto" }}>
           <Table
