@@ -869,6 +869,24 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       align: "center" as const,
     },
     {
+      title: "Last Reset",
+      dataIndex: "last_reset",
+      key: "last_reset",
+      render: (text: any) => (
+        <div
+          style={{
+            color: "#065ed9",
+            fontSize: "14px",
+            fontWeight: 500,
+            textAlign: "center",
+          }}
+        >
+          <span>{text}</span>
+        </div>
+      ),
+      sorter: (a: any, b: any) => Number(a.last_reset) - Number(b.last_reset),
+    },
+    {
       title: "Action",
       key: "action",
       fixed: isMobile ? undefined : "right",
