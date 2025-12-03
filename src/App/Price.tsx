@@ -29,7 +29,7 @@ import {
 import { ClockCircleOutlined} from "@ant-design/icons";
 import { ReloadOutlined, DeleteOutlined } from "@ant-design/icons";
 import { green, red } from "@ant-design/colors";
-import { calculatePercentage } from "../Helpers/text";
+import { calculatePercentage , formatSecondsToTime } from "../Helpers/text";
 import {
   SearchOutlined,
   AppstoreOutlined,
@@ -2652,11 +2652,11 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             >
               {item.Type === "Delay Price Stop" ? (
                 <span style={{ color: "#ef4444", display: "flex", alignItems: "center", gap: "4px" }}>
-                  <ClockIcon /> {item.Delay}
+                  <ClockIcon /> {formatSecondsToTime(item.Delay)}
                 </span>
               ) : (
                 <span style={{ color: "#00be8f", display: "flex", alignItems: "center", gap: "4px" }}>
-                  <ClockIcon /> {item.Count}
+                  <ClockIcon /> {formatSecondsToTime(item.Count)}
                 </span>
               )}
             </div>
