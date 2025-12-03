@@ -894,6 +894,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         <Space size="small" direction={isMobile ? "vertical" : "horizontal"}>
           {record.Status === "True" ? (
             <Button
+            icon={<RefreshCcw size={16} />}
+            style={{width:50}}
               type="primary"
               size="small"
               onClick={async () => {
@@ -931,8 +933,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                 }
               }}
             >
-              {isMobile ? "Reset" : "Reset"}
             </Button>
+            
           ) : record.Status === "Disconnect" ? (
             "Disconnect"
           ) : (
@@ -945,6 +947,97 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               />
             </Tooltip>
           )}
+
+          <Button
+              type="primary"
+              size="small"
+              onClick={async () => {
+                try {
+                  const AccessToken = localStorage.getItem("accessToken") || "";
+                  const Key_SECRET = localStorage.getItem("id_SECRET") || "";
+                  const Symbol = record.symbol;
+                  const Broker_ = record.Broker_;
+                  const Price = record.ask;
+                  const resp: any = await axios.get(
+                    `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/BUY/${Price}/${Key_SECRET}/order`,
+                    {
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `${AccessToken}`,
+                      },
+                      timeout: 10000,
+                    }
+                  );
+                  if (resp?.data.code === 1) {
+                    messageApi.open({
+                      type: "success",
+                      content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
+                    });
+                  } else {
+                    messageApi.open({
+                      type: "error",
+                      content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
+                    });
+                  }
+                } catch (error) {
+                  // console.log("Error resetting symbol:", error);
+                  messageApi.open({
+                    type: "error",
+                    content: (error as Error).message,
+                  });
+                  // navigate("/login");
+                  handleLogout();
+                }
+              }}
+            >
+              {isMobile ? "BUY" : "BUY"}
+            </Button>
+
+            <Button
+              type="primary"
+              size="small"
+              danger
+              onClick={async () => {
+                try {
+                  const AccessToken = localStorage.getItem("accessToken") || "";
+                  const Key_SECRET = localStorage.getItem("id_SECRET") || "";
+                  const Symbol = record.symbol;
+                  const Broker_ = record.Broker_;
+                  const Price = record.bid;
+                  const resp: any = await axios.get(
+                    `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/SELL/${Price}/${Key_SECRET}/order`,
+                    {
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `${AccessToken}`,
+                      },
+                      timeout: 10000,
+                    }
+                  );
+                  if (resp?.data.code === 1) {
+                    messageApi.open({
+                      type: "success",
+                      content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
+                    });
+                  } else {
+                    messageApi.open({
+                      type: "error",
+                      content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
+                    });
+                  }
+                } catch (error) {
+                  // console.log("Error resetting symbol:", error);
+                  messageApi.open({
+                    type: "error",
+                    content: (error as Error).message,
+                  });
+                  // navigate("/login");
+                  handleLogout();
+                }
+              }}
+            >
+              {isMobile ? "SELL" : "SELL"}
+            </Button>
         </Space>
       ),
       width: isMobile ? 60 : 140,
