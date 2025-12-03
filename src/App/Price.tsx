@@ -2641,18 +2641,24 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           </div>
 
           {!isTablet && (
-            <div
+           <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
-                color: isTrusted ? "#10b981" : t.muted,
                 fontSize: "12px",
                 fontWeight: 500,
               }}
             >
-              <ClockIcon />
-              <span>{item.Count}</span>
+              {item.Type === "Delay Price Stop" ? (
+                <span style={{ color: "#ef4444", display: "flex", alignItems: "center", gap: "4px" }}>
+                  <ClockIcon /> {item.Delay}
+                </span>
+              ) : (
+                <span style={{ color: "#00be8f", display: "flex", alignItems: "center", gap: "4px" }}>
+                  <ClockIcon /> {item.Count}
+                </span>
+              )}
             </div>
           )}
 
