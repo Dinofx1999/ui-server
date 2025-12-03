@@ -694,6 +694,24 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       sorter: (a: any, b: any) => Number(a.spread_mdf) - Number(b.spread_mdf),
     },
     {
+      title: "Time Delay",
+      dataIndex: "timedelay",
+      key: "timedelay",
+      render: (text: any) => (
+        <div
+          style={{
+            color: Number(text) < 0 ? "#ff4d4f" : "#52c41a",
+            fontSize: "14px",
+            fontWeight: 500,
+            textAlign: "center",
+          }}
+        >
+          <span>{text}</span>
+        </div>
+      ),
+      sorter: (a: any, b: any) => Number(a.timedelay) - Number(b.timedelay),
+    },
+    {
       title: "Long Candle",
       dataIndex: "longcandle",
       key: "longcandle",
