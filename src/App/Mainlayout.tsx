@@ -108,7 +108,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
       icon: <CopyOutlined />,
       label: localStorage.getItem("id_SECRET"),
       onClick: () => {
-        const secretKey = localStorage.getItem("id_SECRET");
+        try {
+           const secretKey = localStorage.getItem("id_SECRET");
+        console.log("SECRET Key to copy:", secretKey);
         if (secretKey) {
           navigator.clipboard.writeText(secretKey)
             .then(() => {
@@ -120,6 +122,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
               console.error("Failed to copy SECRET Key:", secretKey);
             });
         }
+        } catch (error) {
+          messageApi.error("Copy thất bại!");
+          console.error("Error copying SECRET Key:", error);
+        }
+       
       },
     },
     {
