@@ -37,6 +37,7 @@ export default function ForexLogin() {
             localStorage.setItem('refreshToken', resp.data.refreshToken);
             localStorage.setItem('fullname',resp.data.user.fullname);
             localStorage.setItem('role',resp.data.user.role);
+            localStorage.setItem('id_SECRET',resp.data.user.id_SECRET);
             window.location.href = '/';
         } else {
             throw new Error(resp.data.message || 'Email hoặc mật khẩu không hợp lệ.');

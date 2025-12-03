@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Avatar, Dropdown, Badge, Drawer } from 'antd';
+import { Layout, Avatar, Dropdown, Badge, Drawer, message } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
   UserOutlined, 
   LogoutOutlined, 
   SettingOutlined,
+  CopyOutlined,
   BellOutlined,
   MoonOutlined,
   SunOutlined,
@@ -16,6 +17,8 @@ import {
   LineChartOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
+
+import { App } from 'antd';
 
 const { Header, Content, Footer } = Layout;
 
@@ -41,6 +44,8 @@ type MainLayoutProps = {
   }, (60000 * 10));
 
 const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
+
+  const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
   const location = useLocation();
   const [darkMode, setDarkMode] = useState<boolean>(localStorage.getItem('darkMode') === 'true');
@@ -86,19 +91,36 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
     localStorage.removeItem('user');
     localStorage.removeItem('fullname');
     localStorage.removeItem('role');
+    localStorage.removeItem('id_SECRET');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     navigate('/login');
   };
 
-  const userMenuItems: MenuProps['items'] = [
+ const userMenuItems: MenuProps['items'] = [
     {
       key: 'profile',
       icon: <UserOutlined />,
       label: 'My Profile',
     },
     {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: 'Settings',
+      key: 'Key SECRET',
+      icon: <CopyOutlined />,
+      label: localStorage.getItem("id_SECRET"),
+      onClick: () => {
+        const secretKey = localStorage.getItem("id_SECRET");
+        if (secretKey) {
+          navigator.clipboard.writeText(secretKey)
+            .then(() => {
+               messageApi.success("Đã copy Key SECRET!");
+              console.log("Copied SECRET Key:", secretKey);
+            })
+            .catch(() => {
+              messageApi.error("Copy thất bại!");
+              console.error("Failed to copy SECRET Key:", secretKey);
+            });
+        }
+      },
     },
     {
       type: 'divider',
@@ -128,6 +150,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {/* Fixed Header */}
+      {contextHolder} 
       <Header style={{
         background: darkMode ? '#1f2937' : '#ffffff',
         padding: isMobile ? '0 16px' : isTablet ? '0 24px' : '0 32px',
