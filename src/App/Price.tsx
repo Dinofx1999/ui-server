@@ -189,6 +189,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   const [form] = Form.useForm();
   const [symbol_config, setSymbol_config] = useState([]);
   const [brokerCheck, setbrokerCheck] = useState("");
+  const [broker_actived, setbrokerActived] = useState("");
+
 
   let IP_Server = "116.105.227.149";
 
@@ -343,6 +345,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                 setNameDrawer(r.broker);
                 setUrlWsBrokerInfo(`ws://${IP_Server}:8002/${r.broker_}`);
                 handleClickInfo_Broker();
+                setbrokerActived(r.broker_);
               }}
             >
               {numberFmt(r.totalsymbol)}
@@ -1592,13 +1595,102 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       key: "action",
       fixed: isMobile ? undefined : "right",
       render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          onClick={() => console.log("Connect", record)}
-        >
-          {isMobile ? "→" : "Connect"}
-        </Button>
+        <div>
+          <Space size="small" direction={isMobile ? "vertical" : "horizontal"}>
+            <Button 
+              type="primary"
+              size="small"
+              onClick={async () => {
+                try {
+                  const AccessToken = localStorage.getItem("accessToken") || "";
+                  const Key_SECRET = localStorage.getItem("id_SECRET") || "";
+                  const Symbol = record.symbol;
+                  const Broker_ = broker_actived;
+                  const Price = record.ask;
+                  console.log(record);
+                  const resp: any = await axios.get(
+                    `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/BUY/${Price}/${Key_SECRET}/order`,
+                    {
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `${AccessToken}`,
+                      },
+                      timeout: 10000,
+                    }
+                  );
+                  if (resp?.data.code === 1) {
+                    messageApi.open({
+                      type: "success",
+                      content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
+                    });
+                  } else {
+                    messageApi.open({
+                      type: "error",
+                      content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
+                    });
+                  }
+                } catch (error) {
+                  // console.log("Error resetting symbol:", error);
+                  messageApi.open({
+                    type: "error",
+                    content: (error as Error).message,
+                  });
+                  // navigate("/login");
+                  handleLogout();
+                }
+              }}
+            >
+              {isMobile ? "BUY" : "BUY"}
+            </Button>
+
+            <Button
+              type="primary"
+              size="small"
+              danger
+              onClick={async () => {
+                try {
+                  const AccessToken = localStorage.getItem("accessToken") || "";
+                  const Key_SECRET = localStorage.getItem("id_SECRET") || "";
+                  const Symbol = record.symbol;
+                  const Broker_ = broker_actived;
+                  const Price = record.bid;
+                  const resp: any = await axios.get(
+                    `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/SELL/${Price}/${Key_SECRET}/order`,
+                    {
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `${AccessToken}`,
+                      },
+                      timeout: 10000,
+                    }
+                  );
+                  if (resp?.data.code === 1) {
+                    messageApi.open({
+                      type: "success",
+                      content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
+                    });
+                  } else {
+                    messageApi.open({
+                      type: "error",
+                      content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
+                    });
+                  }
+                } catch (error) {
+                  // console.log("Error resetting symbol:", error);
+                  messageApi.open({
+                    type: "error",
+                    content: (error as Error).message,
+                  });
+                  // navigate("/login");
+                  handleLogout();
+                }
+              }}
+            >
+              {isMobile ? "SELL" : "SELL"}
+            </Button>
+          </Space>
+
+        </div>
       ),
       width: isMobile ? 50 : 140,
     },
