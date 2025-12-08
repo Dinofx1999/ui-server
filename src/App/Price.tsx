@@ -935,12 +935,12 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                   if (resp?.data.code === 1) {
                     messageApi.open({
                       type: "success",
-                      content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
+                      content: `Send Reset ${record.symbol} -> ${record.Broker} thành công!`,
                     });
                   } else {
                     messageApi.open({
                       type: "error",
-                      content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
+                      content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.Broker} thất bại!`,
                     });
                   }
                 } catch (error) {
@@ -992,12 +992,12 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                   if (resp?.data.code === 1) {
                     messageApi.open({
                       type: "success",
-                      content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
+                      content: `Send BUY ${record.symbol} -> ${record.Broker} thành công!`,
                     });
                   } else {
                     messageApi.open({
                       type: "error",
-                      content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
+                      content: `Gửi yêu cầu BUY ${record.symbol} cho broker ${record.Broker} thất bại!`,
                     });
                   }
                 } catch (error) {
@@ -1038,12 +1038,12 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                   if (resp?.data.code === 1) {
                     messageApi.open({
                       type: "success",
-                      content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
+                      content: `Send SELL ${record.symbol} -> ${record.Broker} thành công!`,
                     });
                   } else {
                     messageApi.open({
                       type: "error",
-                      content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
+                      content: `Gửi yêu cầu SELL ${record.symbol} cho broker ${record.Broker} thất bại!`,
                     });
                   }
                 } catch (error) {
@@ -2620,6 +2620,12 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                 fontWeight: 700,
                 marginBottom: "4px",
               }}
+               onClick={() => {
+              console.log("Clicked symbol", item.Symbol);
+              setActiveBroker(item.Broker || item.provider);
+              setActiveTab(item.Symbol || item.pair);
+              setModalOpenSymbol(true);
+            }}
             >
               {item.Symbol || item.pair}
             </div>
