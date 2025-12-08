@@ -2348,7 +2348,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 
   return (
     <div
-      key={item.id}
+      key={`${item.id}-${item.Broker}-${item.Symbol}`}
       style={{
         display: "grid",
         gridTemplateColumns: isMobile
