@@ -1596,7 +1596,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         <Button 
           type="primary"
           size="small"
-          disabled={brokerInfo?.data?.auto_trade !== "true"}
+          disabled={brokerInfo?.data?.auto_trade !== "true" || record.trade !== "TRUE"}
           onClick={async () => {
             try {
               const AccessToken = localStorage.getItem("accessToken") || "";
@@ -1642,7 +1642,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           type="primary"
           size="small"
           danger
-          disabled={brokerInfo?.data?.auto_trade !== "true"}
+          disabled={brokerInfo?.data?.auto_trade !== "true" || record.trade !== "TRUE"}
           onClick={async () => {
             try {
               const AccessToken = localStorage.getItem("accessToken") || "";
