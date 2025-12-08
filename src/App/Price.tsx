@@ -3257,15 +3257,143 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   }}
 >
         {/* Table - Separate container */}
-        <div style={{ overflowX: "auto" }}>
-          <Table
-            columns={columns}
-            dataSource={Array.isArray(dataBrokerInfo) ? dataBrokerInfo : []}
-            scroll={{ x: isMobile ? 600 : "max-content" }}
-            pagination={{ pageSize: isMobile ? 100 : 100, simple: isMobile }}
-            size={isMobile ? "small" : "middle"}
-          />
-        </div>
+        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+    <Space 
+      direction={isMobile ? "vertical" : "horizontal"} 
+      size="small"
+    >
+      <Button
+        type="primary"
+        danger
+        icon={<RefreshCcw size={14} />}
+        size="small"
+        style={{
+          width: isMobile ? "100%" : "160px",
+          height: "32px",
+          fontSize: "13px",
+          fontWeight: 500,
+          borderRadius: "6px",
+          boxShadow: "0 2px 6px rgba(255, 77, 79, 0.25)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "6px",
+        }}
+        onClick={async () => {
+          try {
+            message.loading("Resetting...");
+            console.log("Reset ALL brokers initiated");
+
+            const AccessToken = localStorage.getItem("accessToken") || "";
+            if (!AccessToken) {
+              messageApi.open({
+                type: "warning",
+                content: "Chưa có token truy cập!, vui lòng đăng nhập lại.",
+              });
+              return;
+            }
+            messageApi.open({
+              type: "success",
+              content: "Đã gửi yêu cầu Reset ALL!",
+            });
+            const resp = await axios.get(
+              `http://${IP_Server}:5000/v1/api/reset-all-brokers`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `${AccessToken}`,
+                },
+                timeout: 10000,
+              }
+            );
+            if (resp.data && resp.data.success) {
+              message.success("Reset ALL successful!");
+              console.log("Reset ALL response:", resp.data);
+            } else {
+              console.error("Reset ALL failed:", resp.data);
+            }
+          } catch (error) {
+            console.error("Error resetting:", error);
+          }
+        }}
+      >
+        Reset ALL
+      </Button>
+
+      <Button
+        type="primary"
+        icon={<Trash2 size={14} />}
+        size="small"
+        style={{
+          width: isMobile ? "100%" : "160px",
+          height: "32px",
+          fontSize: "13px",
+          fontWeight: 500,
+          borderRadius: "6px",
+          boxShadow: "0 2px 6px rgba(24, 144, 255, 0.25)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "6px",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          border: "none",
+          marginRight: isMobile ? 0 : "16px",
+        }}
+        onClick={async () => {
+          try {
+            message.loading("Deleting...");
+            console.log("Delete broker server initiated");
+
+            const AccessToken = localStorage.getItem("accessToken") || "";
+            if (!AccessToken) {
+              messageApi.open({
+                type: "warning",
+                content: "Chưa có token truy cập!, vui lòng đăng nhập lại.",
+              });
+              return;
+            }
+            messageApi.open({
+              type: "success",
+              content: "Đã gửi yêu cầu Delete Broker!",
+            });
+            const resp = await axios.get(
+              `http://${IP_Server}:5000/v1/api/reset-broker-server`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `${AccessToken}`,
+                },
+                timeout: 10000,
+              }
+            );
+            if (resp.data && resp.data.success) {
+              message.success("Delete Broker successful!");
+              console.log("Delete Broker response:", resp.data);
+            } else {
+              console.error("Delete Broker failed:", resp.data);
+            }
+          } catch (error) {
+            console.error("Error deleting:", error);
+          }
+        }}
+      >
+        Delete Server
+      </Button>
+    </Space>
+  </div>
+
+  <div style={{ overflowX: "auto" }}>
+    <Table
+      columns={columns}
+      dataSource={Array.isArray(dataBrokerInfo) ? dataBrokerInfo : []}
+      scroll={{ x: isMobile ? 600 : "max-content" }}
+      pagination={{ pageSize: isMobile ? 100 : 100, simple: isMobile }}
+      size={isMobile ? "small" : "middle"}
+    />
+  </div>
+        </Space>
+       
 
         {/* Button - Separate container */}
         <div
@@ -3276,109 +3404,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             borderTop: "1px solid #e5e7eb",
           }}
         >
-          <Space direction={isMobile ? "vertical" : "horizontal"} size="middle">
-            <Button
-            type="primary"
-            danger
-            size={isMobile ? "middle" : "large"}
-            style={{
-              width: isMobile ? "100%" : "200px",
-              minWidth: isMobile ? "auto" : "200px",
-              height: isMobile ? "40px" : "30px",
-              fontSize: isMobile ? "14px" : "16px",
-              fontWeight: 600,
-            }}
-            onClick={async () => {
-              try {
-                message.loading("Resetting...");
-                console.log("Reset ALL brokers initiated");
-
-                const AccessToken = localStorage.getItem("accessToken") || "";
-                if (!AccessToken) {
-                  messageApi.open({
-                    type: "warning",
-                    content: "Chưa có token truy cập!, vui lòng đăng nhập lại.",
-                  });
-                  return;
-                }
-                messageApi.open({
-                  type: "success",
-                  content: "Đã gửi yêu cầu Reset ALL!",
-                });
-                const resp = await axios.get(
-                  `http://${IP_Server}:5000/v1/api/reset-all-brokers`,
-                  {
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `${AccessToken}`,
-                    },
-                    timeout: 10000,
-                  }
-                );
-                if (resp.data && resp.data.success) {
-                  message.success("Reset ALL successful!");
-                  console.log("Reset ALL response:", resp.data);
-                } else {
-                  console.error("Reset ALL failed:", resp.data);
-                }
-              } catch (error) {
-                console.error("Error resetting:", error);
-              }
-            }}
-          >
-            Reset ALL
-          </Button>
-          <Button
-            type="primary"
-            size={isMobile ? "middle" : "large"}
-            style={{
-              width: isMobile ? "100%" : "200px",
-              minWidth: isMobile ? "auto" : "200px",
-              height: isMobile ? "40px" : "30px",
-              fontSize: isMobile ? "14px" : "16px",
-              fontWeight: 600,
-            }}
-            onClick={async () => {
-              try {
-                message.loading("Resetting...");
-                console.log("Reset ALL brokers initiated");
-
-                const AccessToken = localStorage.getItem("accessToken") || "";
-                if (!AccessToken) {
-                  messageApi.open({
-                    type: "warning",
-                    content: "Chưa có token truy cập!, vui lòng đăng nhập lại.",
-                  });
-                  return;
-                }
-                messageApi.open({
-                  type: "success",
-                  content: "Đã gửi yêu cầu Reset ALL!",
-                });
-                const resp = await axios.get(
-                  `http://${IP_Server}:5000/v1/api/reset-broker-server`,
-                  {
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `${AccessToken}`,
-                    },
-                    timeout: 10000,
-                  }
-                );
-                if (resp.data && resp.data.success) {
-                  message.success("Reset ALL successful!");
-                  console.log("Reset ALL response:", resp.data);
-                } else {
-                  console.error("Reset ALL failed:", resp.data);
-                }
-              } catch (error) {
-                console.error("Error resetting:", error);
-              }
-            }}
-          >
-            Delete Broker On Server
-          </Button>
-          </Space>
+         
           
         </div>
       </Modal>
