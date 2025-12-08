@@ -3283,7 +3283,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             borderTop: "1px solid #e5e7eb",
           }}
         >
-          <Button
+          <Space direction={isMobile ? "vertical" : "horizontal"} size="middle">
+            <Button
             type="primary"
             danger
             size={isMobile ? "middle" : "large"}
@@ -3334,6 +3335,58 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           >
             Reset ALL
           </Button>
+          <Button
+            type="primary"
+            size={isMobile ? "middle" : "large"}
+            style={{
+              width: isMobile ? "100%" : "200px",
+              minWidth: isMobile ? "auto" : "200px",
+              height: isMobile ? "40px" : "30px",
+              fontSize: isMobile ? "14px" : "16px",
+              fontWeight: 600,
+            }}
+            onClick={async () => {
+              try {
+                message.loading("Resetting...");
+                console.log("Reset ALL brokers initiated");
+
+                const AccessToken = localStorage.getItem("accessToken") || "";
+                if (!AccessToken) {
+                  messageApi.open({
+                    type: "warning",
+                    content: "Chưa có token truy cập!, vui lòng đăng nhập lại.",
+                  });
+                  return;
+                }
+                messageApi.open({
+                  type: "success",
+                  content: "Đã gửi yêu cầu Reset ALL!",
+                });
+                const resp = await axios.get(
+                  `http://${IP_Server}:5000/v1/api/reset-broker-server`,
+                  {
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `${AccessToken}`,
+                    },
+                    timeout: 10000,
+                  }
+                );
+                if (resp.data && resp.data.success) {
+                  message.success("Reset ALL successful!");
+                  console.log("Reset ALL response:", resp.data);
+                } else {
+                  console.error("Reset ALL failed:", resp.data);
+                }
+              } catch (error) {
+                console.error("Error resetting:", error);
+              }
+            }}
+          >
+            Delete Broker On Server
+          </Button>
+          </Space>
+          
         </div>
       </Modal>
 
