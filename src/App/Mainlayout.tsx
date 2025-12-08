@@ -103,32 +103,58 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
       icon: <UserOutlined />,
       label: 'My Profile',
     },
-    {
-      key: 'Key SECRET',
-      icon: <CopyOutlined />,
-      label: localStorage.getItem("id_SECRET"),
-      onClick: () => {
-        try {
-           const secretKey = localStorage.getItem("id_SECRET");
-        console.log("SECRET Key to copy:", secretKey);
-        if (secretKey) {
-          navigator.clipboard.writeText(secretKey)
-            .then(() => {
-               messageApi.success("Đã copy Key SECRET!");
-              console.log("Copied SECRET Key:", secretKey);
-            })
-            .catch(() => {
-              messageApi.error("Copy thất bại!");
-              console.error("Failed to copy SECRET Key:", secretKey);
-            });
-        }
-        } catch (error) {
-          messageApi.error("Copy thất bại!");
-          console.error("Error copying SECRET Key:", error);
-        }
-       
-      },
-    },
+{
+  key: 'Key SECRET',
+  icon: <CopyOutlined />,
+  label: localStorage.getItem("id_SECRET"),
+  onClick: () => {
+    const secretKey = localStorage.getItem("id_SECRET");
+    console.log("SECRET Key to copy:", secretKey);
+
+    if (!secretKey) {
+      messageApi.error("Không tìm thấy Key!");
+      return;
+    }
+
+    // Fallback để copy trong mọi trường hợp
+    const fallbackCopy = (text: string) => {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    };
+
+    try {
+      // Nếu browser hỗ trợ clipboard API
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard
+          .writeText(secretKey)
+          .then(() => {
+            messageApi.success("Đã copy Key SECRET!");
+            console.log("Copied SECRET Key:", secretKey);
+          })
+          .catch((err) => {
+            console.error("Clipboard API failed, using fallback", err);
+            fallbackCopy(secretKey);
+            messageApi.success("Đã copy Key SECRET!");
+          });
+      } else {
+        // Dùng fallback khi clipboard API không hoạt động
+        fallbackCopy(secretKey);
+        messageApi.success("Đã copy Key SECRET!");
+      }
+    } catch (error) {
+      console.error("Error copying SECRET Key:", error);
+      fallbackCopy(secretKey);
+      messageApi.success("Đã copy Key SECRET!");
+    }
+  },
+},
+
     {
       type: 'divider',
     },
