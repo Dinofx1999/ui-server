@@ -972,51 +972,6 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           />
         </Tooltip>
       )}
-
-      <Button
-        type="primary"
-        size="small"
-        disabled={record.Auto_Trade !== "true"}
-        onClick={async () => {
-          try {
-            const AccessToken = localStorage.getItem("accessToken") || "";
-            const Key_SECRET = localStorage.getItem("id_SECRET") || "";
-            const Symbol = record.symbol;
-            const Broker_ = record.Broker_;
-            const Price = record.ask;
-            const resp: any = await axios.get(
-              `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/BUY/${Price}/${Key_SECRET}/order`,
-              {
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `${AccessToken}`,
-                },
-                timeout: 10000,
-              }
-            );
-            if (resp?.data.code === 1) {
-              messageApi.open({
-                type: "success",
-                content: `Send BUY ${record.symbol} -> ${record.Broker} thành công!`,
-              });
-            } else {
-              messageApi.open({
-                type: "error",
-                content: `Gửi yêu cầu BUY ${record.symbol} cho broker ${record.Broker} thất bại!`,
-              });
-            }
-          } catch (error) {
-            messageApi.open({
-              type: "error",
-              content: (error as Error).message,
-            });
-            handleLogout();
-          }
-        }}
-      >
-        {isMobile ? "BUY" : "BUY"}
-      </Button>
-
       <Button
         type="primary"
         size="small"
@@ -1061,6 +1016,51 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
       >
         {isMobile ? "SELL" : "SELL"}
       </Button>
+      <Button
+        type="primary"
+        size="small"
+        disabled={record.Auto_Trade !== "true"}
+        onClick={async () => {
+          try {
+            const AccessToken = localStorage.getItem("accessToken") || "";
+            const Key_SECRET = localStorage.getItem("id_SECRET") || "";
+            const Symbol = record.symbol;
+            const Broker_ = record.Broker_;
+            const Price = record.ask;
+            const resp: any = await axios.get(
+              `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/BUY/${Price}/${Key_SECRET}/order`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `${AccessToken}`,
+                },
+                timeout: 10000,
+              }
+            );
+            if (resp?.data.code === 1) {
+              messageApi.open({
+                type: "success",
+                content: `Send BUY ${record.symbol} -> ${record.Broker} thành công!`,
+              });
+            } else {
+              messageApi.open({
+                type: "error",
+                content: `Gửi yêu cầu BUY ${record.symbol} cho broker ${record.Broker} thất bại!`,
+              });
+            }
+          } catch (error) {
+            messageApi.open({
+              type: "error",
+              content: (error as Error).message,
+            });
+            handleLogout();
+          }
+        }}
+      >
+        {isMobile ? "BUY" : "BUY"}
+      </Button>
+
+      
     </Space>
   ),
   width: isMobile ? 60 : 140,
@@ -1599,6 +1599,50 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   render: (_, record) => (
     <div>
       <Space size="small" direction={isMobile ? "vertical" : "horizontal"}>
+         <Button
+          type="primary"
+          size="small"
+          danger
+          disabled={brokerInfo?.data?.auto_trade !== "true" || record.trade !== "TRUE"}
+          onClick={async () => {
+            try {
+              const AccessToken = localStorage.getItem("accessToken") || "";
+              const Key_SECRET = localStorage.getItem("id_SECRET") || "";
+              const Symbol = record.symbol;
+              const Broker_ = broker_actived;
+              const Price = record.bid;
+              const resp: any = await axios.get(
+                `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/SELL/${Price}/${Key_SECRET}/order`,
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `${AccessToken}`,
+                  },
+                  timeout: 10000,
+                }
+              );
+              if (resp?.data.code === 1) {
+                messageApi.open({
+                  type: "success",
+                  content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
+                });
+              } else {
+                messageApi.open({
+                  type: "error",
+                  content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
+                });
+              }
+            } catch (error) {
+              messageApi.open({
+                type: "error",
+                content: (error as Error).message,
+              });
+              handleLogout();
+            }
+          }}
+        >
+          {isMobile ? "SELL" : "SELL"}
+        </Button>
         <Button 
           type="primary"
           size="small"
@@ -1644,50 +1688,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
           {isMobile ? "BUY" : "BUY"}
         </Button>
 
-        <Button
-          type="primary"
-          size="small"
-          danger
-          disabled={brokerInfo?.data?.auto_trade !== "true" || record.trade !== "TRUE"}
-          onClick={async () => {
-            try {
-              const AccessToken = localStorage.getItem("accessToken") || "";
-              const Key_SECRET = localStorage.getItem("id_SECRET") || "";
-              const Symbol = record.symbol;
-              const Broker_ = broker_actived;
-              const Price = record.bid;
-              const resp: any = await axios.get(
-                `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/SELL/${Price}/${Key_SECRET}/order`,
-                {
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `${AccessToken}`,
-                  },
-                  timeout: 10000,
-                }
-              );
-              if (resp?.data.code === 1) {
-                messageApi.open({
-                  type: "success",
-                  content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
-                });
-              } else {
-                messageApi.open({
-                  type: "error",
-                  content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
-                });
-              }
-            } catch (error) {
-              messageApi.open({
-                type: "error",
-                content: (error as Error).message,
-              });
-              handleLogout();
-            }
-          }}
-        >
-          {isMobile ? "SELL" : "SELL"}
-        </Button>
+       
       </Space>
     </div>
   ),
