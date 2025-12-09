@@ -166,7 +166,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   }, []);
 
   const [alert, setAlert] = useState(false);
-
+  const [alert_, setAlert_] = useState(false);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("EURUSD");
   const [activeBroker, setActiveBroker] = useState("");
@@ -2173,7 +2173,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 }, [forexData, stocksData]);
 
 useEffect(() => {
-  if (alert) {
+  if (alert && alert_) {
     audio.play();
   }
 }, [alert]);
@@ -2961,6 +2961,7 @@ useEffect(() => {
     setActiveBroker("");
     audio.play();
     audio.pause();
+    setAlert_(true);
   }}
   title={
     isMobile
