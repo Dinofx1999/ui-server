@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   Badge,
   Button,
@@ -165,8 +165,10 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     document.title = "Price Delay - Dashboard";
   }, []);
 
-  const [alert, setAlert] = useState(false);
-  const [alert_, setAlert_] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+const [alert, setAlert] = useState(false);
+const [alert_, setAlert_] = useState(false); 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("EURUSD");
   const [activeBroker, setActiveBroker] = useState("");
@@ -200,6 +202,39 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   const [symbol_config, setSymbol_config] = useState([]);
   const [brokerCheck, setbrokerCheck] = useState("");
   const [broker_actived, setbrokerActived] = useState("");
+
+
+  useEffect(() => {
+  audioRef.current = new Audio("/sound/alert.wav");
+  audioRef.current.load();
+}, []);
+
+const handleCancelModalInfo = async () => {
+  setOpenModalInfo(false);
+  setActiveBroker("");
+
+  if (audioRef.current && !alert_) {
+    try {
+      // Tắt tiếng
+      audioRef.current.volume = 0;
+
+      // Play để unlock
+      await audioRef.current.play();
+
+      // Ngừng audio ngay sau khi unlock
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+
+      // Bật lại volume bình thường
+      audioRef.current.volume = 1;
+
+      setAlert_(true);
+      console.log("🔓 Audio unlocked (silent)");
+    } catch (err) {
+      console.error("Unlock audio error:", err);
+    }
+  }
+};
 
 
   let IP_Server = "116.105.227.149";
@@ -2173,10 +2208,19 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 }, [forexData, stocksData]);
 
 useEffect(() => {
-  if (alert && alert_) {
-    audio.play();
+  if (alert && alert_ && audioRef.current) {
+    audioRef.current.currentTime = 0;
+    audioRef.current
+      .play()
+      .then(() => {
+        console.log("🔔 Alert sound played");
+      })
+      .catch((err) => {
+        console.error("Play alert error:", err);
+      });
   }
-}, [alert]);
+}, [alert, alert_]); // nhớ thêm alert_ vào dependency
+
 
   const renderSignalCard = (item: any) => (
     <div
@@ -2957,11 +3001,7 @@ useEffect(() => {
   width={isMobile ? "90%" : isTablet ? "80%" : "70%"}
   open={openModalInfo}
   onCancel={() => {
-    setOpenModalInfo(false);
-    setActiveBroker("");
-    audio.play();
-    audio.pause();
-    setAlert_(true);
+    handleCancelModalInfo();
   }}
   title={
     isMobile
