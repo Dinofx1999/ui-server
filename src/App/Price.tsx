@@ -74,7 +74,7 @@ import { useWebSocketBrokerInfo } from "../Hooks/ws.broker.info";
 import { useWebSocketSymbols } from "../Hooks/ws.symbol.brokers";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-// const audio = new Audio("/sound/alert.wav");
+const audio = new Audio("/sound/alert.wav");
 type ViewMode = "grid" | "list";
 
 type Theme = {
@@ -179,7 +179,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   const [nameDrawer, setNameDrawer] = useState("Broker Không Tồn Tại");
   const [messageApi, contextHolder] = message.useMessage();
   //Modal
-  const [openModalInfo, setOpenModalInfo] = useState(false);
+  const [openModalInfo, setOpenModalInfo] = useState(true);
   const [openModalBrokerInfo, setOpenModalBrokerInfo] = useState(false);
   const [modalOpenSymbol, setModalOpenSymbol] = useState(false);
   const [modalConfig, setModalConfig] = useState(false);
@@ -1835,6 +1835,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   };
 
   const HandleSymbol = async (symbol: string) => {
+    // audio.play();
     setModalSpreadConfig(true);
     try {
       // const AccessToken = localStorage.getItem("accessToken") || "";
@@ -2173,7 +2174,6 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 
 useEffect(() => {
   if (alert) {
-    const audio = new Audio("/sound/alert.wav");
     audio.play();
   }
 }, [alert]);
@@ -2959,6 +2959,8 @@ useEffect(() => {
   onCancel={() => {
     setOpenModalInfo(false);
     setActiveBroker("");
+    audio.play();
+    audio.pause();
   }}
   title={
     isMobile
