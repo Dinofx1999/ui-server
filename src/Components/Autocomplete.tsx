@@ -1,265 +1,184 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SearchOutlined } from '@ant-design/icons';
+import { SearchOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Input, Spin } from 'antd';
 
 interface AutocompleteSearchProps {
-  suggestions: string[]; // Danh sách gợi ý
+  suggestions: string[];
   placeholder?: string;
-  onSearch?: (value: string) => void;
-  onSelect?: (value: string) => void;
-  theme: {
-    inputBg: string;
-    border: string;
-    text: string;
-    muted: string;
-    cardBg: string;
-    cardHoverBg: string;
-    accentPurple: string;
-  };
+  onSearch: (value: string) => void;
+  onSelect: (value: string) => void;
+  loading?: boolean;
+  width?: string | number;
+  height?: string | number;
+  theme?: any; // ✅ NEW
 }
 
+// ✅ Default theme
+const DEFAULT_THEME = {
+  inputBg: '#ffffff',
+  border: '#d9d9d9',
+  borderFocus: '#1890ff',
+  text: '#000000',
+  textMuted: '#999999',
+  dropdownBg: '#ffffff',
+  hoverBg: '#f0f0f0',
+};
+
 const AutocompleteSearch: React.FC<AutocompleteSearchProps> = ({
-  suggestions,
+  suggestions = [],
   placeholder = 'Search...',
   onSearch,
   onSelect,
-  theme,
+  loading = false,
+  width = '100%',
+  height = '40px',
+  theme, // ✅ Accept theme prop
 }) => {
-  const [searchValue, setSearchValue] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const t = theme || DEFAULT_THEME; // ✅ Use theme or default
+
+  const [value, setValue] = useState<string>('');
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+  const [isFocused, setIsFocused] = useState<boolean>(false);
+  const inputRef = useRef<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Filter suggestions based on search value
-  useEffect(() => {
-    if (searchValue.trim() === '') {
-      setFilteredSuggestions([]);
-      setShowDropdown(false);
-    } else {
-      const filtered = suggestions.filter((item) =>
-        item.toLowerCase().includes(searchValue.toLowerCase())
-      );
-      setFilteredSuggestions(filtered);
-      setShowDropdown(filtered.length > 0);
-    }
-    setSelectedIndex(-1);
-  }, [searchValue, suggestions]);
+  const toSize = (size: string | number) => 
+    typeof size === 'number' ? `${size}px` : size;
 
-  // Close dropdown when clicking outside
+  const filteredSuggestions = value.trim()
+    ? suggestions.filter(item => 
+        item.toLowerCase().includes(value.toLowerCase())
+      )
+    : [];
+
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+        inputRef.current && !inputRef.current.input?.contains(e.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchValue(value);
-    onSearch?.(value);
-  };
-
-  const handleSelect = (value: string) => {
-    setSearchValue(value);
-    setShowDropdown(false);
-    onSelect?.(value);
-    inputRef.current?.blur();
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showDropdown || filteredSuggestions.length === 0) return;
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev < filteredSuggestions.length - 1 ? prev + 1 : prev
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (selectedIndex >= 0) {
-          handleSelect(filteredSuggestions[selectedIndex]);
-        } else if (filteredSuggestions.length > 0) {
-          handleSelect(filteredSuggestions[0]);
-        }
-        break;
-      case 'Escape':
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev => 
+        prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (highlightedIndex >= 0) {
+        handleSelect(filteredSuggestions[highlightedIndex]);
+      } else if (value.trim()) {
+        onSearch(value);
         setShowDropdown(false);
-        inputRef.current?.blur();
-        break;
+      }
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false);
     }
   };
 
+  const handleSelect = (item: string) => {
+    setValue(item);
+    onSelect(item);
+    setShowDropdown(false);
+    setHighlightedIndex(-1);
+  };
+
+  const handleClear = () => {
+    setValue('');
+    setShowDropdown(false);
+    inputRef.current?.focus();
+  };
+
   return (
-    <div ref={dropdownRef} style={{ flex: 1, position: 'relative' }}>
-      {/* Search Icon */}
-      <SearchOutlined
-        style={{
-          position: 'absolute',
-          left: '12px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          color: theme.muted,
-          fontSize: '16px',
-          zIndex: 1,
-        }}
-      />
-
-      {/* Input */}
-      <input
+    <div 
+      style={{ 
+        position: 'relative',
+        width: toSize(width),
+      }}
+    >
+      <Input
         ref={inputRef}
-        type="text"
-        value={searchValue}
-        onChange={handleInputChange}
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+          onSearch(e.target.value);
+          setShowDropdown(true);
+        }}
         onKeyDown={handleKeyDown}
-        onFocus={() => searchValue && setShowDropdown(filteredSuggestions.length > 0)}
+        onFocus={() => {
+          setIsFocused(true);
+          value.trim() && setShowDropdown(true);
+        }}
+        onBlur={() => setIsFocused(false)}
         placeholder={placeholder}
-        style={{
-          width: '100%',
-          padding: '12px 12px 12px 40px',
-          background: theme.inputBg,
-          border: `1px solid ${showDropdown ? theme.accentPurple : theme.border}`,
-          borderRadius: showDropdown ? '8px 8px 0 0' : '8px',
-          color: theme.text,
-          fontSize: '14px',
-          outline: 'none',
-          transition: 'all 0.2s ease',
+        prefix={loading ? <Spin size="small" /> : <SearchOutlined />}
+        suffix={
+          value && (
+            <CloseCircleOutlined
+              onClick={handleClear}
+              style={{ 
+                cursor: 'pointer', 
+                color: t.textMuted, // ✅ Theme color
+              }}
+            />
+          )
+        }
+        style={{ 
+          height: toSize(height),
+          background: t.inputBg, // ✅ Theme color
+          borderColor: isFocused ? t.borderFocus : t.border, // ✅ Theme color
+          color: t.text, // ✅ Theme color
         }}
       />
 
-      {/* Clear Button */}
-      {searchValue && (
-        <button
-          onClick={() => {
-            setSearchValue('');
-            setShowDropdown(false);
-            inputRef.current?.focus();
-          }}
-          style={{
-            position: 'absolute',
-            right: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            background: 'transparent',
-            border: 'none',
-            color: theme.muted,
-            cursor: 'pointer',
-            fontSize: '16px',
-            padding: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1,
-          }}
-        >
-          ✕
-        </button>
-      )}
-
-      {/* Autocomplete Dropdown */}
-      {showDropdown && (
+      {showDropdown && filteredSuggestions.length > 0 && (
         <div
+          ref={dropdownRef}
           style={{
             position: 'absolute',
             top: '100%',
             left: 0,
             right: 0,
-            background: theme.cardBg,
-            border: `1px solid ${theme.accentPurple}`,
-            borderTop: 'none',
-            borderRadius: '0 0 8px 8px',
+            marginTop: '4px',
+            background: t.dropdownBg, // ✅ Theme color
+            border: `1px solid ${t.border}`, // ✅ Theme color
+            borderRadius: '4px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
             maxHeight: '300px',
             overflowY: 'auto',
-            boxShadow: '0 8px 24px rgba(16, 185, 129, 0.2)',
             zIndex: 1000,
           }}
         >
-          {filteredSuggestions.length > 0 ? (
-            <div>
-              {filteredSuggestions.map((suggestion, index) => (
-                <div
-                  key={suggestion}
-                  onClick={() => handleSelect(suggestion)}
-                  style={{
-                    padding: '12px 16px',
-                    cursor: 'pointer',
-                    background: selectedIndex === index ? theme.cardHoverBg : 'transparent',
-                    color: theme.text,
-                    fontSize: '14px',
-                    transition: 'all 0.2s ease',
-                    borderLeft: selectedIndex === index
-                      ? `3px solid ${theme.accentPurple}`
-                      : '3px solid transparent',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = theme.cardHoverBg;
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedIndex !== index) {
-                      e.currentTarget.style.background = 'transparent';
-                    }
-                  }}
-                >
-                  {/* Highlight matched text */}
-                  {highlightMatch(suggestion, searchValue, theme)}
-                </div>
-              ))}
-            </div>
-          ) : (
+          {filteredSuggestions.map((item, index) => (
             <div
+              key={index}
+              onClick={() => handleSelect(item)}
+              onMouseEnter={() => setHighlightedIndex(index)}
               style={{
-                padding: '16px',
-                textAlign: 'center',
-                color: theme.muted,
-                fontSize: '14px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                background: highlightedIndex === index ? t.hoverBg : t.dropdownBg, // ✅ Theme color
+                color: t.text, // ✅ Theme color
+                transition: 'background 0.2s',
               }}
             >
-              No results found
+              {item}
             </div>
-          )}
+          ))}
         </div>
       )}
     </div>
-  );
-};
-
-// Helper function to highlight matched text
-const highlightMatch = (
-  text: string,
-  search: string,
-  theme: { text: string; accentPurple: string }
-) => {
-  if (!search) return text;
-
-  const parts = text.split(new RegExp(`(${search})`, 'gi'));
-  return (
-    <span>
-      {parts.map((part, index) =>
-        part.toLowerCase() === search.toLowerCase() ? (
-          <strong
-            key={index}
-            style={{
-              color: theme.accentPurple,
-              fontWeight: 700,
-            }}
-          >
-            {part}
-          </strong>
-        ) : (
-          <span key={index}>{part}</span>
-        )
-      )}
-    </span>
   );
 };
 

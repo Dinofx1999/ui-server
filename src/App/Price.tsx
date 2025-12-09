@@ -14,7 +14,14 @@ import {
   AutoComplete,
 } from "antd";
 
+import HistoryModal from '../Components/modal/modal.history';
+import AccountModal from '../Components/modal/modal.manager';
+
+
+
 import { RefreshCcw, Trash2 } from "lucide-react";
+
+import SpreadManagementModal from '../Components/modal/modal.configSpread';
 
 import {
   Pagination,
@@ -168,7 +175,6 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   const [nameDrawer, setNameDrawer] = useState("Broker Không Tồn Tại");
   const [messageApi, contextHolder] = message.useMessage();
   //Modal
-
   const [openModalInfo, setOpenModalInfo] = useState(false);
   const [openModalBrokerInfo, setOpenModalBrokerInfo] = useState(false);
   const [modalOpenSymbol, setModalOpenSymbol] = useState(false);
@@ -1736,10 +1742,10 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     console.log("Selected:", value);
     handle_setModalSymbols(value);
 
-    HandleSymbol(value);
+    // HandleSymbol(value);
   };
   const handleSelect_symbolConfig = (value: string) => {
-    HandleSymbol(value);
+    // HandleSymbol(value);
   };
   useEffect(() => {
     if (brokers) {
@@ -1824,7 +1830,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   };
 
   const HandleSymbol = async (symbol: string) => {
-    // setModalSpreadConfig(true);
+    setModalSpreadConfig(true);
     try {
       // const AccessToken = localStorage.getItem("accessToken") || "";
       //         const resp: any = await axios.get(
@@ -2913,15 +2919,17 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         <p>Disconnected server at {new Date().toLocaleTimeString()} </p>
       </Modal>
 
-      <Modal
+      {/* <Modal
         title="Config"
         width={"800px"}
         style={{ top: 20 }}
         open={modalConfig}
-        onCancel={() => HandleSymbol("ALL")}
+        onCancel={() => setModalConfig(false)}
       >
-        <p>Config Comming soon....</p>
-      </Modal>
+        <p>Manager Comming soon....</p>
+      </Modal> */}
+
+      {AccountModal({ open: modalConfig }, () => setModalConfig(false))}
 
       {/* <Modal
         title="Config"
@@ -2933,308 +2941,16 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         <p>Spread Config Comming soon....</p>
       </Modal> */}
 
-      <Modal
-        title="Thông Số SPREAD Sản Phẩm"
-        open={modalSpreadConfig}
-        onCancel={() => setModalSpreadConfig(false)}
-        cancelText="Đóng"
-        width={1200}
-        // className={styles.modalResponsive}
-      >
-        <Space
-          direction="vertical"
-          size="middle"
-          style={{ display: "flex", whiteSpace: "nowrap" }}
-          // className={styles.spaceContainer}
-        >
-          <Row>
-            <AutocompleteSearch
-              suggestions={analysis?.symbols || []}
-              placeholder="Search..."
-              onSearch={handleSearch}
-              onSelect={handleSelect_symbolConfig}
-              theme={t}
-            />
-            <Button
-              danger
-              type="primary"
-              onClick={themmoiSymbol}
-              style={{ width: 100, marginLeft: 20 }}
-            >
-              {button_Add_Form_Symbol}
-            </Button>
-            <Button
-              danger
-              type="primary"
-              onClick={() => HandleSymbol("ALL")}
-              style={{ width: 100, marginLeft: 20, marginRight: 20 }}
-            >
-              Tải Lại
-            </Button>
-            <Form
-              layout="vertical"
-              form={form_spread}
-              onFinish={onFinish_add_Spread}
-            >
-              {" "}
-              {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
-              <Row gutter={[16, 16]} style={{ width: "100%" }}>
-                <Col xs={24} sm={20} md={20} lg={20}>
-                  <Form.Item name="spread" initialValue={1}>
-                    <Space>
-                      <span style={{ fontSize: "16px" }}>SPREAD</span>
-                      <InputNumber min={1} style={{ width: "100%" }} />
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        style={{ width: "100%" }}
-                      >
-                        SETTING SPREAD
-                      </Button>
-                      <span style={{ fontSize: "16px" }}>
-                        {" "}
-                        Spread Plus Hiện Tại: {spreadPlus}
-                      </span>
-                    </Space>
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Form>
-          </Row>
+        <SpreadManagementModal
+        visible={modalSpreadConfig}
+          onClose={() => setModalSpreadConfig(false)}
+          symbols ={analysis?.symbols || []}
+        />
 
-          {form_Add_Symbol === true && (
-            <Card title="Thêm Mới" style={{ width: "100%" }}>
-              <Form layout="vertical" form={form_} onFinish={onFinish_add}>
-                {" "}
-                {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
-                <Row gutter={[16, 16]} style={{ width: "100%" }}>
-                  <Col xs={24} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="SYMBOL"
-                      name="Symbol"
-                      rules={[
-                        { required: true, message: "Please input symbol!" },
-                      ]}
-                    >
-                      {/* <Input /> */}
-                      <AutoComplete
-                        options={
-                          Array.isArray(analysis?.symbols)
-                            ? analysis.symbols.map((sym: string) => ({
-                                value: sym,
-                              }))
-                            : []
-                        }
-                        onSearch={(value) => {
-                          // onSearch_symbol_api(value);
-                          console.log("Search Value:", value);
-                        }}
-                        style={{ width: "100%", maxWidth: "200px" }}
-                      >
-                        {/* <Search
-                          placeholder="Tìm Sản Phẩm"
-                          allowClear
-                          onSearch={onSearch_symbol_api}
-                        /> */}
-                      </AutoComplete>
-                    </Form.Item>
-                  </Col>
-
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="SPREAD STD"
-                      name="Spread_STD"
-                      initialValue={1}
-                    >
-                      <InputNumber
-                        min={1}
-                        style={{ width: "100%" }}
-                        onChange={handleSpreadSTDChange}
-                      />
-                    </Form.Item>
-                  </Col>
-
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="SPREAD ECN"
-                      name="Spread_ECN"
-                      initialValue={1}
-                    >
-                      <InputNumber min={1} style={{ width: "100%" }} />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label=" " // Thêm label trống để căn chỉnh với các input khác
-                    >
-                      <Button
-                        danger
-                        type="primary"
-                        htmlType="submit"
-                        style={{ width: "100%" }}
-                      >
-                        Thêm Mới
-                      </Button>
-                    </Form.Item>
-                  </Col>
-                </Row>
-                <Row gutter={[16, 16]} style={{ width: "100%" }}>
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="SYDNEY"
-                      name="Sydney"
-                      //initialValue={1}
-                    >
-                      <InputNumber style={{ width: "100%" }} />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="TOKYO"
-                      name="Tokyo"
-                      //initialValue={1}
-                    >
-                      <InputNumber style={{ width: "100%" }} />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="LONDON"
-                      name="London"
-                      // initialValue={1}
-                    >
-                      <InputNumber style={{ width: "100%" }} />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="NEWYORK"
-                      name="NewYork"
-                      // initialValue={1}
-                    >
-                      <InputNumber style={{ width: "100%" }} />
-                    </Form.Item>
-                  </Col>
-                </Row>
-              </Form>
-            </Card>
-          )}
-          {form_update_Symbol === true && (
-            <Card title="Update" style={{ width: "100%" }}>
-              <Form form={form} layout="vertical" onFinish={onFinish_update}>
-                {" "}
-                {/* Thay đổi layout thành vertical để phù hợp hơn với màn hình nhỏ */}
-                <Row gutter={[16, 16]} style={{ width: "100%" }}>
-                  <Col xs={24} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="SYMBOL"
-                      name="Symbol"
-                      rules={[
-                        { required: true, message: "Please input symbol!" },
-                      ]}
-                    >
-                      <Input disabled />
-                    </Form.Item>
-                  </Col>
-
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="SPREAD STD"
-                      name="Spread_STD"
-                      initialValue={1}
-                    >
-                      <InputNumber style={{ width: "100%" }} />
-                    </Form.Item>
-                  </Col>
-
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="SPREAD ECN"
-                      name="Spread_ECN"
-                      initialValue={1}
-                    >
-                      <InputNumber min={1} style={{ width: "100%" }} />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label=" " // Thêm label trống để căn chỉnh với các input khác
-                    >
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        style={{ width: "100%" }}
-                      >
-                        Update
-                      </Button>
-                    </Form.Item>
-                  </Col>
-                </Row>
-                <Row gutter={[16, 16]} style={{ width: "100%" }}>
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="SYDNEY"
-                      name="Sydney"
-                      // initialValue={1}
-                    >
-                      <InputNumber style={{ width: "100%" }} />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="TOKYO"
-                      name="Tokyo"
-                      // initialValue={1}
-                    >
-                      <InputNumber style={{ width: "100%" }} />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="LONDON"
-                      name="London"
-                      //initialValue={1}
-                    >
-                      <InputNumber style={{ width: "100%" }} />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={12} sm={12} md={6} lg={6}>
-                    <Form.Item
-                      label="NEWYORK"
-                      name="NewYork"
-                      //initialValue={1}
-                    >
-                      <InputNumber style={{ width: "100%" }} />
-                    </Form.Item>
-                  </Col>
-                </Row>
-              </Form>
-            </Card>
-          )}
-
-          <Table
-            rowKey={(record) =>
-              `${record.IndexSymbol}-${record.Symbol}-${record.Broker}`
-            }
-            columns={columns_SymbolConfig}
-            dataSource={symbol_config}
-            // onChange={onChange}
-            pagination={{ pageSize: 50 }}
-            // loading={load_symbol}
-            scroll={{ x: "max-content" }}
-          />
-        </Space>
-      </Modal>
-
-      <Modal
-        title="History Logs"
-        width={"800px"}
-        style={{ top: 20 }}
-        open={modalHistory}
-        onCancel={() => setModalHistory(false)}
-      >
-        <p>History Logs Comming soon....</p>
-      </Modal>
+      <HistoryModal
+        visible={modalHistory}
+        onClose={() => setModalHistory(false)}
+      />
 
       <Modal
   width={isMobile ? "90%" : isTablet ? "80%" : "70%"}
@@ -3701,6 +3417,7 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               onSearch={handleSearch}
               onSelect={handleSelect}
               theme={t}
+              height={isMobile ? 36 : 40}
             />
           </div>
 
@@ -3815,91 +3532,37 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 
               {!isTablet && (
                 <>
-                  {/* Config Button */}
-                  <button
-                    style={{
-                      padding: "10px 20px",
-                      background: t.btnNeutral,
-                      border: "none",
-                      borderRadius: "8px",
-                      color: t.muted,
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = t.btnNeutralHover;
-                      e.currentTarget.style.color = t.text;
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 4px 12px rgba(0, 0, 0, 0.1)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = t.btnNeutral;
-                      e.currentTarget.style.color = t.muted;
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
-                    onMouseDown={(e) => {
-                      e.currentTarget.style.transform =
-                        "translateY(0) scale(0.95)";
-                    }}
-                    onMouseUp={(e) => {
-                      e.currentTarget.style.transform =
-                        "translateY(-2px) scale(1)";
-                    }}
-                    onClick={() => setModalConfig(true)}
-                  >
-                    <SettingOutlined />
-                    Config
-                  </button>
+                 
 
                   {/* History Button */}
-                  <button
-                    style={{
-                      padding: "10px 20px",
-                      background: t.btnNeutral,
-                      border: "none",
-                      borderRadius: "8px",
-                      color: t.muted,
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = t.btnNeutralHover;
-                      e.currentTarget.style.color = t.text;
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 4px 12px rgba(0, 0, 0, 0.1)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = t.btnNeutral;
-                      e.currentTarget.style.color = t.muted;
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
-                    onMouseDown={(e) => {
-                      e.currentTarget.style.transform =
-                        "translateY(0) scale(0.95)";
-                    }}
-                    onMouseUp={(e) => {
-                      e.currentTarget.style.transform =
-                        "translateY(-2px) scale(1)";
-                    }}
-                    onClick={() => setModalHistory(true)}
-                  >
-                    <HistoryOutlined />
-                    History
-                  </button>
+                   <button
+              style={{
+                padding: "10px",
+                background: "#06b6d4",            // Cyan chính
+                border: "none",
+                borderRadius: "6px",
+                color: "#ffffff",                // Trắng cho dễ nhìn
+                fontSize: "13px",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                transition: "all 0.2s ease",
+              }}
+              onTouchStart={(e) => {
+                e.currentTarget.style.transform = "scale(0.95)";
+                e.currentTarget.style.background = "#0891b2";   // Cyan đậm khi nhấn
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.background = "#06b6d4";   // Trở về cyan
+              }}
+              onClick={() => setModalHistory(true)}
+            >
+              <HistoryOutlined /> History
+            </button>
 
                   {/* Spread 0 Button */}
                   <button
@@ -3946,46 +3609,58 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
                         "translateY(-2px) scale(1.05)";
                     }}
                     onClick={() => HandleSymbol("ALL")}
-                  >
-                    <ThunderboltOutlined />
+                  > <SettingOutlined />
+                   
                     Spread Config
                   </button>
+
+                   {/* Config Button */}
+                  <button
+                      style={{
+                        padding: "10px 20px",
+                        background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                        border: "none",
+                        borderRadius: "8px",
+                        color: "#fff",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        boxShadow: "0 4px 12px rgba(239, 68, 68, 0.35)",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background =
+                          "linear-gradient(135deg, #f87171 0%, #ef4444 100%)";
+                        e.currentTarget.style.transform = "translateY(-2px) scale(1.05)";
+                        e.currentTarget.style.boxShadow =
+                          "0 8px 20px rgba(239, 68, 68, 0.5)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background =
+                          "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+                        e.currentTarget.style.transform = "translateY(0) scale(1)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(239, 68, 68, 0.35)";
+                      }}
+                      onMouseDown={(e) => {
+                        e.currentTarget.style.transform = "translateY(0) scale(0.98)";
+                      }}
+                      onMouseUp={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px) scale(1.05)";
+                      }}
+                      onClick={() => setModalConfig(true)}
+                    >
+                    <ThunderboltOutlined />
+                    Manager
+                  </button>
+
                 </>
               )}
-
-              {/* Reload Button */}
-              <button
-                style={{
-                  padding: "10px",
-                  background: t.btnNeutral,
-                  border: "none",
-                  borderRadius: "8px",
-                  color: t.muted,
-                  cursor: "pointer",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = t.btnNeutralHover;
-                  e.currentTarget.style.color = t.text;
-                  e.currentTarget.style.transform = "rotate(180deg) scale(1.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = t.btnNeutral;
-                  e.currentTarget.style.color = t.muted;
-                  e.currentTarget.style.transform = "rotate(0deg) scale(1)";
-                }}
-                onMouseDown={(e) => {
-                  e.currentTarget.style.transform = "rotate(180deg) scale(0.9)";
-                }}
-                onMouseUp={(e) => {
-                  e.currentTarget.style.transform = "rotate(180deg) scale(1.1)";
-                }}
-              >
-                <ReloadOutlined style={{ fontSize: "16px" }} />
-              </button>
             </>
           )}
 
@@ -4067,43 +3742,59 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
             </button>
 
             {/* Config Button - Mobile */}
-            <button
-              style={{
-                padding: "10px",
-                background: t.btnNeutral,
-                border: "none",
-                borderRadius: "6px",
-                color: t.text,
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-                transition: "all 0.2s ease",
-              }}
-              onTouchStart={(e) => {
-                e.currentTarget.style.transform = "scale(0.95)";
-                e.currentTarget.style.background = t.btnNeutralHover;
-              }}
-              onTouchEnd={(e) => {
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.background = t.btnNeutral;
-              }}
-              onClick={() => setModalConfig(true)}
-            >
-              <SettingOutlined /> Config
-            </button>
+            {/* Config Button */}
+                  <button
+                      style={{
+                        padding: "10px 20px",
+                        background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                        border: "none",
+                        borderRadius: "8px",
+                        color: "#fff",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        boxShadow: "0 4px 12px rgba(239, 68, 68, 0.35)",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background =
+                          "linear-gradient(135deg, #f87171 0%, #ef4444 100%)";
+                        e.currentTarget.style.transform = "translateY(-2px) scale(1.05)";
+                        e.currentTarget.style.boxShadow =
+                          "0 8px 20px rgba(239, 68, 68, 0.5)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background =
+                          "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+                        e.currentTarget.style.transform = "translateY(0) scale(1)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(239, 68, 68, 0.35)";
+                      }}
+                      onMouseDown={(e) => {
+                        e.currentTarget.style.transform = "translateY(0) scale(0.98)";
+                      }}
+                      onMouseUp={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px) scale(1.05)";
+                      }}
+                      onClick={() => setModalConfig(true)}
+                    >
+                    <ThunderboltOutlined />
+                    Manager
+                  </button>
 
             {/* History Button - Mobile */}
-            <button
+           <button
               style={{
                 padding: "10px",
-                background: t.btnNeutral,
+                background: "#06b6d4",            // Cyan chính
                 border: "none",
                 borderRadius: "6px",
-                color: t.text,
+                color: "#ffffff",                // Trắng cho dễ nhìn
                 fontSize: "13px",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -4115,45 +3806,67 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
               }}
               onTouchStart={(e) => {
                 e.currentTarget.style.transform = "scale(0.95)";
-                e.currentTarget.style.background = t.btnNeutralHover;
+                e.currentTarget.style.background = "#0891b2";   // Cyan đậm khi nhấn
               }}
               onTouchEnd={(e) => {
                 e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.background = t.btnNeutral;
+                e.currentTarget.style.background = "#06b6d4";   // Trở về cyan
               }}
               onClick={() => setModalHistory(true)}
             >
               <HistoryOutlined /> History
             </button>
 
+
             {/* Spread 0 Button - Mobile */}
-            <button
-              style={{
-                padding: "10px",
-                background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                border: "none",
-                borderRadius: "6px",
-                color: "#fff",
-                fontSize: "13px",
-                fontWeight: 700,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-                transition: "all 0.2s ease",
-              }}
-              onTouchStart={(e) => {
-                e.currentTarget.style.transform = "scale(0.95)";
-                e.currentTarget.style.opacity = "0.9";
-              }}
-              onTouchEnd={(e) => {
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.opacity = "1";
-              }}
-            >
-              <ThunderboltOutlined /> Spread 0
-            </button>
+             <button
+                    style={{
+                      padding: "10px 20px",
+                      background:
+                        "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                      border: "none",
+                      borderRadius: "8px",
+                      color: "#fff",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      boxShadow: "0 4px 12px rgba(245, 158, 11, 0.35)",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)";
+                      e.currentTarget.style.transform =
+                        "translateY(-2px) scale(1.05)";
+                      e.currentTarget.style.boxShadow =
+                        "0 8px 20px rgba(245, 158, 11, 0.5)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
+                      e.currentTarget.style.transform =
+                        "translateY(0) scale(1)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(245, 158, 11, 0.35)";
+                    }}
+                    onMouseDown={(e) => {
+                      e.currentTarget.style.transform =
+                        "translateY(0) scale(0.98)";
+                    }}
+                    onMouseUp={(e) => {
+                      e.currentTarget.style.transform =
+                        "translateY(-2px) scale(1.05)";
+                    }}
+                    onClick={() => HandleSymbol("ALL")}
+                  > <SettingOutlined />
+                   
+                    Spread Config
+                  </button>
           </div>
         )}
 
