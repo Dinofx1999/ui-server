@@ -14,6 +14,8 @@ import {
   AutoComplete,
 } from "antd";
 
+
+
 import HistoryModal from '../Components/modal/modal.history';
 import AccountModal from '../Components/modal/modal.manager';
 
@@ -72,7 +74,7 @@ import { useWebSocketBrokerInfo } from "../Hooks/ws.broker.info";
 import { useWebSocketSymbols } from "../Hooks/ws.symbol.brokers";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+// const audio = new Audio("/sound/alert.wav");
 type ViewMode = "grid" | "list";
 
 type Theme = {
@@ -162,6 +164,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
     // ✅ Thay đổi title động
     document.title = "Price Delay - Dashboard";
   }, []);
+
+  const [alert, setAlert] = useState(false);
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("EURUSD");
@@ -2159,6 +2163,21 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
 
   const stocksData: any[] = analysis?.ANALYSIS?.Type_2 || [];
 
+  useEffect(() => {
+  if (forexData && (forexData.length + stocksData.length) > 0) {
+    setAlert(true);
+  } else {
+    setAlert(false);
+  }
+}, [forexData, stocksData]);
+
+useEffect(() => {
+  if (alert) {
+    const audio = new Audio("/sound/alert.wav");
+    audio.play();
+  }
+}, [alert]);
+
   const renderSignalCard = (item: any) => (
     <div
       key={item.id}
@@ -2920,27 +2939,8 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
         <p>Disconnected server at {new Date().toLocaleTimeString()} </p>
       </Modal>
 
-      {/* <Modal
-        title="Config"
-        width={"800px"}
-        style={{ top: 20 }}
-        open={modalConfig}
-        onCancel={() => setModalConfig(false)}
-      >
-        <p>Manager Comming soon....</p>
-      </Modal> */}
-
       {AccountModal({ open: modalConfig }, () => setModalConfig(false))}
 
-      {/* <Modal
-        title="Config"
-        width={"800px"}
-        style={{ top: 20 }}
-        open={modalSpreadConfig}
-        onCancel={() => setModalSpreadConfig(false)}
-      >
-        <p>Spread Config Comming soon....</p>
-      </Modal> */}
 
         <SpreadManagementModal
         visible={modalSpreadConfig}
