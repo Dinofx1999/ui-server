@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Table, Input, Button, Space, Tag, message, Spin } from 'antd';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Modal, Table, Input, Button, Space, Tag, message, Spin, AutoComplete } from 'antd';
 import { X, Search } from 'lucide-react';
 import axios, { AxiosError } from 'axios';
 import type { ColumnsType } from 'antd/es/table';
@@ -57,6 +57,28 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
       fetchHistoryData();
     }
   }, [visible]);
+
+    const symbolFilters = useMemo(
+    () =>
+      Array.from(new Set(historyData.map((item:any) => item.Symbol))).map(
+        (sym) => ({
+          text: sym,
+          value: sym,
+        })
+      ),
+    [historyData]
+  );
+
+  const BrokerFilters = useMemo(
+    () =>
+      Array.from(new Set(historyData.map((item:any) => item.Broker))).map(
+        (broker) => ({
+          text: broker,
+          value: broker,
+        })
+      ),
+    [historyData]
+  );
 
   const fetchHistoryData = async (): Promise<void> => {
     setLoading(true);
@@ -138,36 +160,134 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
       ),
     },
     {
-      title: 'Broker',
-      dataIndex: 'broker',
-      key: 'broker',
-      width: isMobile ? 100 : 140,
-      fixed: isMobile ? undefined : 'left' as const,
-      sorter: (a, b) => a.broker.localeCompare(b.broker),
-      render: (text: string) => (
-        <span style={{ color: '#1890ff', fontWeight: 500, fontSize: isMobile ? 12 : 14 }}>
-          {text}
-        </span>
-      ),
-    },
-    {
-      title: 'Sản Phẩm',
-      dataIndex: 'symbol',
-      key: 'symbol',
-      width: isMobile ? 80 : 120,
-      sorter: (a, b) => a.symbol.localeCompare(b.symbol),
-      render: (text: string) => (
-        <span style={{ color: '#1890ff', fontWeight: 600, fontSize: isMobile ? 12 : 14 }}>
-          {text}
-        </span>
-      ),
-    },
+  title: "Broker",
+  dataIndex: "Broker",
+  key: "Broker",
+  width: isMobile ? 80 : 120,
+
+  // 🔥 Dùng filterDropdown custom
+  filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+    <div style={{ padding: 8 }}>
+      <AutoComplete
+        style={{ width: 180 }}
+        placeholder="Tìm Broker..."
+        options={BrokerFilters.map((broker) => ({ value: broker.value }))}
+        value={selectedKeys[0]}
+        onChange={(value) => {
+          setSelectedKeys(value ? [value] : []);
+        }}
+        onSelect={(value) => {
+          setSelectedKeys([value]);
+          confirm();
+        }}
+        allowClear
+      />
+
+      <div style={{ marginTop: 8, textAlign: "right" }}>
+        <a
+          onClick={() => {
+            clearFilters?.();
+            confirm();
+          }}
+        >
+          Reset
+        </a>
+      </div>
+    </div>
+  ),
+
+  // 🔥 Điều kiện lọc khi dùng AutoComplete
+  onFilter: (value, record:any) =>
+    record.Broker.toLowerCase().includes(String(value).toLowerCase()),
+
+  filterIcon: (filtered) => (
+    <span style={{ color: filtered ? "#1890ff" : undefined }}>🔍</span>
+  ),
+
+  render: (text) => (
+    <span
+      style={{
+        color: "#1890ff",
+        fontWeight: 600,
+        fontSize: isMobile ? 12 : 14,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {text}
+    </span>
+  ),
+}
+,
+  {
+  title: (
+    <span style={{ fontSize: isMobile ? 10 : 12, fontWeight: 600 }}>
+      Sản Phẩm
+    </span>
+  ),
+  dataIndex: "Symbol",
+  key: "Symbol",
+  width: isMobile ? 80 : 120,
+
+  // 🔥 Dùng filterDropdown custom
+  filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+    <div style={{ padding: 8 }}>
+      <AutoComplete
+        style={{ width: 180 }}
+        placeholder="Tìm Symbol..."
+        options={symbolFilters.map((sym) => ({ value: sym.value }))}
+        value={selectedKeys[0]}
+        onChange={(value) => {
+          setSelectedKeys(value ? [value] : []);
+        }}
+        onSelect={(value) => {
+          setSelectedKeys([value]);
+          confirm();
+        }}
+        allowClear
+      />
+
+      <div style={{ marginTop: 8, textAlign: "right" }}>
+        <a
+          onClick={() => {
+            clearFilters?.();
+            confirm();
+          }}
+        >
+          Reset
+        </a>
+      </div>
+    </div>
+  ),
+
+  // 🔥 Điều kiện lọc khi dùng AutoComplete
+  onFilter: (value, record:any) =>
+    record.Symbol.toLowerCase().includes(String(value).toLowerCase()),
+
+  filterIcon: (filtered) => (
+    <span style={{ color: filtered ? "#1890ff" : undefined }}>🔍</span>
+  ),
+
+  render: (text) => (
+    <span
+      style={{
+        color: "#1890ff",
+        fontWeight: 600,
+        fontSize: isMobile ? 12 : 14,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {text}
+    </span>
+  ),
+}
+,
+
     {
       title: 'Time Start',
-      dataIndex: 'timeStart',
-      key: 'timeStart',
+      dataIndex: 'TimeStart',
+      key: 'TimeStart',
       width: isMobile ? 140 : 180,
-      sorter: (a, b) => new Date(a.timeStart).getTime() - new Date(b.timeStart).getTime(),
+      sorter: (a:any, b:any) => new Date(a.TimeStart).getTime() - new Date(b.TimeStart).getTime(),
       render: (text: string) => (
         <span style={{ 
           color: '#52c41a', 
@@ -181,10 +301,10 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
     },
     {
       title: 'Time End',
-      dataIndex: 'timeEnd',
-      key: 'timeEnd',
+      dataIndex: 'TimeCurrent',
+      key: 'TimeCurrent',
       width: isMobile ? 140 : 180,
-      sorter: (a, b) => new Date(a.timeEnd).getTime() - new Date(b.timeEnd).getTime(),
+      sorter: (a:any, b:any) => new Date(a.TimeCurrent).getTime() - new Date(b.TimeCurrent).getTime(),
       render: (text: string) => (
         <span style={{ 
           color: '#ff4d4f', 
@@ -199,10 +319,10 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
     ...(!isMobile ? [
       {
         title: 'Khoảng Cách',
-        dataIndex: 'distance',
-        key: 'distance',
+        dataIndex: 'KhoangCach',
+        key: 'KhoangCach',
         width: 120,
-        sorter: (a: HistoryData, b: HistoryData) => a.distance - b.distance,
+        sorter: (a: any, b: any) => a.KhoangCach - b.KhoangCach,
         render: (text: number) => (
           <span style={{ fontWeight: 500, fontSize: 14 }}>{text}</span>
         ),
@@ -210,10 +330,10 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
     ] : []),
     {
       title: 'Spread',
-      dataIndex: 'spread',
-      key: 'spread',
+      dataIndex: 'Spread_main',
+      key: 'Spread_main',
       width: isMobile ? 70 : 100,
-      sorter: (a, b) => a.spread - b.spread,
+      sorter: (a:any, b:any) => a.Spread_main - b.Spread_main,
       render: (text: number) => (
         <span style={{ 
           color: '#d946ef', 
@@ -227,10 +347,10 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
     ...(!isMobile ? [
       {
         title: 'Time Delay',
-        dataIndex: 'timeDelay',
-        key: 'timeDelay',
+        dataIndex: 'Count',
+        key: 'Count',
         width: 110,
-        sorter: (a: HistoryData, b: HistoryData) => a.timeDelay.localeCompare(b.timeDelay),
+        sorter: (a: any, b: any) => a.Count - b.Count,
         render: (text: string) => (
           <span style={{ 
             fontWeight: 500, 
@@ -242,16 +362,61 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
         ),
       },
     ] : []),
-    {
+  
+  {
+  title: 'isTrusted',
+  key: 'IsStable',
+  dataIndex: 'isTrusted',
+  width: isMobile ? 70 : 90,
+  fixed: 'right' as const,
+
+  filters: [
+    { text: 'Trusted', value: 'true' },
+    { text: 'Not Trusted', value: 'false' },
+  ],
+
+  onFilter: (value, record: any) => {
+    const boolValue = value === 'true';   // Ép string → boolean
+    return record.IsStable === boolValue;
+  },
+
+  render: (value: boolean) => (
+    <Tag color={value ? 'green' : 'red'} style={{ fontWeight: 600 }}>
+      {value ? 'Trusted' : 'Not Trusted'}
+    </Tag>
+  ),
+}, {
+  title: 'Type Alert',
+  key: 'Type',
+  dataIndex: 'Type',
+  width: isMobile ? 70 : 90,
+//   fixed: 'right' as const,
+
+  filters: [
+    { text: 'Delay Price', value: 'Delay Price' },
+    { text: 'Delay Price Stop', value: 'Delay Price Stop' },
+  ],
+
+  onFilter: (value, record: any) => {
+    return record.Type === value;
+  },
+
+  render: (value: string) => (
+    <Tag color={value === 'Delay Price' ? 'lime' : 'tomato'} style={{ fontWeight: 600 }}>
+      {value === 'Delay Price' ? 'Delay Price' : 'Price Stop'}
+    </Tag>
+  ),
+},
+  {
       title: 'TYPE',
-      dataIndex: 'type',
-      key: 'type',
+      dataIndex: 'Messenger',
+      key: 'Messenger',
       width: isMobile ? 70 : 90,
       filters: [
         { text: 'SELL', value: 'SELL' },
         { text: 'BUY', value: 'BUY' },
       ],
-      onFilter: (value, record) => record.type === value,
+      onFilter: (value, record:any) => record.Messenger === value,
       render: (text: 'SELL' | 'BUY') => (
         <Button
           type="primary"
@@ -270,29 +435,8 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
         </Button>
       ),
     },
-    {
-      title: 'Action',
-      key: 'action',
-      width: isMobile ? 70 : 90,
-      fixed: 'right' as const,
-      render: (_: unknown, record: HistoryData) => (
-        <Button
-          danger
-          size={isMobile ? 'small' : 'middle'}
-          onClick={() => handleDelete(record)}
-          style={{
-            width: isMobile ? 60 : 70,
-            fontWeight: 500,
-            fontSize: isMobile ? 11 : 13,
-            borderColor: '#ff4d4f',
-            color: '#ff4d4f',
-            background: '#fff'
-          }}
-        >
-          Xóa
-        </Button>
-      ),
-    },
+
+
   ];
 
   const filteredData: HistoryData[] = historyData.filter((item: HistoryData) => {
@@ -310,7 +454,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
       }
       open={visible}
       onCancel={handleClose}
-      width={isMobile ? '100%' : isTablet ? 1000 : 1400}
+      width={isMobile ? '100%' : isTablet ? 1000 : 1600}
       footer={null}
       closeIcon={<X size={isMobile ? 18 : 20} />}
       styles={{
@@ -323,7 +467,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
       style={isMobile ? { top: 10, margin: '0 8px', maxWidth: 'calc(100% - 16px)' } : {}}
     >
       {/* Search Section */}
-      <div style={{ 
+      {/* <div style={{ 
         marginBottom: 16,
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr auto' : '300px 300px auto',
@@ -396,13 +540,13 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
         >
           {!isMobile && 'Tìm Kiếm'}
         </Button>
-      </div>
+      </div> */}
 
       {/* Table */}
       <Spin spinning={loading}>
         <Table<HistoryData>
           columns={columns}
-          dataSource={filteredData}
+          dataSource={historyData}
           pagination={{ 
             pageSize: isMobile ? 10 : 20,
             size: isMobile ? 'small' : 'default',

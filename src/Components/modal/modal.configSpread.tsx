@@ -48,6 +48,8 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
   const [isTablet, setIsTablet] = useState<boolean>(false);
 
   const [messageApi, contextHolder] = message.useMessage();
+  const [spreadPlus, setSpreadPlus] = useState<number>(0);
+  
 
 
   const API_BASE_URL = 'http://116.105.227.149:5000/v1/api';
@@ -60,10 +62,11 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
       setIsMobile(width < 768);
       setIsTablet(width >= 768 && width < 1024);
     };
-
+    getSpreadPlus();
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+
   }, []);
 
   // ============= FETCH DATA =============
@@ -72,6 +75,24 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
       fetchSpreadData();
     }
   }, [visible]);
+
+
+  //Get SpreadPlus
+  async function getSpreadPlus() {
+    const response = await axios.get(`${API_BASE_URL}/admin/config`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: ACCESS_TOKEN,
+      },
+      timeout: 10000,
+    });
+
+    if (response.data?.data) {
+      setSpreadPlus(response.data.data.SpreadPlus);
+    } else {
+      message.error('Không thể tải dữ liệu SpreadPlus');
+    }
+  }
 
   const fetchSpreadData = async (): Promise<void> => {
     setLoading(true);
@@ -393,7 +414,7 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
       title: 'NEWYORK',
       dataIndex: 'NewYork',
       key: 'NewYork',
-      width: isMobile ? 80 : 100,
+      width: isMobile ? 30 : 100,
       sorter: (a: SpreadData, b: SpreadData) => a.NewYork - b.NewYork,
       render: (text: number, record: SpreadData) =>
         isEditing(record) ? (
@@ -407,7 +428,7 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
     {
       title: 'ACTION',
       key: 'action',
-      width: isMobile ? 110 : 150,
+      width: isMobile ? 100 : 150,
       fixed: 'right' as const,
       render: (_: unknown, record: SpreadData) => {
         const editable = isEditing(record);
@@ -431,7 +452,7 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
         ) : (
           <Space
             size={isMobile ? 4 : 8}
-            direction={isMobile ? 'vertical' : 'horizontal'}
+            direction={isMobile ? 'horizontal' : 'horizontal'}
           >
             <Button
               type="primary"
@@ -528,7 +549,7 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
         size={isMobile ? 6 : 16}
       >
         <Space
-          direction={isMobile ? 'vertical' : 'horizontal'}
+          direction={isMobile ? 'horizontal' : 'horizontal'}
           style={{ width: isMobile ? '100%' : 'auto' }}
           size={isMobile ? 6 : 8}
         >
@@ -537,8 +558,8 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
             placeholder="Search..."
             onSearch={handleSearch}
             onSelect={handleSelect}
-            width={isMobile ? '100%' : 220}
-            height={isMobile ? 34 : 40}
+            width={isMobile ? 150 : 220}
+            height={isMobile ? 30 : 30}
           />
           <Space size={isMobile ? 6 : 8} wrap>
             <Button
@@ -546,17 +567,44 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
               danger
               onClick={handleReload}
               loading={loading}
-              size={isMobile ? 'small' : 'middle'}
+              size={isMobile ? 'middle' : 'middle'}
             >
-              {isMobile ? 'Tải' : 'Tải Lại'}
+              {isMobile ? 'Reload' : 'Reload'}
             </Button>
           </Space>
         </Space>
-        {!isMobile && (
           <span style={{ marginLeft: 8, fontWeight: 500, fontSize: 14 }}>
-            Spread Plus: 1.2
+            Spread Plus:&nbsp;
+            <Space>
+              <Input value={spreadPlus} style={{ width: 50, textAlign: 'center' }}  onChange={(e:any) => setSpreadPlus(e.target.value)} />
+              <Button
+                type="primary"
+               danger
+               onClick={async () => {
+                 try {
+                   const response = await axios.put(`${API_BASE_URL}/admin/config`, {
+                     SpreadPlus: spreadPlus,
+                   }, {
+                     headers: {
+                       'Content-Type': 'application/json',
+                       Authorization: ACCESS_TOKEN,
+                     },
+                   });
+                   if (response.data?.success) {
+                     messageApi.success('Cập nhật Spread Plus thành công');
+                   } else {
+                     messageApi.error('Cập nhật Spread Plus thất bại');
+                   }
+                 } catch (error) {
+                   messageApi.error('Đã xảy ra lỗi');
+                 }
+               }}
+              >
+                Update
+              </Button>
+            </Space>
           </span>
-        )}
+        
       </Space>
 
       {/* ADD FORM */}

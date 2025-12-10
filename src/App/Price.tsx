@@ -2974,6 +2974,7 @@ useEffect(() => {
         style={{ top: 20 }}
         open={modalDisconnect}
         okText="Re Load"
+
         onOk={() => {
           setModalDisconnect(false);
           navigate(`http://${IP_Server}:3000/price`);
@@ -2983,8 +2984,7 @@ useEffect(() => {
         <p>Disconnected server at {new Date().toLocaleTimeString()} </p>
       </Modal>
 
-      {AccountModal({ open: modalConfig }, () => setModalConfig(false))}
-
+      <AccountModal open={modalConfig} onCancel={() => setModalConfig(false)} />
 
         <SpreadManagementModal
         visible={modalSpreadConfig}
@@ -3003,6 +3003,7 @@ useEffect(() => {
   onCancel={() => {
     handleCancelModalInfo();
   }}
+  className="light-scroll"
   title={
     isMobile
       ? `Thông Tin Sàn (${dataBrokerInfo.length} Sàn Đã Kết Nối - ${analysis?.symbols.length} Sản Phẩm)`
@@ -3143,8 +3144,9 @@ useEffect(() => {
     </Space>
   </div>
 
-  <div style={{ overflowX: "auto" }}>
+  <div style={{ overflowX: "auto" }} className="light-scroll">
     <Table
+    
       columns={columns}
       dataSource={Array.isArray(dataBrokerInfo) ? dataBrokerInfo : []}
       scroll={{ x: isMobile ? 600 : "max-content" }}
@@ -4223,6 +4225,23 @@ useEffect(() => {
             padding: 8px 4px;
           }
         }
+
+         /* Scrollbar light theme */
+    .light-scroll::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .light-scroll::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 6px;
+    }
+    .light-scroll::-webkit-scrollbar-thumb {
+      background: #c8c8c8;
+      border-radius: 6px;
+    }
+    .light-scroll::-webkit-scrollbar-thumb:hover {
+      background: #b5b5b5;
+    }
       `}</style>
     </div>
   );
