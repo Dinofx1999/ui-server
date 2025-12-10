@@ -12,6 +12,7 @@ import {
   Card,
   Space,
   Typography,
+  InputNumber,
 } from "antd";
 import {
   ClockCircleOutlined,
@@ -20,6 +21,7 @@ import {
   UserOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  HourglassOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import dayjs, { Dayjs } from "dayjs";
@@ -38,6 +40,8 @@ const AccountModal = ({ open, onCancel }: any) => {
   const [endTime, setEndTime] = useState<Dayjs | null>(null);
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
+  const [delayBrokerStop, setDelayBrokerStop] = useState<number>(0);
+  const [loadingDelay, setLoadingDelay] = useState(false);
 
   const API_BASE_URL = "http://116.105.227.149:5000/v1/api";
   const ACCESS_TOKEN = localStorage.getItem("accessToken") || "";
@@ -59,35 +63,12 @@ const AccountModal = ({ open, onCancel }: any) => {
         const end = response.data.data.TimeStopReset?.end ?? null;
         setStartTime(start ? dayjs(start, timeFormat) : null);
         setEndTime(end ? dayjs(end, timeFormat) : null);
+        setDelayBrokerStop(response.data.data.Delay_Stop ?? 0);
       } else {
         messageApi.error("Không thể tải dữ liệu SpreadPlus");
       }
     } catch (error) {
       messageApi.error("Lỗi khi tải cấu hình");
-    }
-  }
-
-
-  async function updateConfigAdmin(payload: any) {
-    try {
-      const response = await axios.put(
-        `${API_BASE_URL}/admin/config`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: ACCESS_TOKEN,
-          },
-        }
-      );
-
-      if (response.data?.success) {
-        messageApi.success("Cập nhật cấu hình thành công!");
-      } else {
-        messageApi.error("Cập nhật cấu hình thất bại");
-      }
-    } catch (error) {
-      messageApi.error("Lỗi khi kết nối đến server");
     }
   }
 
@@ -252,6 +233,40 @@ const AccountModal = ({ open, onCancel }: any) => {
     }
   };
 
+  async function updateConfigAdmin(payload: any) {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/admin/config`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: ACCESS_TOKEN,
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        messageApi.success("Cập nhật cấu hình thành công!");
+      } else {
+        messageApi.error("Cập nhật cấu hình thất bại");
+      }
+    } catch (error) {
+      messageApi.error("Lỗi khi kết nối đến server");
+    }
+  }
+
+  const handleUpdateDelay = async () => {
+    setLoadingDelay(true);
+    try {
+      await updateConfigAdmin({ Delay_Stop: delayBrokerStop });
+    } catch (error) {
+      messageApi.error("Lỗi khi cập nhật Delay Stop");
+    } finally {
+      setLoadingDelay(false);
+    }
+  };
+
   return (
     <Modal
       open={open}
@@ -338,10 +353,7 @@ const AccountModal = ({ open, onCancel }: any) => {
           </Space>
           <Switch
             checked={autoTrade}
-            onChange={(check) => {
-                setAutoTrade(check);
-                updateConfigAdmin({ AutoTrade: check });
-            }}
+            onChange={setAutoTrade}
             style={{
               background: autoTrade ? "#52c41a" : undefined,
             }}
@@ -374,14 +386,60 @@ const AccountModal = ({ open, onCancel }: any) => {
           </Space>
           <Switch
             checked={sendTelegram}
-            onChange={(check) => {
-                setSendTelegram(check);
-                updateConfigAdmin({ sendTelegram: check });
-            }}
+            onChange={setSendTelegram}
             style={{
               background: sendTelegram ? "#1890ff" : undefined,
             }}
           />
+        </div>
+
+        {/* Delay Broker Stop */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "16px",
+            background: "#fafafa",
+            borderRadius: "8px",
+            marginTop: "12px",
+            border: "1px solid #f0f0f0",
+          }}
+        >
+          <Space>
+            <HourglassOutlined style={{ fontSize: "18px", color: "#fa8c16" }} />
+            <div>
+              <Text strong style={{ fontSize: "15px" }}>
+                Delay Broker Stop
+              </Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: "12px" }}>
+                Thời gian trì hoãn dừng broker (Giây)
+              </Text>
+            </div>
+          </Space>
+          <Space>
+            <InputNumber
+              value={delayBrokerStop}
+              onChange={(value) => setDelayBrokerStop(value || 0)}
+              min={0}
+              max={10000}
+              step={100}
+              style={{ width: "80px" }}
+              placeholder="Nhập delay (Giây)"
+            />
+            <Button
+              type="primary"
+              loading={loadingDelay}
+              onClick={handleUpdateDelay}
+              style={{
+                background: "#fa8c16",
+                borderColor: "#fa8c16",
+              }}
+            >
+              Cập Nhật
+            </Button>
+          </Space>
         </div>
 
         <Divider style={{ margin: "20px 0" }} />
