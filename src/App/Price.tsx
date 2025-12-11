@@ -204,6 +204,8 @@ const [alert_, setAlert_] = useState(false);
   const [symbol, setSymbol] = useState<any[]>([]);
   const [timeAnalysis, setTimeAnalysis] = useState("");
 
+  //Pagination
+  const [pageSize_BrokerInfo, setPageSize_BrokerInfo] = useState(10);
 
   useEffect(() => {
   audioRef.current = new Audio("/sound/alert.wav");
@@ -3258,6 +3260,7 @@ useEffect(() => {
       >
         <div style={{ overflowX: "auto" }}>
           <Table
+            rowKey={(record) => `${record.symbol}`}
             columns={columns_broker_info}
             dataSource={
               Array.isArray(brokerInfo?.data?.OHLC_Symbols)
@@ -3265,7 +3268,14 @@ useEffect(() => {
                 : []
             }
             scroll={{ x: isMobile ? 500 : "max-content" }}
-            pagination={{ pageSize: isMobile ? 5 : 10, simple: isMobile }}
+            pagination={{
+              onChange: (page, newPageSize) => {
+                setPageSize_BrokerInfo(newPageSize);
+            },
+              pageSize: pageSize_BrokerInfo,
+              simple: isMobile,
+              hideOnSinglePage: false, // ← Thêm dòng này!
+            }}
             size={isMobile ? "small" : "middle"}
           />
         </div>
@@ -3500,9 +3510,10 @@ useEffect(() => {
               placeholder="Search..."
               onSearch={handleSearch}
               onSelect={handleSelect}
-              theme={t}
+              // theme={t}
               height={isMobile ? 36 : 40}
             />
+
           </div>
 
           <div

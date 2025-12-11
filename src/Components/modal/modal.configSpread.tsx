@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Table, Input, Button, Space, Form, message, Spin } from 'antd';
-import { X } from 'lucide-react';
+import { Modal, Table, Input, Button, Space, Form, message, Spin, InputNumber } from 'antd';
+import { X, Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
 import axios, { AxiosError } from 'axios';
 import type { ColumnsType } from 'antd/es/table';
 import AutocompleteSearch from '../Autocomplete';
@@ -42,15 +42,14 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
   const [spreadData, setSpreadData] = useState<SpreadData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
-  const [editingKey, setEditingKey] = useState<string>(''); // dùng Symbol làm key
+  const [editingKey, setEditingKey] = useState<string>('');
 
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [isTablet, setIsTablet] = useState<boolean>(false);
 
   const [messageApi, contextHolder] = message.useMessage();
   const [spreadPlus, setSpreadPlus] = useState<number>(0);
-  
-
+  const [pageSize, setPageSize] = useState<number>(10);
 
   const API_BASE_URL = 'http://116.105.227.149:5000/v1/api';
   const ACCESS_TOKEN = localStorage.getItem('accessToken') || '';
@@ -66,7 +65,6 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-
   }, []);
 
   // ============= FETCH DATA =============
@@ -75,7 +73,6 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
       fetchSpreadData();
     }
   }, [visible]);
-
 
   //Get SpreadPlus
   async function getSpreadPlus() {
@@ -232,7 +229,7 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
 
       if (response.data) {
         messageApi.success(`Đã cập nhật ${values.Symbol} thành công!`);
-        setEditingKey(values.Symbol);
+        setEditingKey('');
         await fetchSpreadData();
       } else {
         messageApi.error(response.data?.message || 'Cập nhật thất bại');
@@ -257,10 +254,10 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
   const handleDelete = async (record: SpreadData): Promise<void> => {
     console.log('Deleting record:', record);
     try {
-        const payload = {
+      const payload = {
         _id: record._id,
       };
-          const response = await axios.post(
+      const response = await axios.post(
         `${API_BASE_URL}/symbol/delete`,
         payload,
         {
@@ -272,20 +269,20 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
         },
       );
 
-          if (response.data) {
-            messageApi.success(`Đã xóa ${record.Symbol} thành công!`);
-            await fetchSpreadData();
-          } else {
-            messageApi.error(response.data?.message || 'Xóa thất bại');
-          }
-        } catch (error) {
-          console.error('Error deleting spread:', error);
-          const axiosError = error as AxiosError<ApiResponse<never>>;
-          messageApi.error(
-            axiosError.response?.data?.message ||
-              'Lỗi khi xóa spread. Vui lòng thử lại!',
-          );
-        }
+      if (response.data) {
+        messageApi.success(`Đã xóa ${record.Symbol} thành công!`);
+        await fetchSpreadData();
+      } else {
+        messageApi.error(response.data?.message || 'Xóa thất bại');
+      }
+    } catch (error) {
+      console.error('Error deleting spread:', error);
+      const axiosError = error as AxiosError<ApiResponse<never>>;
+      messageApi.error(
+        axiosError.response?.data?.message ||
+          'Lỗi khi xóa spread. Vui lòng thử lại!',
+      );
+    }
   };
 
   const isEditing = (record: SpreadData): boolean =>
@@ -296,25 +293,35 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
     {
       title: '#',
       key: 'index',
-      width: isMobile ? 40 : 50,
-      fixed: isMobile ? 'left' : undefined,
-      render: (_: unknown, __: SpreadData, index: number) => index + 1,
+      width: isMobile ? 40 : 40,    
+      fixed: 'left' as const,
+      align: 'center' as const,
+      render: (_: unknown, __: SpreadData, index: number) => (
+        <span style={{
+          fontSize: isMobile ? 12 : 13,
+          fontWeight: 600,
+          color: '#8c8c8c',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
+        }}>
+          {index + 1}
+        </span>
+      ),
     },
     {
-      title: 'SYMBOL',
+      title: isMobile ? 'SYMBOL' : 'SYMBOL',
       dataIndex: 'Symbol',
       key: 'Symbol',
-      width: isMobile ? 90 : 120,
-      fixed: isMobile ? 'left' : undefined,
+      width: isMobile ? 100 : 140,
+      fixed: 'left' as const,
       sorter: (a, b) => a.Symbol.localeCompare(b.Symbol),
       render: (text: string) => (
-        <span
-          style={{
-            color: '#1890ff',
-            fontWeight: 600,
-            fontSize: isMobile ? 12 : 14,
-          }}
-        >
+        <span style={{
+          color: '#1a1a1a',
+          fontWeight: 600,
+          fontSize: isMobile ? 12 : 15,
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          letterSpacing: '0.01em'
+        }}>
           {text}
         </span>
       ),
@@ -323,21 +330,25 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
       title: 'STD',
       dataIndex: 'Spread_STD',
       key: 'Spread_STD',
-      width: isMobile ? 70 : 100,
+      width: isMobile ? 100 : 100,
+      align: 'center' as const,
       sorter: (a, b) => a.Spread_STD - b.Spread_STD,
       render: (text: number, record: SpreadData) =>
         isEditing(record) ? (
           <Form.Item name="Spread_STD" style={{ margin: 0 }}>
-            <Input type="number" size={isMobile ? 'small' : 'middle'} />
+            <InputNumber 
+              size={isMobile ? 'small' : 'middle'} 
+              style={{ width: '100%' }}
+              controls={false}
+            />
           </Form.Item>
         ) : (
-          <span
-            style={{
-              color: '#ff4d4f',
-              fontWeight: 500,
-              fontSize: isMobile ? 12 : 14,
-            }}
-          >
+          <span style={{
+            color: '#ff4d4f',
+            fontWeight: 600,
+            fontSize: isMobile ? 12 : 14,
+            fontFamily: 'SF Mono, Monaco, monospace'
+          }}>
             {text}
           </span>
         ),
@@ -346,133 +357,202 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
       title: 'ECN',
       dataIndex: 'Spread_ECN',
       key: 'Spread_ECN',
-      width: isMobile ? 70 : 100,
+      width: isMobile ? 100 : 100,
+      align: 'center' as const,
       sorter: (a, b) => a.Spread_ECN - b.Spread_ECN,
       render: (text: number, record: SpreadData) =>
         isEditing(record) ? (
           <Form.Item name="Spread_ECN" style={{ margin: 0 }}>
-            <Input type="number" size={isMobile ? 'small' : 'middle'} />
+            <InputNumber 
+              size={isMobile ? 'small' : 'middle'} 
+              style={{ width: '100%' }}
+              controls={false}
+            />
           </Form.Item>
         ) : (
-          <span
-            style={{
-              color: '#ff4d4f',
-              fontWeight: 500,
-              fontSize: isMobile ? 12 : 14,
-            }}
-          >
+          <span style={{
+            color: '#ff4d4f',
+            fontWeight: 600,
+            fontSize: isMobile ? 12 : 14,
+            fontFamily: 'SF Mono, Monaco, monospace'
+          }}>
             {text}
           </span>
         ),
     },
-    {
-      title: 'SYDNEY',
-      dataIndex: 'Sydney',
-      key: 'Sydney',
-      width: isMobile ? 70 : 100,
-      sorter: (a: SpreadData, b: SpreadData) => a.Sydney - b.Sydney,
-      render: (text: number, record: SpreadData) =>
-        isEditing(record) ? (
-          <Form.Item name="Sydney" style={{ margin: 0 }}>
-            <Input type="number" size={isMobile ? 'small' : 'middle'} />
-          </Form.Item>
-        ) : (
-          <span style={{ color: '#1890ff', fontWeight: 500 }}>{text}</span>
-        ),
-    },
-    {
-      title: 'TOKYO',
-      dataIndex: 'Tokyo',
-      key: 'Tokyo',
-      width: isMobile ? 70 : 100,
-      sorter: (a: SpreadData, b: SpreadData) => a.Tokyo - b.Tokyo,
-      render: (text: number, record: SpreadData) =>
-        isEditing(record) ? (
-          <Form.Item name="Tokyo" style={{ margin: 0 }}>
-            <Input type="number" size={isMobile ? 'small' : 'middle'} />
-          </Form.Item>
-        ) : (
-          <span style={{ color: '#1890ff', fontWeight: 500 }}>{text}</span>
-        ),
-    },
-    {
-      title: 'LONDON',
-      dataIndex: 'London',
-      key: 'London',
-      width: isMobile ? 80 : 100,
-      sorter: (a: SpreadData, b: SpreadData) => a.London - b.London,
-      render: (text: number, record: SpreadData) =>
-        isEditing(record) ? (
-          <Form.Item name="London" style={{ margin: 0 }}>
-            <Input type="number" size={isMobile ? 'small' : 'middle'} />
-          </Form.Item>
-        ) : (
-          <span style={{ color: '#52c41a', fontWeight: 500 }}>{text}</span>
-        ),
-    },
-    {
-      title: 'NEWYORK',
-      dataIndex: 'NewYork',
-      key: 'NewYork',
-      width: isMobile ? 30 : 100,
-      sorter: (a: SpreadData, b: SpreadData) => a.NewYork - b.NewYork,
-      render: (text: number, record: SpreadData) =>
-        isEditing(record) ? (
-          <Form.Item name="NewYork" style={{ margin: 0 }}>
-            <Input type="number" size={isMobile ? 'small' : 'middle'} />
-          </Form.Item>
-        ) : (
-          <span style={{ color: '#52c41a', fontWeight: 500 }}>{text}</span>
-        ),
-    },
+      {
+        title: 'SYDNEY',
+        dataIndex: 'Sydney',
+        key: 'Sydney',
+        width: 110,
+        align: 'center' as const,
+        sorter: (a: SpreadData, b: SpreadData) => a.Sydney - b.Sydney,
+        render: (text: number, record: SpreadData) =>
+          isEditing(record) ? (
+            <Form.Item name="Sydney" style={{ margin: 0 }}>
+              <InputNumber 
+                size="middle" 
+                style={{ width: '100%' }}
+                controls={false}
+              />
+            </Form.Item>
+          ) : (
+            <span style={{ 
+              color: '#595959',
+              fontWeight: 500,
+              fontSize: 14,
+              fontFamily: 'SF Mono, Monaco, monospace'
+            }}>
+              {text}
+            </span>
+          ),
+      },
+      {
+        title: 'TOKYO',
+        dataIndex: 'Tokyo',
+        key: 'Tokyo',
+        width: 110,
+        align: 'center' as const,
+        sorter: (a: SpreadData, b: SpreadData) => a.Tokyo - b.Tokyo,
+        render: (text: number, record: SpreadData) =>
+          isEditing(record) ? (
+            <Form.Item name="Tokyo" style={{ margin: 0 }}>
+              <InputNumber 
+                size="middle" 
+                style={{ width: '100%' }}
+                controls={false}
+              />
+            </Form.Item>
+          ) : (
+            <span style={{ 
+              color: '#595959',
+              fontWeight: 500,
+              fontSize: 14,
+              fontFamily: 'SF Mono, Monaco, monospace'
+            }}>
+              {text}
+            </span>
+          ),
+      },
+      {
+        title: 'LONDON',
+        dataIndex: 'London',
+        key: 'London',
+        width: 110,
+        align: 'center' as const,
+        sorter: (a: SpreadData, b: SpreadData) => a.London - b.London,
+        render: (text: number, record: SpreadData) =>
+          isEditing(record) ? (
+            <Form.Item name="London" style={{ margin: 0 }}>
+              <InputNumber 
+                size="middle" 
+                style={{ width: '100%' }}
+                controls={false}
+              />
+            </Form.Item>
+          ) : (
+            <span style={{ 
+              color: '#595959',
+              fontWeight: 500,
+              fontSize: 14,
+              fontFamily: 'SF Mono, Monaco, monospace'
+            }}>
+              {text}
+            </span>
+          ),
+      },
+      {
+        title: 'NEWYORK',
+        dataIndex: 'NewYork',
+        key: 'NewYork',
+        width: 120,
+        align: 'center' as const,
+        sorter: (a: SpreadData, b: SpreadData) => a.NewYork - b.NewYork,
+        render: (text: number, record: SpreadData) =>
+          isEditing(record) ? (
+            <Form.Item name="NewYork" style={{ margin: 0 }}>
+              <InputNumber 
+                size="middle" 
+                style={{ width: '100%' }}
+                controls={false}
+              />
+            </Form.Item>
+          ) : (
+            <span style={{ 
+              color: '#595959',
+              fontWeight: 500,
+              fontSize: 14,
+              fontFamily: 'SF Mono, Monaco, monospace'
+            }}>
+              {text}
+            </span>
+          ),
+      },
     {
       title: 'ACTION',
       key: 'action',
-      width: isMobile ? 100 : 150,
-      fixed: 'right' as const,
+      width: isMobile ? 80 : 180,
+    //   fixed: 'right' as const,
+      align: 'center' as const,
       render: (_: unknown, record: SpreadData) => {
         const editable = isEditing(record);
         return editable ? (
-          <Space size="small">
+          <Space size={isMobile ? 4 : 8} direction="horizontal">
             <Button
               type="primary"
               size={isMobile ? 'small' : 'middle'}
               loading={submitting}
               onClick={() => handleSaveEdit(record)}
+              style={{
+                background: '#1a1a1a',
+                borderColor: '#1a1a1a',
+                fontWeight: 500,
+                borderRadius: 6,
+                minWidth: isMobile ? 32 : 70
+              }}
             >
-              Lưu
+              {isMobile ? '✓' : 'Save'}
             </Button>
             <Button
               size={isMobile ? 'small' : 'middle'}
               onClick={handleCancelEdit}
+              style={{
+                fontWeight: 500,
+                borderRadius: 6,
+                minWidth: isMobile ? 32 : 70
+              }}
             >
-              Hủy
+              {isMobile ? '✕' : 'Cancel'}
             </Button>
           </Space>
         ) : (
-          <Space
-            size={isMobile ? 4 : 8}
-            direction={isMobile ? 'horizontal' : 'horizontal'}
-          >
+          <Space size={isMobile ? 4 : 8} direction="horizontal">
             <Button
-              type="primary"
+              type="text"
               size={isMobile ? 'small' : 'middle'}
               disabled={editingKey !== ''}
               onClick={() => handleEdit(record)}
-              style={{ width: isMobile ? '100%' : 'auto' }}
-            >
-              Sửa
-            </Button>
+              icon={<Edit2 size={isMobile ? 14 : 16} />}
+              style={{
+                color: editingKey !== '' ? '#d9d9d9' : '#1a1a1a',
+                fontWeight: 500,
+                padding: isMobile ? '4px 8px' : '4px 12px',
+                minWidth: isMobile ? 32 : 'auto'
+              }}
+            />
             <Button
-              type="primary"
-              danger
+              type="text"
               size={isMobile ? 'small' : 'middle'}
               disabled={editingKey !== ''}
               onClick={() => handleDelete(record)}
-              style={{ width: isMobile ? '100%' : 'auto' }}
-            >
-              Xóa
-            </Button>
+              icon={<Trash2 size={isMobile ? 14 : 16} />}
+              style={{
+                color: editingKey !== '' ? '#d9d9d9' : '#ff4d4f',
+                fontWeight: 500,
+                padding: isMobile ? '4px 8px' : '4px 12px',
+                minWidth: isMobile ? 32 : 'auto'
+              }}
+            />
           </Space>
         );
       },
@@ -509,127 +589,209 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
   return (
     <Modal
       title={
-        <span style={{ fontSize: isMobile ? 15 : 18, fontWeight: 600 }}>
-          Thông Số SPREAD Sản Phẩm
-        </span>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: isMobile ? 12 : 16,
+          padding: isMobile ? '4px 0' : '8px 0'
+        }}>
+          <div>
+            <div style={{ 
+              fontSize: isMobile ? 17 : 20, 
+              fontWeight: 600,
+              color: '#1a1a1a',
+              lineHeight: 1.3,
+              letterSpacing: '-0.02em',
+              fontFamily: 'system-ui, -apple-system, sans-serif'
+            }}>
+              Spread Management
+            </div>
+            <div style={{ 
+              fontSize: isMobile ? 12 : 13, 
+              color: '#8c8c8c',
+              fontWeight: 400,
+              marginTop: 2,
+              fontFamily: 'system-ui, -apple-system, sans-serif'
+            }}>
+              Configure spread parameters for products
+            </div>
+          </div>
+        </div>
       }
       open={visible}
       onCancel={handleClose}
-      width={isMobile ? '100%' : isTablet ? 900 : 1200}
+      width={isMobile ? '100%' : isTablet ? 900 : 1400}
       footer={null}
-      closeIcon={<X size={isMobile ? 18 : 20} />}
+      closeIcon={
+        <div style={{
+          width: 32,
+          height: 32,
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#f5f5f5',
+          transition: 'all 0.2s ease',
+          cursor: 'pointer'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = '#1a1a1a';
+          e.currentTarget.querySelector('svg')?.setAttribute('stroke', 'white');
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = '#f5f5f5';
+          e.currentTarget.querySelector('svg')?.setAttribute('stroke', '#000000');
+        }}
+        >
+          <X size={18} />
+        </div>
+      }
       styles={{
         body: {
-          maxHeight: isMobile ? 'calc(100vh - 110px)' : '70vh',
+          height: isMobile ? '85vh' : '90vh',
+          padding: isMobile ? 16 : 24,
+          background: '#ffffff',
           overflowY: 'auto',
-          padding: isMobile ? 8 : 24,
         },
       }}
-      style={
-        isMobile
-          ? {
-              top: 0,
-              margin: 0,
-              padding: 0,
-              maxWidth: '100%',
-            }
-          : {}
-      }
+      style={isMobile ? { top: 10, margin: '0 8px', maxWidth: 'calc(100% - 16px)' } : { top: 20 }}
     >
-         {contextHolder}
-      {/* HEADER: SEARCH + BUTTONS */}
-      <Space
-        direction={isMobile ? 'vertical' : 'horizontal'}
-        style={{
-          marginBottom: isMobile ? 8 : 16,
-          width: '100%',
-          justifyContent: 'space-between',
-        }}
-        size={isMobile ? 6 : 16}
-      >
+      {contextHolder}
+
+      {/* HEADER: SEARCH + BUTTONS + SPREAD PLUS */}
+      <div style={{
+        marginBottom: isMobile ? 16 : 20,
+        padding: isMobile ? 14 : 18,
+        background: '#fafafa',
+        borderRadius: '8px',
+        border: '1px solid #e8e8e8'
+      }}>
         <Space
-          direction={isMobile ? 'horizontal' : 'horizontal'}
-          style={{ width: isMobile ? '100%' : 'auto' }}
-          size={isMobile ? 6 : 8}
+          direction={isMobile ? 'vertical' : 'horizontal'}
+          style={{
+            width: '100%',
+            justifyContent: 'space-between',
+          }}
+          size={isMobile ? 12 : 16}
         >
-          <AutocompleteSearch
-            suggestions={symbols || []}
-            placeholder="Search..."
-            onSearch={handleSearch}
-            onSelect={handleSelect}
-            width={isMobile ? 150 : 220}
-            height={isMobile ? 30 : 30}
-          />
-          <Space size={isMobile ? 6 : 8} wrap>
+          <Space
+            direction={isMobile ? 'horizontal' : 'horizontal'}
+            style={{ width: isMobile ? '100%' : 'auto' }}
+            size={isMobile ? 8 : 12}
+            wrap
+          >
+            <AutocompleteSearch
+              suggestions={symbols || []}
+              placeholder="Search symbol..."
+              onSearch={handleSearch}
+              onSelect={handleSelect}
+              width={isMobile ? 140 : 220}
+              height={isMobile ? 34 : 36}
+            />
             <Button
-              type="primary"
-              danger
               onClick={handleReload}
               loading={loading}
-              size={isMobile ? 'middle' : 'middle'}
+              size={isMobile ? 'middle' : 'large'}
+              icon={<RefreshCw size={16} />}
+              style={{
+                fontWeight: 500,
+                height: isMobile ? 34 : 36,
+                borderRadius: 6,
+                background: '#1a1a1a',
+                color: 'white',
+                borderColor: '#1a1a1a'
+              }}
             >
-              {isMobile ? 'Reload' : 'Reload'}
+              {!isMobile && 'Reload'}
             </Button>
           </Space>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: isMobile ? '8px 12px' : '8px 14px',
+            background: 'white',
+            borderRadius: '6px',
+            border: '1px solid #e8e8e8'
+          }}>
+            <span style={{ 
+              fontWeight: 500, 
+              fontSize: isMobile ? 12 : 14,
+              color: '#595959',
+              fontFamily: 'system-ui, -apple-system, sans-serif'
+            }}>
+              Spread Plus:
+            </span>
+            <InputNumber
+              value={spreadPlus}
+              onChange={(value) => setSpreadPlus(value || 0)}
+              style={{ 
+                width: isMobile ? 65 : 80,
+                fontWeight: 500
+              }}
+              size={isMobile ? 'small' : 'middle'}
+              controls={false}
+            />
+            <Button
+              size={isMobile ? 'small' : 'middle'}
+              onClick={async () => {
+                try {
+                  const response = await axios.put(
+                    `${API_BASE_URL}/admin/config`,
+                    { SpreadPlus: spreadPlus },
+                    {
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: ACCESS_TOKEN,
+                      },
+                    }
+                  );
+                  if (response.data?.success) {
+                    messageApi.success('Updated Spread Plus successfully');
+                  } else {
+                    messageApi.error('Failed to update Spread Plus');
+                  }
+                } catch (error) {
+                  messageApi.error('An error occurred');
+                }
+              }}
+              style={{
+                background: '#1a1a1a',
+                borderColor: '#1a1a1a',
+                color: 'white',
+                fontWeight: 500,
+                borderRadius: 6
+              }}
+            >
+              Update
+            </Button>
+          </div>
         </Space>
-          <span style={{ marginLeft: 8, fontWeight: 500, fontSize: 14 }}>
-            Spread Plus:&nbsp;
-            <Space>
-              <Input value={spreadPlus} style={{ width: 50, textAlign: 'center' }}  onChange={(e:any) => setSpreadPlus(e.target.value)} />
-              <Button
-                type="primary"
-               danger
-               onClick={async () => {
-                 try {
-                   const response = await axios.put(`${API_BASE_URL}/admin/config`, {
-                     SpreadPlus: spreadPlus,
-                   }, {
-                     headers: {
-                       'Content-Type': 'application/json',
-                       Authorization: ACCESS_TOKEN,
-                     },
-                   });
-                   if (response.data?.success) {
-                     messageApi.success('Cập nhật Spread Plus thành công');
-                   } else {
-                     messageApi.error('Cập nhật Spread Plus thất bại');
-                   }
-                 } catch (error) {
-                   messageApi.error('Đã xảy ra lỗi');
-                 }
-               }}
-              >
-                Update
-              </Button>
-            </Space>
-          </span>
-        
-      </Space>
+      </div>
 
       {/* ADD FORM */}
       {showAddForm && searchText && (
         <div
           style={{
-            marginBottom: isMobile ? 10 : 20,
-            border: '2px solid #1890ff',
-            borderRadius: 8,
-            padding: isMobile ? 10 : 16,
-            background: 'linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%)',
-            animation: 'slideDown 0.3s ease-out',
-            boxShadow: '0 4px 12px rgba(24, 144, 255, 0.15)',
+            marginBottom: isMobile ? 16 : 20,
+            border: '1px solid #e8e8e8',
+            borderRadius: '8px',
+            padding: isMobile ? 16 : 20,
+            background: '#fafafa',
           }}
         >
           <div
             style={{
-              marginBottom: 12,
-              padding: isMobile ? '8px 10px' : '12px 16px',
+              marginBottom: 20,
+              padding: isMobile ? '12px 14px' : '14px 18px',
               background: '#fff',
-              borderRadius: 6,
-              border: '1px solid #91d5ff',
+              borderRadius: '8px',
+              border: '1px solid #e8e8e8',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              gap: 8,
+              gap: 12,
             }}
           >
             <div>
@@ -637,16 +799,22 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
                 style={{
                   fontSize: 11,
                   color: '#8c8c8c',
-                  marginBottom: 4,
+                  marginBottom: 6,
+                  fontWeight: 500,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}
               >
-                THÊM MỚI SYMBOL
+                Add New Symbol
               </div>
               <div
                 style={{
-                  fontSize: isMobile ? 16 : 20,
-                  fontWeight: 700,
-                  color: '#1890ff',
+                  fontSize: isMobile ? 20 : 24,
+                  fontWeight: 600,
+                  color: '#1a1a1a',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  letterSpacing: '-0.02em'
                 }}
               >
                 {searchText.toUpperCase()}
@@ -654,12 +822,15 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
             </div>
             <Button
               type="text"
-              icon={<X size={18} />}
+              icon={<X size={20} />}
               onClick={() => {
                 setShowAddForm(false);
                 setSearchText('');
               }}
-              style={{ color: '#8c8c8c' }}
+              style={{ 
+                color: '#8c8c8c',
+                transition: 'all 0.2s'
+              }}
             />
           </div>
 
@@ -667,145 +838,165 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                gap: isMobile ? 10 : 16,
+                gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(2, 1fr)',
+                gap: isMobile ? 14 : 16,
               }}
             >
               <Form.Item
                 label={
-                  <span
-                    style={{
-                      fontWeight: 500,
-                      fontSize: isMobile ? 12 : 14,
-                    }}
-                  >
+                  <span style={{ 
+                    fontWeight: 500, 
+                    fontSize: isMobile ? 12 : 13,
+                    color: '#595959',
+                    fontFamily: 'system-ui, -apple-system, sans-serif'
+                  }}>
                     SPREAD STD
                   </span>
                 }
                 name="spreadStd"
                 initialValue={1}
-                rules={[
-                  { required: true, message: 'Vui lòng nhập spread STD' },
-                ]}
+                rules={[{ required: true, message: 'Enter spread STD' }]}
               >
-                <Input type="number" size={isMobile ? 'small' : 'middle'} />
+                <InputNumber 
+                  style={{ width: '100%' }}
+                  size={isMobile ? 'middle' : 'large'}
+                  controls={false}
+                />
               </Form.Item>
 
               <Form.Item
                 label={
-                  <span
-                    style={{
-                      fontWeight: 500,
-                      fontSize: isMobile ? 12 : 14,
-                    }}
-                  >
+                  <span style={{ 
+                    fontWeight: 500, 
+                    fontSize: isMobile ? 12 : 13,
+                    color: '#595959',
+                    fontFamily: 'system-ui, -apple-system, sans-serif'
+                  }}>
                     SPREAD ECN
                   </span>
                 }
                 name="spreadEcn"
                 initialValue={1}
-                rules={[
-                  { required: true, message: 'Vui lòng nhập spread ECN' },
-                ]}
+                rules={[{ required: true, message: 'Enter spread ECN' }]}
               >
-                <Input type="number" size={isMobile ? 'small' : 'middle'} />
+                <InputNumber 
+                  style={{ width: '100%' }}
+                  size={isMobile ? 'middle' : 'large'}
+                  controls={false}
+                />
               </Form.Item>
             </div>
 
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: isMobile
-                  ? '1fr 1fr'
-                  : isTablet
-                  ? 'repeat(2, 1fr)'
-                  : 'repeat(4, 1fr)',
-                gap: isMobile ? 10 : 16,
+                gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+                gap: isMobile ? 14 : 16,
               }}
             >
               <Form.Item
                 label={
-                  <span
-                    style={{
-                      fontWeight: 500,
-                      fontSize: isMobile ? 12 : 14,
-                    }}
-                  >
+                  <span style={{ 
+                    fontWeight: 500, 
+                    fontSize: isMobile ? 12 : 13,
+                    color: '#595959',
+                    fontFamily: 'system-ui, -apple-system, sans-serif'
+                  }}>
                     SYDNEY
                   </span>
                 }
                 name="sydney"
                 initialValue={1}
               >
-                <Input type="number" size={isMobile ? 'small' : 'middle'} />
+                <InputNumber 
+                  style={{ width: '100%' }}
+                  size={isMobile ? 'middle' : 'large'}
+                  controls={false}
+                />
               </Form.Item>
 
               <Form.Item
                 label={
-                  <span
-                    style={{
-                      fontWeight: 500,
-                      fontSize: isMobile ? 12 : 14,
-                    }}
-                  >
+                  <span style={{ 
+                    fontWeight: 500, 
+                    fontSize: isMobile ? 12 : 13,
+                    color: '#595959',
+                    fontFamily: 'system-ui, -apple-system, sans-serif'
+                  }}>
                     TOKYO
                   </span>
                 }
                 name="tokyo"
                 initialValue={1}
               >
-                <Input type="number" size={isMobile ? 'small' : 'middle'} />
+                <InputNumber 
+                  style={{ width: '100%' }}
+                  size={isMobile ? 'middle' : 'large'}
+                  controls={false}
+                />
               </Form.Item>
 
               <Form.Item
                 label={
-                  <span
-                    style={{
-                      fontWeight: 500,
-                      fontSize: isMobile ? 12 : 14,
-                    }}
-                  >
+                  <span style={{ 
+                    fontWeight: 500, 
+                    fontSize: isMobile ? 12 : 13,
+                    color: '#595959',
+                    fontFamily: 'system-ui, -apple-system, sans-serif'
+                  }}>
                     LONDON
                   </span>
                 }
                 name="london"
                 initialValue={1}
               >
-                <Input type="number" size={isMobile ? 'small' : 'middle'} />
+                <InputNumber 
+                  style={{ width: '100%' }}
+                  size={isMobile ? 'middle' : 'large'}
+                  controls={false}
+                />
               </Form.Item>
 
               <Form.Item
                 label={
-                  <span
-                    style={{
-                      fontWeight: 500,
-                      fontSize: isMobile ? 12 : 14,
-                    }}
-                  >
+                  <span style={{ 
+                    fontWeight: 500, 
+                    fontSize: isMobile ? 12 : 13,
+                    color: '#595959',
+                    fontFamily: 'system-ui, -apple-system, sans-serif'
+                  }}>
                     NEWYORK
                   </span>
                 }
                 name="newyork"
                 initialValue={1}
               >
-                <Input type="number" size={isMobile ? 'small' : 'middle'} />
+                <InputNumber 
+                  style={{ width: '100%' }}
+                  size={isMobile ? 'middle' : 'large'}
+                  controls={false}
+                />
               </Form.Item>
             </div>
 
-            <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Form.Item style={{ marginBottom: 0, textAlign: 'right', marginTop: 12 }}>
               <Button
                 type="primary"
                 onClick={handleAdd}
                 loading={submitting}
-                size={isMobile ? 'small' : 'large'}
+                size={isMobile ? 'middle' : 'large'}
+                icon={<Plus size={16} />}
                 style={{
-                  minWidth: isMobile ? 110 : 150,
-                  height: isMobile ? 34 : 44,
-                  fontWeight: 600,
-                  fontSize: isMobile ? 13 : 15,
+                  minWidth: isMobile ? 120 : 160,
+                  fontWeight: 500,
+                  fontSize: isMobile ? 14 : 15,
+                  height: isMobile ? 38 : 42,
+                  background: '#1a1a1a',
+                  borderColor: '#1a1a1a',
+                  borderRadius: 6
                 }}
               >
-                ✓ Thêm Mới
+                Add Symbol
               </Button>
             </Form.Item>
           </Form>
@@ -813,7 +1004,7 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
       )}
 
       {/* TABLE */}
-      <Spin spinning={loading}>
+      <Spin spinning={loading} tip="Loading data...">
         <Form form={editForm} component={false}>
           <Form.Item name="_id" hidden>
             <Input type="hidden" />
@@ -822,53 +1013,290 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
             <Input type="hidden" />
           </Form.Item>
 
-          <div style={{ width: '100%', overflowX: 'auto' }}>
-            <Table<SpreadData>
-              columns={columns}
-              dataSource={filteredData}
-              pagination={{
-                pageSize: isMobile ? 20 : 50,
-                size: isMobile ? 'small' : 'default',
-                showSizeChanger: !isMobile,
-              }}
-              scroll={{
-                x: 'max-content', // kéo ngang để xem hết cột
-                y: isMobile ? 320 : 400,
-              }}
-              size={isMobile ? 'small' : 'middle'}
-              bordered
-              rowKey={(record) => record._id}
-            />
-          </div>
+          <Table<SpreadData>
+            columns={columns}
+            dataSource={filteredData}
+            pagination={{
+              pageSize: pageSize,
+              onChange: (page, newPageSize) => {
+                setPageSize(newPageSize);
+              },
+              onShowSizeChange: (current, size) => {
+                setPageSize(size);
+              },
+              simple: false,
+              hideOnSinglePage: false,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50'],
+              showTotal: (total, range) => (
+                <div style={{
+                  fontWeight: 500,
+                  color: '#595959',
+                  fontSize: isMobile ? 12 : 13,
+                  textAlign: 'center',
+                  width: '100%',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
+                }}>
+                  {isMobile
+                    ? `${range[0]}-${range[1]} of ${total}`
+                    : (
+                      <>
+                        Showing <span style={{ color: '#1a1a1a', fontWeight: 600 }}>{range[0]}-{range[1]}</span> of <span style={{ color: '#1a1a1a', fontWeight: 600 }}>{total}</span> items
+                      </>
+                    )
+                  }
+                </div>
+              ),
+              size: isMobile ? 'small' : 'default',
+              responsive: true,
+            }}
+            scroll={{
+              x: isMobile ? 500 : 1200,
+            }}
+            size={isMobile ? 'small' : 'middle'}
+            bordered
+            rowKey={(record) => record._id}
+            style={{
+              borderRadius: '8px',
+              overflow: 'hidden',
+            }}
+          />
         </Form>
       </Spin>
 
       <style>{`
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
         @media (max-width: 767px) {
           .ant-table-wrapper {
             font-size: 12px;
           }
           .ant-table-cell {
-            padding: 6px 4px !important;
+            padding: 10px 6px !important;
           }
-          .ant-modal {
-            max-width: 100% !important;
+          .ant-table-thead > tr > th {
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            padding: 12px 6px !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
           }
+          .ant-table-tbody > tr > td {
+            font-size: 12px !important;
+            padding: 10px 6px !important;
+          }
+          .ant-form-item {
+            margin-bottom: 12px !important;
+          }
+          .ant-form-item-label {
+            padding-bottom: 4px !important;
+          }
+          .ant-pagination {
+            margin-top: 12px !important;
+            font-size: 12px !important;
+          }
+          .ant-pagination-item {
+            min-width: 28px !important;
+            height: 28px !important;
+            line-height: 26px !important;
+            margin: 0 2px !important;
+            font-size: 12px !important;
+          }
+          .ant-pagination-item a {
+            font-size: 12px !important;
+          }
+          .ant-pagination-prev, .ant-pagination-next {
+            min-width: 28px !important;
+            height: 28px !important;
+            line-height: 26px !important;
+          }
+          .ant-pagination-options {
+            display: inline-block !important;
+            margin-left: 8px !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+          }
+          .ant-pagination-options-size-changer.ant-select {
+            display: inline-block !important;
+            visibility: visible !important;
+            min-width: 90px !important;
+          }
+          .ant-select {
+            font-size: 12px !important;
+          }
+          .ant-select-selector {
+            height: 28px !important;
+            font-size: 12px !important;
+            padding: 0 8px !important;
+          }
+          .ant-select-selection-item {
+            line-height: 26px !important;
+            font-size: 12px !important;
+          }
+          .ant-select-arrow {
+            font-size: 10px !important;
+          }
+        }
+
+        .ant-table-wrapper {
+          background: white;
+          border-radius: 8px;
+          overflow: hidden;
+          border: 1px solid #e8e8e8;
+        }
+
+        .ant-table-thead > tr > th {
+          background: #fafafa !important;
+          font-weight: 600 !important;
+          border-bottom: 1px solid #e8e8e8 !important;
+          padding: 16px !important;
+          color: #595959 !important;
+          font-size: 13px !important;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .ant-table-tbody > tr {
+          transition: all 0.2s ease;
+        }
+
+        .ant-table-tbody > tr:hover {
+          background: #fafafa !important;
+        }
+
+        .ant-table-cell {
+          border-color: #f0f0f0 !important;
+          padding: 14px 16px !important;
+        }
+
+        .ant-table-tbody > tr > td {
+          font-size: 14px !important;
+        }
+
+        .ant-pagination {
+          margin-top: 20px !important;
+          margin-bottom: 0 !important;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 4px;
+        }
+
+        @media (max-width: 767px) {
+          .ant-pagination {
+            text-align: center !important;
+            gap: 6px 4px;
+          }
+
+          .ant-pagination-total-text {
+            display: block;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 8px;
+            order: 1;
+          }
+
+          .ant-pagination-options {
+            display: inline-block !important;
+            margin: 0 !important;
+            order: 2;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 8px !important;
+          }
+
+          .ant-pagination-item,
+          .ant-pagination-prev,
+          .ant-pagination-next,
+          .ant-pagination-jump-prev,
+          .ant-pagination-jump-next {
+            order: 3;
+          }
+        }
+
+        .ant-pagination-item {
+          border-color: #e8e8e8;
+          border-radius: 6px;
+        }
+
+        .ant-pagination-item-active {
+          background: #1a1a1a !important;
+          border-color: #1a1a1a !important;
+        }
+
+        .ant-pagination-item-active a {
+          color: white !important;
+        }
+
+        .ant-pagination-item:hover {
+          border-color: #1a1a1a !important;
+        }
+
+        .ant-pagination-item:hover a {
+          color: #1a1a1a !important;
+        }
+
+        .ant-pagination-prev:hover button,
+        .ant-pagination-next:hover button {
+          color: #1a1a1a !important;
+          border-color: #1a1a1a !important;
+        }
+
+        .ant-spin-dot-item {
+          background-color: #1a1a1a !important;
+        }
+
+        .ant-modal-body::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .ant-modal-body::-webkit-scrollbar-track {
+          background: #f5f5f5;
+          border-radius: 3px;
+        }
+
+        .ant-modal-body::-webkit-scrollbar-thumb {
+          background: #bfbfbf;
+          border-radius: 3px;
+        }
+
+        .ant-modal-body::-webkit-scrollbar-thumb:hover {
+          background: #8c8c8c;
+        }
+
+        .ant-input-number {
+          border-radius: 6px;
+        }
+
+        .ant-input-number:hover,
+        .ant-input-number:focus {
+          border-color: #1a1a1a;
+        }
+
+        .ant-input-number-focused {
+          border-color: #1a1a1a;
+          box-shadow: 0 0 0 2px rgba(26, 26, 26, 0.1);
+        }
+
+        .ant-btn {
+          border-radius: 6px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+        }
+
+        .ant-btn-primary {
+          background: #1a1a1a;
+          border-color: #1a1a1a;
+        }
+
+        .ant-btn-primary:hover {
+          background: #262626;
+          border-color: #262626;
+        }
+
+        .ant-btn-text:hover {
+          background: #f5f5f5;
         }
       `}</style>
     </Modal>
-    
   );
 };
 

@@ -168,7 +168,7 @@ const AutocompleteSearch: React.FC<AutocompleteSearchProps> = ({
               style={{
                 padding: '8px 12px',
                 cursor: 'pointer',
-                background: highlightedIndex === index ? t.hoverBg : t.dropdownBg, // ✅ Theme color
+                // background: highlightedIndex === index ? t.hoverBg : t.dropdownBg, // ✅ Theme color
                 color: t.text, // ✅ Theme color
                 transition: 'background 0.2s',
               }}
