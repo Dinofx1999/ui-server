@@ -13,6 +13,8 @@ import {
   Space,
   Typography,
   InputNumber,
+  Select,
+  Tooltip,
 } from "antd";
 import {
   ClockCircleOutlined,
@@ -42,6 +44,7 @@ const AccountModal = ({ open, onCancel }: any) => {
   const [loading, setLoading] = useState(false);
   const [delayBrokerStop, setDelayBrokerStop] = useState<number>(0);
   const [loadingDelay, setLoadingDelay] = useState(false);
+  const [typeAnalysis, setTypeAnalysis] = useState("type1");
 
   const API_BASE_URL = "http://116.105.227.149:5000/v1/api";
   const ACCESS_TOKEN = localStorage.getItem("accessToken") || "";
@@ -64,6 +67,7 @@ const AccountModal = ({ open, onCancel }: any) => {
         setStartTime(start ? dayjs(start, timeFormat) : null);
         setEndTime(end ? dayjs(end, timeFormat) : null);
         setDelayBrokerStop(response.data.data.Delay_Stop ?? 0);
+        setTypeAnalysis(response.data.data.TypeAnalysis ?? "type1");
       } else {
         messageApi.error("Không thể tải dữ liệu SpreadPlus");
       }
@@ -233,7 +237,7 @@ const AccountModal = ({ open, onCancel }: any) => {
     }
   };
 
-  async function updateConfigAdmin(payload: any) {
+  async function updateConfigAdmin(payload: any , mess:String) {
     try {
       const response = await axios.put(
         `${API_BASE_URL}/admin/config`,
@@ -247,9 +251,9 @@ const AccountModal = ({ open, onCancel }: any) => {
       );
 
       if (response.data?.success) {
-        messageApi.success("Cập nhật cấu hình thành công!");
+        messageApi.success(`Cập Nhật ${mess} Thành Công!`);
       } else {
-        messageApi.error("Cập nhật cấu hình thất bại");
+        messageApi.error(`Cập Nhật ${mess} Thất Bại!`);
       }
     } catch (error) {
       messageApi.error("Lỗi khi kết nối đến server");
@@ -259,7 +263,7 @@ const AccountModal = ({ open, onCancel }: any) => {
   const handleUpdateDelay = async () => {
     setLoadingDelay(true);
     try {
-      await updateConfigAdmin({ Delay_Stop: delayBrokerStop });
+      await updateConfigAdmin({ Delay_Stop: delayBrokerStop }, "Delay Stop");
     } catch (error) {
       messageApi.error("Lỗi khi cập nhật Delay Stop");
     } finally {
@@ -353,7 +357,10 @@ const AccountModal = ({ open, onCancel }: any) => {
           </Space>
           <Switch
             checked={autoTrade}
-            onChange={setAutoTrade}
+            onChange={(value) => {
+              setAutoTrade(value);
+              updateConfigAdmin({ AutoTrade: value }, "Auto Trade");
+            }}
             style={{
               background: autoTrade ? "#52c41a" : undefined,
             }}
@@ -386,7 +393,10 @@ const AccountModal = ({ open, onCancel }: any) => {
           </Space>
           <Switch
             checked={sendTelegram}
-            onChange={setSendTelegram}
+            onChange={(value) => {
+              setSendTelegram(value);
+              updateConfigAdmin({ Send_Telegram: value }, "Send Telegram");
+            }}
             style={{
               background: sendTelegram ? "#1890ff" : undefined,
             }}
@@ -441,6 +451,57 @@ const AccountModal = ({ open, onCancel }: any) => {
             </Button>
           </Space>
         </div>
+        {/* Type Phân Tích */}
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "16px",
+    background: "#fafafa",
+    borderRadius: "8px",
+    marginTop: "12px",
+    border: "1px solid #f0f0f0",
+  }}
+>
+  <Space>
+    <HourglassOutlined style={{ fontSize: "18px", color: "#fa8c16" }} />
+    <div>
+      <Text strong style={{ fontSize: "15px" }}>
+        Type Analysis
+      </Text>
+      <br />
+      <Text type="secondary" style={{ fontSize: "12px" }}>
+        Thời gian phân tích loại (Giây)
+      </Text>
+    </div>
+  </Space>
+
+  <Space>
+    <Select
+      value={typeAnalysis}
+      onChange={(value) => {
+        setTypeAnalysis(value);
+        updateConfigAdmin({ TypeAnalysis: value }, "Type Analysis");
+      }}
+      style={{ width: 140 }}
+      placeholder="Chọn Type"
+    >
+      <Select.Option value="type1">
+        <Tooltip title="Phân tích kiểu 1 – tốc độ nhanh, phù hợp realtime">
+          Type 1
+        </Tooltip>
+      </Select.Option>
+
+      <Select.Option value="type2">
+        <Tooltip title="Phân tích kiểu 2 – chính xác hơn, xử lý sâu">
+          Type 2
+        </Tooltip>
+      </Select.Option>
+    </Select>
+  </Space>
+</div>
+
 
         <Divider style={{ margin: "20px 0" }} />
 
