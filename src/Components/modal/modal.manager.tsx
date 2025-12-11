@@ -67,7 +67,7 @@ const AccountModal = ({ open, onCancel }: any) => {
         setStartTime(start ? dayjs(start, timeFormat) : null);
         setEndTime(end ? dayjs(end, timeFormat) : null);
         setDelayBrokerStop(response.data.data.Delay_Stop ?? 0);
-        setTypeAnalysis(response.data.data.TypeAnalysis ?? "type1");
+        setTypeAnalysis(response.data.data.Type_Analysis ?? "type1");
       } else {
         messageApi.error("Không thể tải dữ liệu SpreadPlus");
       }
@@ -482,7 +482,7 @@ const AccountModal = ({ open, onCancel }: any) => {
       value={typeAnalysis}
       onChange={(value) => {
         setTypeAnalysis(value);
-        updateConfigAdmin({ TypeAnalysis: value }, "Type Analysis");
+        updateConfigAdmin({ Type_Analysis: value }, "Type Analysis");
       }}
       style={{ width: 140 }}
       placeholder="Chọn Type"
