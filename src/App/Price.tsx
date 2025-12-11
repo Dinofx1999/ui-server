@@ -3345,15 +3345,15 @@ useEffect(() => {
                               padding: '0 12px',
                               borderRadius: '6px',
                               border: 'none',
-                              background: isDark ? '#374151' : '#f3f4f6',
-                              color: isDark ? '#d1d5db' : '#6b7280',
+                              background: isDark ? '#353a41' : '#e3eaf8',
+                              color: isDark ? '#fcf4f4' : '#99a3b9',
                               cursor: 'default',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               flexShrink: 0,
-                              fontSize: '13px',
-                              fontWeight: '500',
+                              fontSize: '15px',
+                              fontWeight: '600',
                             }}
                           >
                             {timeAnalysis}
