@@ -202,6 +202,7 @@ const [alert_, setAlert_] = useState(false);
   const [brokerCheck, setbrokerCheck] = useState("");
   const [broker_actived, setbrokerActived] = useState("");
   const [symbol, setSymbol] = useState<any[]>([]);
+  const [timeAnalysis, setTimeAnalysis] = useState("");
 
 
   useEffect(() => {
@@ -261,6 +262,12 @@ const handleCancelModalInfo = async () => {
       setSymbol(analysis?.symbols || []);
     }
   }, [analysis?.symbols]);
+
+  useEffect(() => {
+    if (analysis?.timeAnalysis !== timeAnalysis) {
+      setTimeAnalysis(analysis?.timeAnalysis || "XX:XX:XX");
+    }
+  }, [analysis?.timeAnalysis]);
 
   const { brokers, connected_brokers, connect_Brokers, disconnect_Brokers } =
     useWebSocketBrokers(`ws://${IP_Server}:8001`, {
@@ -3331,6 +3338,26 @@ useEffect(() => {
             }}
           >
             <div style={{ display: "flex", gap: "4px" }}>
+              <button
+                            style={{
+                              width: '180px',
+                              height: '36px',
+                              padding: '0 12px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              background: isDark ? '#374151' : '#f3f4f6',
+                              color: isDark ? '#d1d5db' : '#6b7280',
+                              cursor: 'default',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              fontSize: '13px',
+                              fontWeight: '500',
+                            }}
+                          >
+                            {timeAnalysis}
+                          </button>
               <button
                 onClick={() => setViewMode("grid")}
                 style={{

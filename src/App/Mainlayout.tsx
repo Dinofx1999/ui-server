@@ -384,27 +384,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
           )}
 
           {/* Time - Hide on mobile */}
-          {!isMobile && (
-            <button
-              style={{
-                height: '36px',
-                padding: '0 12px',
-                borderRadius: '6px',
-                border: 'none',
-                background: darkMode ? '#374151' : '#f3f4f6',
-                color: darkMode ? '#d1d5db' : '#6b7280',
-                cursor: 'default',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                fontSize: '13px',
-                fontWeight: '500',
-              }}
-            >
-              12:30 PM
-            </button>
-          )}
+       
 
           {/* Notifications */}
           <Badge count={3} size="small">
