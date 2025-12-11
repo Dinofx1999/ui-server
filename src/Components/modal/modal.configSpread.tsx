@@ -518,7 +518,6 @@ const SpreadManagementModal: React.FC<SpreadManagementModalProps> = ({
       width={isMobile ? '100%' : isTablet ? 900 : 1200}
       footer={null}
       closeIcon={<X size={isMobile ? 18 : 20} />}
-      destroyOnClose
       styles={{
         body: {
           maxHeight: isMobile ? 'calc(100vh - 110px)' : '70vh',

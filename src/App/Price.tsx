@@ -191,8 +191,7 @@ const [alert_, setAlert_] = useState(false);
   const [modalSpreadConfig, setModalSpreadConfig] = useState(false);
 
   const [form_Add_Symbol, setForm_Add_Symbol] = useState(false);
-  const [button_Add_Form_Symbol, setButton_Add_Form_Symbol] =
-    useState("Thêm Mới");
+  const [button_Add_Form_Symbol, setButton_Add_Form_Symbol] = useState("Thêm Mới");
   const [form_] = Form.useForm();
   const [form_spread] = Form.useForm();
   const [modal_Symbol, setModal_Symbol] = useState(false);
@@ -202,6 +201,7 @@ const [alert_, setAlert_] = useState(false);
   const [symbol_config, setSymbol_config] = useState([]);
   const [brokerCheck, setbrokerCheck] = useState("");
   const [broker_actived, setbrokerActived] = useState("");
+  const [symbol, setSymbol] = useState<any[]>([]);
 
 
   useEffect(() => {
@@ -255,6 +255,12 @@ const handleCancelModalInfo = async () => {
       setIsConnected(true);
     }
   }, [connected_analysis]);
+
+  useEffect(() => {
+    if (analysis?.symbols !== symbol) {
+      setSymbol(analysis?.symbols || []);
+    }
+  }, [analysis?.symbols]);
 
   const { brokers, connected_brokers, connect_Brokers, disconnect_Brokers } =
     useWebSocketBrokers(`ws://${IP_Server}:8001`, {
@@ -1266,16 +1272,7 @@ const handleCancelModalInfo = async () => {
               fontWeight: 500,
             }}
           >
-            {n < -3600 ? (
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <ClockCircleOutlined style={{ color: "red" }} />
-                1H
-              </span>
-            ) : (
-              <span>
-                <ClockCircleOutlined style={{ color: "green" }} /> {n} s
-              </span>
-            )}
+            {formatSecondsToTime(n)}
           </div>
         ) : (
           <div
@@ -2194,18 +2191,32 @@ const handleCancelModalInfo = async () => {
   ];
 
   const t = useMemo(() => (isDark ? DARK : LIGHT), [isDark]);
+  
 
-  const forexData: any[] = analysis?.ANALYSIS?.Type_1 || [];
+   const [type_1, setType_1] = useState<any[]>([]);
+   const [type_2, setType_2] = useState<any[]>([]);
+  useEffect(() => {
+    if (analysis?.analysis) {
+      if(analysis?.analysis.Type_1 !== type_1){
+        setType_1(analysis?.analysis.Type_1 || []);
+      }
+      if(analysis?.analysis.Type_2 !== type_2){
+        setType_2(analysis?.analysis.Type_2 || []);
+      }
+    }
+}, [analysis?.analysis]);
 
-  const stocksData: any[] = analysis?.ANALYSIS?.Type_2 || [];
+  const forexData: any[] = analysis?.analysis?.Type_1 || [];
+
+  const stocksData: any[] = analysis?.analysis?.Type_2 || [];
 
   useEffect(() => {
-  if (forexData && (forexData.length + stocksData.length) > 0) {
+  if ((type_1.length + type_2.length) > 0) {
     setAlert(true);
   } else {
     setAlert(false);
   }
-}, [forexData, stocksData]);
+}, [type_1, type_2]);
 
 useEffect(() => {
   if (alert && alert_ && audioRef.current) {
@@ -2989,7 +3000,7 @@ useEffect(() => {
         <SpreadManagementModal
         visible={modalSpreadConfig}
           onClose={() => setModalSpreadConfig(false)}
-          symbols ={analysis?.symbols || []}
+          symbols ={symbol || []}
         />
 
       <HistoryModal
@@ -3006,8 +3017,8 @@ useEffect(() => {
   className="light-scroll"
   title={
     isMobile
-      ? `Thông Tin Sàn (${dataBrokerInfo.length} Sàn Đã Kết Nối - ${analysis?.symbols.length} Sản Phẩm)`
-      : `Thông Tin Các Sàn Giao Dịch (${dataBrokerInfo.length} Sàn Đã Kết Nối - ${analysis?.symbols.length} Sản Phẩm)`
+      ? `Thông Tin Sàn (${dataBrokerInfo.length} Sàn Đã Kết Nối - ${symbol?.length} Sản Phẩm)`
+      : `Thông Tin Các Sàn Giao Dịch (${dataBrokerInfo.length} Sàn Đã Kết Nối - ${symbol?.length} Sản Phẩm)`
   }
   footer={null}
   styles={{
@@ -3146,7 +3157,7 @@ useEffect(() => {
 
   <div style={{ overflowX: "auto" }} className="light-scroll">
     <Table
-    
+      rowKey={(record) => `${record.symbol}-${record.broker}`}
       columns={columns}
       dataSource={Array.isArray(dataBrokerInfo) ? dataBrokerInfo : []}
       scroll={{ x: isMobile ? 600 : "max-content" }}
@@ -3389,7 +3400,7 @@ useEffect(() => {
               paddingBottom: 2,
             }}
           >
-            {analysis?.symbols.map((tab: any, idx: any) => (
+            {symbol?.map((tab: any, idx: any) => (
               <button
                 key={`${tab}-${idx}`}
                 onClick={() => handle_setModalSymbols(tab)}
@@ -3990,7 +4001,7 @@ useEffect(() => {
                 iconBg={t.accentPurpleGradient}
                 title="FX, XAU, Crypto"
                 subtitle="Forex & Commodities"
-                count={forexData.length}
+                count={type_1.length}
                 countBg="rgba(16, 185, 129, 0.12)"
                 countBorder={t.accentIndigo}
                 countColor={t.accentPurple}
@@ -4003,7 +4014,7 @@ useEffect(() => {
                   marginTop: isMobile ? "12px" : "16px",
                 }}
               >
-                {forexData?.map((item, index) => renderSignalRow(item, index))}
+                {type_1?.map((item, index) => renderSignalRow(item, index))}
               </div>
             </div>
 
@@ -4023,7 +4034,7 @@ useEffect(() => {
                 iconBg="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
                 title="Chỉ Số, Chứng Khoán"
                 subtitle="Indices & Stocks"
-                count={stocksData.length}
+                count={type_2.length}
                 countBg="rgba(245,158,11,0.12)"
                 countBorder={t.accentYellowBorder}
                 countColor={t.accentYellow}
@@ -4036,7 +4047,7 @@ useEffect(() => {
                   marginTop: isMobile ? "12px" : "16px",
                 }}
               >
-                {stocksData.map((item, index) => renderSignalRow(item, index))}
+                {type_2.map((item, index) => renderSignalRow(item, index))}
               </div>
             </div>
           </div>

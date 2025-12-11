@@ -60,7 +60,7 @@ export function useWebSocketAnalysis(
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data?.ANALYSIS) {
+        if (data) {
           setAnalysis(data);
         }
       } catch (e) {
