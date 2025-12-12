@@ -14,10 +14,13 @@ import {
   AutoComplete,
 } from "antd";
 
+import Marquee from 'react-fast-marquee';
+
 
 
 import HistoryModal from '../Components/modal/modal.history';
 import AccountModal from '../Components/modal/modal.manager';
+import ImpactBadge from '../Components/Alert/Alert_News';
 
 
 
@@ -38,7 +41,7 @@ import {
 import { ClockCircleOutlined} from "@ant-design/icons";
 import { ReloadOutlined, DeleteOutlined } from "@ant-design/icons";
 import { green, red } from "@ant-design/colors";
-import { calculatePercentage , formatSecondsToTime } from "../Helpers/text";
+import { calculatePercentage , formatSecondsToTime ,formatNewsMessage } from "../Helpers/text";
 import {
   SearchOutlined,
   AppstoreOutlined,
@@ -203,7 +206,7 @@ const [alert_, setAlert_] = useState(false);
   const [broker_actived, setbrokerActived] = useState("");
   const [symbol, setSymbol] = useState<any[]>([]);
   const [timeAnalysis, setTimeAnalysis] = useState("");
-
+  const [highNews , setHighNews] = useState([]);
   //Pagination
   const [pageSize_BrokerInfo, setPageSize_BrokerInfo] = useState(10);
 
@@ -240,7 +243,19 @@ const handleCancelModalInfo = async () => {
 };
 
 
+
   let IP_Server = "116.105.227.149";
+const HandleGetNews = async () => {
+  const response = await axios.get(`${`http://${IP_Server}:5000`}/v1/api/admin/forex-news/impact/high`);
+  return response.data;
+};
+
+  useEffect(() => {
+    HandleGetNews().then((data) => {
+      console.log("Forex News High Impact:",(data.data));
+      setHighNews((data.data));
+    });
+  }, []);
 
   const {
     analysis,
@@ -267,7 +282,7 @@ const handleCancelModalInfo = async () => {
 
   useEffect(() => {
     if (analysis?.timeAnalysis !== timeAnalysis) {
-      setTimeAnalysis(analysis?.timeAnalysis || "XX:XX:XX");
+      setTimeAnalysis(analysis?.timeAnalysis || "Disconnect");
     }
   }, [analysis?.timeAnalysis]);
 
@@ -3337,6 +3352,25 @@ useEffect(() => {
                 </div>
               </div>
             )}
+            
+  
+
+           <Alert
+           style={{ maxWidth: isMobile ? 200 : 400  , borderRadius: 8 }}
+    banner
+    message={
+      <Marquee pauseOnHover gradient={false}>
+        <Space>
+          {highNews.map((newsItem:any, index) => (
+            <ImpactBadge level={newsItem.impactName} text={`[${newsItem.currency}] ${newsItem.timeLabel} - ${newsItem.name}`} />
+          ))
+        }
+        </Space>
+        
+      </Marquee>
+    }
+  />
+          
           </div>
 
           {/* Right: Controls */}

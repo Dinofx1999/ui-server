@@ -23,3 +23,13 @@ export function formatSecondsToTime(seconds : number) {
   
   return seconds < 0 ? `-${formatted}` : formatted;
 }
+
+export function formatNewsMessage(newsArray:any) {
+  if (!newsArray || newsArray.length === 0) {
+    return "No news available";
+  }
+
+  return newsArray
+    .map((item:any) => `[${item.timeLabel.trim()}] ${item.currency} | ${item.name}`)
+    .join(' , ');
+};
