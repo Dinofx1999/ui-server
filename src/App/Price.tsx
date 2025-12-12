@@ -3473,7 +3473,7 @@ useEffect(() => {
                           >
                             {timeAnalysis}
                           </button>
-              <button
+              {/* <button
                 onClick={() => setViewMode("grid")}
                 style={{
                   padding: isMobile ? "6px 10px" : "8px 12px",
@@ -3493,8 +3493,8 @@ useEffect(() => {
                 <AppstoreOutlined
                   style={{ fontSize: isMobile ? "14px" : "16px" }}
                 />
-              </button>
-              <button
+              </button> */}
+              {/* <button
                 onClick={() => setViewMode("list")}
                 style={{
                   padding: isMobile ? "6px 10px" : "8px 12px",
@@ -3514,7 +3514,7 @@ useEffect(() => {
                 <UnorderedListOutlined
                   style={{ fontSize: isMobile ? "14px" : "16px" }}
                 />
-              </button>
+              </button> */}
             </div>
           </div>
         </div>
