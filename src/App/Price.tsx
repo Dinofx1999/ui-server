@@ -207,6 +207,8 @@ const [alert_, setAlert_] = useState(false);
   const [symbol, setSymbol] = useState<any[]>([]);
   const [timeAnalysis, setTimeAnalysis] = useState("");
   const [highNews , setHighNews] = useState([]);
+  const [typeHighNews , setTypeHighNews] = useState('high');
+  const [time_soon, setTime_soon] = useState(2);
   //Pagination
   const [pageSize_BrokerInfo, setPageSize_BrokerInfo] = useState(10);
 
@@ -244,9 +246,63 @@ const handleCancelModalInfo = async () => {
 
 
 
+// ✅ parse "02:00pm" | "2:00 pm" | "14:45" | "14:45:00" => phút trong ngày
+const parseTimeLabelToMinutes = (timeLabel: string): number | null => {
+  if (!timeLabel) return null;
+
+  const raw = String(timeLabel).trim().toLowerCase();
+
+  // 1) 12h: 02:00pm / 2:00 pm
+  const t12 = raw.replace(/\s+/g, "");
+  const m12 = t12.match(/^(\d{1,2}):(\d{2})(am|pm)$/);
+  if (m12) {
+    let hh = parseInt(m12[1], 10);
+    const mm = parseInt(m12[2], 10);
+    const ap = m12[3];
+
+    if (hh < 1 || hh > 12 || mm < 0 || mm > 59) return null;
+
+    if (ap === "am") hh = hh === 12 ? 0 : hh;
+    if (ap === "pm") hh = hh === 12 ? 12 : hh + 12;
+
+    return hh * 60 + mm;
+  }
+
+  // 2) 24h: 14:45 hoặc 14:45:00
+  const m24 = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (m24) {
+    const hh = parseInt(m24[1], 10);
+    const mm = parseInt(m24[2], 10);
+    if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+    return hh * 60 + mm;
+  }
+
+  return null;
+};
+
+const nowMinutes = () => {
+  const d = new Date();
+  return d.getHours() * 60 + d.getMinutes();
+};
+
+const getToneByTime = (timeLabel: string, soonWindowMin = 30) => {
+  const eventMin = parseTimeLabelToMinutes(timeLabel);
+  if (eventMin == null) return "default" as const;
+
+  const diff = eventMin - nowMinutes();
+  if (diff < 0) return "past" as const;
+  if (diff <= soonWindowMin) return "now" as const;
+  return "default" as const;
+};
+
+const filteredNews = highNews.filter((item: any) => {
+  return getToneByTime(item.timeLabel, time_soon) !== "past";
+});
+
+
   let IP_Server = "116.105.227.149";
 const HandleGetNews = async () => {
-  const response = await axios.get(`${`http://${IP_Server}:5000`}/v1/api/admin/forex-news/impact/high`);
+  const response = await axios.get(`${`http://${IP_Server}:5000`}/v1/api/admin/forex-news/impact/${typeHighNews}`);
   return response.data;
 };
 
@@ -3356,20 +3412,35 @@ useEffect(() => {
   
 
            <Alert
-           style={{ maxWidth: isMobile ? 200 : 400  , borderRadius: 8 }}
-    banner
-    message={
-      <Marquee pauseOnHover gradient={false}>
-        <Space>
-          {highNews.map((newsItem:any, index) => (
-            <ImpactBadge level={newsItem.impactName} text={`[${newsItem.currency}] ${newsItem.timeLabel} - ${newsItem.name}`} />
-          ))
-        }
-        </Space>
-        
-      </Marquee>
-    }
-  />
+  style={{ maxWidth: isMobile ? 200 : 400, borderRadius: 8 }}
+  banner
+  message={
+    <Marquee pauseOnHover gradient={false}>
+      <Space>
+        {filteredNews.length === 0 ? (
+  <span style={{ color: "#9ca3af", fontSize: 12, padding: "0 8px" }}>
+    Không có tin tức
+  </span>
+) : (
+  filteredNews.map((newsItem: any, index: number) => {
+    const tone = getToneByTime(newsItem.timeLabel, time_soon);
+
+    return (
+      <ImpactBadge
+        key={`${newsItem.currency}-${newsItem.timeLabel}-${index}`}
+        level={newsItem.impactName}
+        tone={tone}
+        text={`${index + 1} - [${newsItem.currency}] ${newsItem.timeLabel} - ${newsItem.name}`}
+      />
+    );
+  })
+)}
+
+      </Space>
+    </Marquee>
+  }
+/>
+
           
           </div>
 
@@ -3617,7 +3688,8 @@ useEffect(() => {
           {!isMobile && (
             <>
               {/* Info Button */}
-              <button
+              <Space>
+                <button
                 onClick={handleClickInfo}
                 style={{
                   padding: isTablet ? "8px 16px" : "10px 20px",
@@ -3656,16 +3728,11 @@ useEffect(() => {
                 }}
               >
                 <InfoCircleOutlined />
-                {!isTablet && "Info"}
+                Info
               </button>
 
-              {!isTablet && (
-                <>
-                 
-
-                  {/* History Button */}
-                   <button
-              style={{
+                <button
+               style={{
                 padding: "10px",
                 background: "#06b6d4",            // Cyan chính
                 border: "none",
@@ -3691,7 +3758,7 @@ useEffect(() => {
               onClick={() => setModalHistory(true)}
             >
               <HistoryOutlined /> History
-            </button>
+                </button>
 
                   {/* Spread 0 Button */}
                   <button
@@ -3787,11 +3854,11 @@ useEffect(() => {
                     <ThunderboltOutlined />
                     Manager
                   </button>
+              </Space>
+              
 
                 </>
               )}
-            </>
-          )}
 
           {isMobile && (
             <button
