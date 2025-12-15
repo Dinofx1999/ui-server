@@ -410,6 +410,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
       onCancel={onClose}
       footer={null}
       width={modalWidth as any}
+    //   height={isMobile ? 800 : 200}
       zIndex={20000}
       centered
       styles={{
@@ -496,37 +497,6 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
           </div>
           <div style={{ color: '#94a3b8', fontSize: '10px' }}>
             * Spread khác nhau do thanh khoản
-          </div>
-        </div>
-
-        {/* Spread Info (3 pairs) */}
-        <div style={{
-          background: '#1e293b',
-          borderRadius: '8px',
-          padding: '10px',
-          border: '1px solid #334155',
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? '8px' : '0px',
-          justifyContent: 'space-between',
-          alignItems: isMobile ? 'flex-start' : 'center',
-          fontSize: '12px'
-        }}>
-          <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Spread (Close-Close):</span>
-
-          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-            <div>
-              <span style={{ color: '#94a3b8', fontSize: '11px' }}>{exchange1?.name || "E1"} - {exchange2?.name || "E2"}: </span>
-              <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>{fmtSpread(spread12)}</span>
-            </div>
-            <div>
-              <span style={{ color: '#94a3b8', fontSize: '11px' }}>{exchange1?.name || "E1"} - {exchange3?.name || "E3"}: </span>
-              <span style={{ color: '#06b6d4', fontWeight: 'bold' }}>{fmtSpread(spread13)}</span>
-            </div>
-            <div>
-              <span style={{ color: '#94a3b8', fontSize: '11px' }}>{exchange2?.name || "E2"} - {exchange3?.name || "E3"}: </span>
-              <span style={{ color: '#a78bfa', fontWeight: 'bold' }}>{fmtSpread(spread23)}</span>
-            </div>
           </div>
         </div>
 

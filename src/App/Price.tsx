@@ -390,7 +390,7 @@ function buildChartDataFromAB(payload: any, chartData_Example: any) {
     exchange3Ask: toNum(A?.ask_mdf),
     exchange1Digits: toNum(A?.digit),
     exchange2Digits: toNum(B?.digit),
-    exchange3Digits: toNum(A?.digit),
+    exchange3Digits: toNum(B?.digit),
   };
 }
 
