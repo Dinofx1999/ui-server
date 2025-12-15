@@ -289,15 +289,49 @@ const getToneByTime = (timeLabel: string, soonWindowMin = 30) => {
   const eventMin = parseTimeLabelToMinutes(timeLabel);
   if (eventMin == null) return "default" as const;
 
-  const diff = eventMin - nowMinutes();
+  const now = nowMinutes();
+  let diff = eventMin - now;
+
+  // ✅ rollover: ví dụ 23:50 -> 00:10 (diff = -1420) => +1440
+  if (diff < -720) diff += 1440;
+
   if (diff < 0) return "past" as const;
   if (diff <= soonWindowMin) return "now" as const;
   return "default" as const;
 };
 
+
 const filteredNews = highNews.filter((item: any) => {
   return getToneByTime(item.timeLabel, time_soon) !== "past";
 });
+
+const groupNewsByMinute = (news: any[]) => {
+  const map = new Map<string, any[]>();
+
+  news.forEach((item) => {
+    const key = String(item.timeLabel || "").trim();
+    if (!key) return;
+
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(item);
+  });
+
+  return Array.from(map.entries()).map(([timeLabel, items]) => {
+    const impact =
+      items.some((i) => String(i.impactName).toLowerCase() === "high")
+        ? "high"
+        : items.some((i) => String(i.impactName).toLowerCase() === "medium")
+        ? "medium"
+        : items.some((i) => String(i.impactName).toLowerCase() === "low")
+        ? "low"
+        : "unknown";
+
+    return { timeLabel, items, impact };
+  });
+};
+
+
+const groupedNews = groupNewsByMinute(filteredNews);
 
 
   let IP_Server = "116.105.227.149";
@@ -3415,29 +3449,43 @@ useEffect(() => {
   style={{ maxWidth: isMobile ? 200 : 400, borderRadius: 8 }}
   banner
   message={
-    <Marquee pauseOnHover gradient={false}>
-      <Space>
-        {filteredNews.length === 0 ? (
-  <span style={{ color: "#9ca3af", fontSize: 12, padding: "0 8px" }}>
-    Không có tin tức
-  </span>
-) : (
-  filteredNews.map((newsItem: any, index: number) => {
-    const tone = getToneByTime(newsItem.timeLabel, time_soon);
+      <Marquee pauseOnHover gradient={false} speed={80}>
+  <Space size={30}>
+    {groupedNews.length === 0 ? (
+      <span style={{ color: "#9ca3af", fontSize: 12, padding: "0 8px" }}>
+        Không có tin tức
+      </span>
+    ) : (
+      groupedNews.map((g, index) => {
+        const tone = getToneByTime(g.timeLabel, time_soon);
 
-    return (
-      <ImpactBadge
-        key={`${newsItem.currency}-${newsItem.timeLabel}-${index}`}
-        level={newsItem.impactName}
-        tone={tone}
-        text={`${index + 1} - [${newsItem.currency}] ${newsItem.timeLabel} - ${newsItem.name}`}
-      />
-    );
+        const CIRCLED = ["①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩"];
+
+const titles = g.items
+  .map((x: any, i: number) => {
+    const n = CIRCLED[i] ?? `${i + 1}.`;
+    return `| ${n} [${x.currency}] ${x.name}`;
   })
-)}
+  .join("  "); 
 
-      </Space>
-    </Marquee>
+        return (
+          <ImpactBadge
+            key={`group-${g.timeLabel}-${index}`}
+            size="lg"
+            level={g.impact}
+            tone={tone}
+            text={`${g.timeLabel} - ${titles}`}
+          />
+        );
+      })
+    )}
+
+    {/* ✅ spacer để tạo khoảng cách khi marquee lặp */}
+    <span style={{ display: "inline-block", width: 30 }} />
+  </Space>
+</Marquee>
+
+    
   }
 />
 
@@ -3612,11 +3660,12 @@ useEffect(() => {
           >
             <AutocompleteSearch
               suggestions={analysis?.symbols || []}
-              placeholder="Search..."
+              placeholder="Symbol ..."
               onSearch={handleSearch}
               onSelect={handleSelect}
               // theme={t}
               height={isMobile ? 36 : 40}
+              width={isMobile ? 120 : 150}
             />
 
           </div>

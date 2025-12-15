@@ -6,7 +6,7 @@ type Tone = "default" | "now" | "past";
 interface ImpactBadgeProps {
   level: string;                // nhận luôn newsItem.impactName
   text?: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   tone?: Tone;                  // ✅ NEW
 }
 
@@ -42,7 +42,8 @@ const TONE_OVERRIDE: Record<Tone, Partial<{ bg: string; color: string; border: s
 
 const SIZE_STYLE = {
   sm: { fontSize: "10px", padding: "2px 6px", gap: "4px" },
-  md: { fontSize: "11px", padding: "4px 8px", gap: "6px" },
+  md: { fontSize: "12px", padding: "4px 10px", gap: "6px" },
+  lg: { fontSize: "14px", padding: "4px 10px", gap: "6px" }, // ✅ NEW
 };
 
 const ImpactBadge: React.FC<ImpactBadgeProps> = ({ level, text, size = "sm", tone = "default" }) => {

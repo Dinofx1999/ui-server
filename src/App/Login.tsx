@@ -534,8 +534,8 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none ring-emerald-500/30 focus:border-emerald-500/40 focus:ring appearance-none cursor-pointer"
               >
                 <option value="User" className="bg-[#0a1118]">User</option>
-                <option value="Admin" className="bg-[#0a1118]">Admin</option>
-                <option value="Moderator" className="bg-[#0a1118]">Moderator</option>
+                {/* <option value="Admin" className="bg-[#0a1118]">Admin</option> */}
+                {/* <option value="Moderator" className="bg-[#0a1118]">Moderator</option> */}
               </select>
             </div>
 
