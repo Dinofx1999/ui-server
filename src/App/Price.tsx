@@ -542,21 +542,8 @@ useEffect(() => {
 }, [analysis?.timeAnalysis]);
 
 
-  const { symbols, connected_symbols, connect_symbols, disconnect_symbols } =
-    useWebSocketSymbols(`ws://${IP_Server}:8000/${activeTab}`, {
-      autoConnect: false,
-      autoReconnect: false,
-      debug: true,
-    });
-
-const shouldConnectSymbols = modalOpenSymbol || isChartOpen;
-
-useEffect(() => {
-  if (shouldConnectSymbols) connect_symbols();
-  else disconnect_symbols();
-
-  return () => disconnect_symbols();
-}, [shouldConnectSymbols, connect_symbols, disconnect_symbols]);
+// The symbol connect/disconnect effect was moved below (after the useWebSocketSymbols
+// declaration) to avoid referencing block-scoped variables before they are defined.
 
   const { brokers, connected_brokers, connect_Brokers, disconnect_Brokers } =
     useWebSocketBrokers(`ws://${IP_Server}:8001`, {
@@ -575,6 +562,13 @@ useEffect(() => {
     autoReconnect: false,
     debug: true,
   });
+
+  const { symbols, connected_symbols, connect_symbols, disconnect_symbols } =
+    useWebSocketSymbols(`ws://${IP_Server}:8000/${activeTab}`, {
+      autoConnect: false,
+      autoReconnect: false,
+      debug: true,
+    });
 
   
 
@@ -2088,27 +2082,38 @@ useEffect(() => {
     return () => disconnect_BrokerInfo();
   }, [openModalBrokerInfo, connect_BrokerInfo, disconnect_BrokerInfo]);
 
-  // useEffect(() => {
-  //   if (modalOpenSymbol) {
-  //     connect_symbols();
-  //     if(isChartOpen) setIsChartOpen(false);
-  //   } else {
-  //     disconnect_symbols();
-  //   }
-  //   return () => disconnect_symbols();
-  // }, [modalOpenSymbol, connect_symbols, disconnect_symbols]);
+  const shouldConnectSymbols = modalOpenSymbol || isChartOpen;
+
+useEffect(() => {
+  if (shouldConnectSymbols) connect_symbols();
+  else disconnect_symbols();
+
+  return () => disconnect_symbols();
+}, [shouldConnectSymbols, connect_symbols, disconnect_symbols]);
 
 
-  // useEffect(() => {
-  //   if (isChartOpen) {
-  //     connect_symbols();
-  //   } else {
-  //     disconnect_symbols();
-  //   }
-  //   return () => disconnect_symbols();
-  // }, [isChartOpen]);
+const rafRef = useRef<number | null>(null);
 
+useEffect(() => {
+  if (!isChartOpen) return;
+  if (!symbols?.length) return;
+  if (!activeBrokerChart) return;
 
+  if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+  rafRef.current = requestAnimationFrame(() => {
+    const pair = pickBrokerPair(symbols, activeBrokerChart);
+    if (!pair?.A || !pair?.B) return;
+
+    const next = buildChartDataFromAB(pair, chartData_Example);
+    setChartData(next);
+  });
+
+  return () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+  };
+}, [symbols, activeBrokerChart, isChartOpen]);
 
 
 
@@ -2213,13 +2218,7 @@ useEffect(() => {
       });
   };
 
-  const themmoiSymbol = () => {
-    if (form_Add_Symbol) {
-      setForm_Add_Symbol(false);
-    } else {
-      setForm_Add_Symbol(true);
-    }
-  };
+ const themmoiSymbol = () => setForm_Add_Symbol((p) => !p);
 
   const HandleSymbol = async (symbol: string) => {
     // audio.play();
