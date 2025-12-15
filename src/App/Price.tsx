@@ -20,6 +20,7 @@ import Marquee from 'react-fast-marquee';
 
 import HistoryModal from '../Components/modal/modal.history';
 import AccountModal from '../Components/modal/modal.manager';
+import DualExchangeChartModal from '../Components/modal/modal.chart';
 import ImpactBadge from '../Components/Alert/Alert_News';
 
 
@@ -193,6 +194,8 @@ const [alert_, setAlert_] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [modalHistory, setModalHistory] = useState(false);
   const [modalSpreadConfig, setModalSpreadConfig] = useState(false);
+  const [isChartOpen, setIsChartOpen] = useState(false);
+  // const [chartData, setChartData] = useState<any | null>(null);
 
   const [form_Add_Symbol, setForm_Add_Symbol] = useState(false);
   const [button_Add_Form_Symbol, setButton_Add_Form_Symbol] = useState("Thêm Mới");
@@ -213,10 +216,9 @@ const [alert_, setAlert_] = useState(false);
   //Pagination
   const [pageSize_BrokerInfo, setPageSize_BrokerInfo] = useState(10);
 
-  useEffect(() => {
-  audioRef.current = new Audio("/sound/alert.wav");
-  audioRef.current.load();
-}, []);
+  //data chart
+
+ 
 
 const handleCancelModalInfo = async () => {
   setOpenModalInfo(false);
@@ -245,7 +247,36 @@ const handleCancelModalInfo = async () => {
   }
 };
 
+ const chartData = {
+    symbol: "EUR/USD",
+    timeframe: "1H",
+    exchange1: {
+      name: "Broker 1",
+      color: "#F0B90B",
+      data: [
+        { time: "14:00", high: 1.0850, low: 1.0820, open: 1.0830, close: 1.0845 },
+        { time: "15:00", high: 1.0870, low: 1.0840, open: 1.0845, close: 1.0865 },
+        { time: "16:00", high: 1.0885, low: 1.0855, open: 1.0865, close: 1.0870 },
+        { time: "17:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+      ]
+    },
+    exchange2: {
+      name: "Broker 2",
+      color: "#5741D9",
+      data: [
+        { time: "14:00", high: 1.0855, low: 1.0815, open: 1.0825, close: 1.0840 },
+        { time: "15:00", high: 1.0875, low: 1.0835, open: 1.0840, close: 1.0870 },
+        { time: "16:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0875 },
+        { time: "17:00", high: 1.0895, low: 1.0865, open: 1.0875, close: 1.0885 },
+      ]
+    }
+  }
 
+
+ useEffect(() => {
+  audioRef.current = new Audio("/sound/alert.wav");
+  audioRef.current.load();
+}, []);
 
 // ✅ parse "02:00pm" | "2:00 pm" | "14:45" | "14:45:00" => phút trong ngày
 const parseTimeLabelToMinutes = (timeLabel: string): number | null => {
@@ -1226,7 +1257,26 @@ const HandleGetNews = async () => {
         {isMobile ? "BUY" : "BUY"}
       </Button>
 
-      
+      <Button
+        type="primary"
+        size="small"
+        disabled={record.Auto_Trade !== "true"}
+        onClick={async () => {
+          try {
+            console.log("Chart for:", record.symbol, record.Broker_);
+            setIsChartOpen(true);
+            // Open chart modal or navigate to chart page
+          } catch (error) {
+            messageApi.open({
+              type: "error",
+              content: (error as Error).message,
+            });
+            handleLogout();
+          }
+        }}
+      >
+        Chart
+      </Button>
     </Space>
   ),
   width: isMobile ? 60 : 140,
@@ -3115,6 +3165,15 @@ useEffect(() => {
       >
         <p>Disconnected server at {new Date().toLocaleTimeString()} </p>
       </Modal>
+      
+      <DualExchangeChartModal
+        isOpen={isChartOpen}
+        onClose={() => setIsChartOpen(false)}
+        symbol={chartData.symbol}
+        exchange1={chartData.exchange1}
+        exchange2={chartData.exchange2}
+        timeframe={chartData.timeframe}
+      />
 
       <AccountModal open={modalConfig} onCancel={() => setModalConfig(false)} />
 
