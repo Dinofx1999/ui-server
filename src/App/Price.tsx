@@ -525,17 +525,38 @@ const HandleGetNews = async () => {
     }
   }, [connected_analysis]);
 
-  useEffect(() => {
-    if (analysis?.symbols !== symbol) {
-      setSymbol(analysis?.symbols || []);
-    }
-  }, [analysis?.symbols]);
+  const symbolSig = useMemo(() => {
+  const arr = analysis?.symbols || [];
+  // signature rẻ: length + first/last (đủ để hạn chế spam)
+  const first = arr?.[0]?.symbol ?? arr?.[0] ?? "";
+  const last = arr?.[arr.length - 1]?.symbol ?? arr?.[arr.length - 1] ?? "";
+  return `${arr.length}|${first}|${last}`;
+}, [analysis?.symbols]);
+
+useEffect(() => {
+  setSymbol(Array.isArray(analysis?.symbols) ? analysis!.symbols : []);
+}, [symbolSig]);
 
   useEffect(() => {
-    if (analysis?.timeAnalysis !== timeAnalysis) {
-      setTimeAnalysis(analysis?.timeAnalysis || "Disconnect");
-    }
-  }, [analysis?.timeAnalysis]);
+  setTimeAnalysis(analysis?.timeAnalysis || "Disconnect");
+}, [analysis?.timeAnalysis]);
+
+
+  const { symbols, connected_symbols, connect_symbols, disconnect_symbols } =
+    useWebSocketSymbols(`ws://${IP_Server}:8000/${activeTab}`, {
+      autoConnect: false,
+      autoReconnect: false,
+      debug: true,
+    });
+
+const shouldConnectSymbols = modalOpenSymbol || isChartOpen;
+
+useEffect(() => {
+  if (shouldConnectSymbols) connect_symbols();
+  else disconnect_symbols();
+
+  return () => disconnect_symbols();
+}, [shouldConnectSymbols, connect_symbols, disconnect_symbols]);
 
   const { brokers, connected_brokers, connect_Brokers, disconnect_Brokers } =
     useWebSocketBrokers(`ws://${IP_Server}:8001`, {
@@ -554,13 +575,6 @@ const HandleGetNews = async () => {
     autoReconnect: false,
     debug: true,
   });
-
-  const { symbols, connected_symbols, connect_symbols, disconnect_symbols } =
-    useWebSocketSymbols(`ws://${IP_Server}:8000/${activeTab}`, {
-      autoConnect: false,
-      autoReconnect: false,
-      debug: true,
-    });
 
   
 
@@ -2074,25 +2088,25 @@ const HandleGetNews = async () => {
     return () => disconnect_BrokerInfo();
   }, [openModalBrokerInfo, connect_BrokerInfo, disconnect_BrokerInfo]);
 
-  useEffect(() => {
-    if (modalOpenSymbol) {
-      connect_symbols();
-      if(isChartOpen) setIsChartOpen(false);
-    } else {
-      disconnect_symbols();
-    }
-    return () => disconnect_symbols();
-  }, [modalOpenSymbol, connect_symbols, disconnect_symbols]);
+  // useEffect(() => {
+  //   if (modalOpenSymbol) {
+  //     connect_symbols();
+  //     if(isChartOpen) setIsChartOpen(false);
+  //   } else {
+  //     disconnect_symbols();
+  //   }
+  //   return () => disconnect_symbols();
+  // }, [modalOpenSymbol, connect_symbols, disconnect_symbols]);
 
 
-  useEffect(() => {
-    if (isChartOpen) {
-      connect_symbols();
-    } else {
-      disconnect_symbols();
-    }
-    return () => disconnect_symbols();
-  }, [isChartOpen]);
+  // useEffect(() => {
+  //   if (isChartOpen) {
+  //     connect_symbols();
+  //   } else {
+  //     disconnect_symbols();
+  //   }
+  //   return () => disconnect_symbols();
+  // }, [isChartOpen]);
 
 
 
