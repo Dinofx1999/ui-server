@@ -21,9 +21,8 @@ import Marquee from 'react-fast-marquee';
 import HistoryModal from '../Components/modal/modal.history';
 import AccountModal from '../Components/modal/modal.manager';
 import DualExchangeChartModal from '../Components/modal/modal.chart';
+import TripleExchangeChartModal from '../Components/modal/modal.chartV2';
 import ImpactBadge from '../Components/Alert/Alert_News';
-import MiniCandleChart from "../Components/Chart/chart";
-import SingleChart from '../Components/Chart/chart.claude';
 
 
 
@@ -176,7 +175,7 @@ const [roleUser, setRoleUser] = useState(localStorage.getItem("role") || "");
 const [alert, setAlert] = useState(false);
 const [alert_, setAlert_] = useState(false); 
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("EURUSD");
+  const [activeTab, setActiveTab] = useState("");
 
   const [activeBroker, setActiveBroker] = useState("");
   const [activeBrokerChart, setActiveBrokerChart] = useState("");
@@ -227,10 +226,16 @@ const [chartData, setChartData] = useState<{
   timeframe: string;
   exchange1: any;
   exchange2: any;
+  exchange3: any;
   exchange1Bid?: number;
   exchange1Ask?: number;
   exchange2Bid?: number;
   exchange2Ask?: number;
+  exchange3Bid?: number;
+  exchange3Ask?: number;
+  exchange1Digits?: number;
+  exchange2Digits?: number;
+  exchange3Digits?: number;
 } | null>(null);
 
 // 2️⃣ Realtime tick – thay đổi liên tục
@@ -277,7 +282,23 @@ const [ticks, setTicks] = useState({
         { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
         { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
       ]
-    }
+    },
+    exchange3: {
+      name: "Broker 3",
+      color: "#10B981",
+      data: [
+        { time: "14:00", high: 1.0855, low: 1.0815, open: 1.0825, close: 1.0840 },
+        { time: "15:00", high: 1.0875, low: 1.0835, open: 1.0840, close: 1.0870 },
+        { time: "16:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0875 },
+        { time: "17:00", high: 1.0895, low: 1.0865, open: 1.0875, close: 1.0885 },
+        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+      ]
+    },
   }
 
 
@@ -355,11 +376,21 @@ function buildChartDataFromAB(payload: any, chartData_Example: any) {
       color: "#5741D9",
       data: bData.length ? bData : aData || chartData_Example.exchange2.data,
     },
+    exchange3: {
+      name: A?.Broker + " & "+ B?.Broker || "Broker C",
+      color: "#10B981",
+      data: bData.length ? bData : chartData_Example.exchange3.data,
+    },
 
     exchange1Bid: toNum(A?.bid),
     exchange1Ask: toNum(A?.ask),
     exchange2Bid: toNum(B?.bid),
     exchange2Ask: toNum(B?.ask),
+    exchange3Bid: toNum(A?.bid_mdf),
+    exchange3Ask: toNum(A?.ask_mdf),
+    exchange1Digits: toNum(A?.digit),
+    exchange2Digits: toNum(B?.digit),
+    exchange3Digits: toNum(A?.digit),
   };
 }
 
@@ -1375,6 +1406,7 @@ const HandleGetNews = async () => {
           try {
             setActiveBrokerChart(record.Broker);
             setIsChartOpen(true);
+            console.log("Open chart for:", record.symbol);
           } catch (error) {
             messageApi.open({
               type: "error",
@@ -2045,11 +2077,26 @@ const HandleGetNews = async () => {
   useEffect(() => {
     if (modalOpenSymbol) {
       connect_symbols();
+      if(isChartOpen) setIsChartOpen(false);
     } else {
       disconnect_symbols();
     }
     return () => disconnect_symbols();
   }, [modalOpenSymbol, connect_symbols, disconnect_symbols]);
+
+
+  useEffect(() => {
+    if (isChartOpen) {
+      connect_symbols();
+    } else {
+      disconnect_symbols();
+    }
+    return () => disconnect_symbols();
+  }, [isChartOpen]);
+
+
+
+
 
   const handleSearch = (value: string) => {
     console.log("Searching:", value);
@@ -2071,22 +2118,6 @@ const HandleGetNews = async () => {
     }
   }, [brokers]);
 
-//   function pickBrokerPair(Data: any[], brokerAName: string) {
-//   if (!Array.isArray(Data) || Data.length === 0) return null;
-
-//   const brokerA = Data.find(
-//     (item) => item.Broker === brokerAName
-//   );
-
-//   const brokerB = Data[0]; // mặc định Data[0]
-
-//   if (!brokerA || !brokerB) return null;
-
-//   return {
-//     A: brokerA,
-//     B: brokerB,
-//   };
-// }
 
 useEffect(() => {
   if (!isChartOpen) return;
@@ -2098,7 +2129,6 @@ useEffect(() => {
 
   const next = buildChartDataFromAB(pair, chartData_Example);
   setChartData(next);
-  console.log("📊 Broker Pair for Chart:", next);
 }, [symbols, activeBrokerChart, isChartOpen]);
   
 
@@ -3008,7 +3038,7 @@ useEffect(() => {
                 marginBottom: "4px",
               }}
                onClick={() => {
-              console.log("Clicked symbol", item.Symbol);
+              console.log("Clicked symbol 1", item.Symbol);
               setActiveBroker(item.Broker || item.provider);
               setActiveTab(item.Symbol || item.pair);
               setModalOpenSymbol(true);
@@ -3055,6 +3085,11 @@ useEffect(() => {
               fontWeight: 700,
               cursor: "pointer",
               whiteSpace: "nowrap",
+            }}
+            onClick={() => {
+              setActiveBrokerChart(item.Broker || item.provider);
+              setActiveTab(item.Symbol || item.pair);
+              console.log("Clicked action button", item.Symbol);
             }}
           >
             {item.Messenger || item.action}
@@ -3119,7 +3154,7 @@ useEffect(() => {
               textOverflow: "ellipsis",
             }}
             onClick={() => {
-              console.log("Clicked symbol", item.Symbol);
+              console.log("Clicked symbol 2", item.Symbol);
               setActiveBroker(item.Broker || item.provider);
               setActiveTab(item.Symbol || item.pair);
               setModalOpenSymbol(true);
@@ -3279,6 +3314,12 @@ useEffect(() => {
                     : "0 4px 12px rgba(239, 68, 68, 0.35)",
                 minWidth: isTablet ? "60px" : "80px",
               }}
+              onClick={() => {
+                setActiveBrokerChart(item.Broker || item.provider);
+                setActiveTab(item.Symbol || item.pair);
+                setIsChartOpen(true);
+              console.log("Clicked action button", item.Symbol);
+            }}
             >
               {item.Messenger || item.action}
             </button>
@@ -3309,50 +3350,27 @@ useEffect(() => {
       </Modal>
       
       {chartData &&(
-        <DualExchangeChartModal
+      <TripleExchangeChartModal
         isOpen={isChartOpen}
         onClose={() => setIsChartOpen(false)}
         symbol={chartData?.symbol|| activeTab}
-        exchange1={chartData?.exchange1}
-        exchange2={chartData?.exchange2}
+        exchange1={chartData?.exchange1 || null}
+        exchange2={chartData?.exchange2 || null}
+        exchange3={chartData?.exchange3 || null}
         timeframe={chartData?.timeframe || "1m"}
         exchange1Bid={chartData?.exchange1Bid || 1.0875}
         exchange1Ask={chartData?.exchange1Ask || 1.0878}
         exchange2Bid={chartData?.exchange2Bid || 1.0876}
         exchange2Ask={chartData?.exchange2Ask || 1.0879}
-
+        exchange3Bid={chartData?.exchange3Bid || 1.0877}
+        exchange3Ask={chartData?.exchange3Ask || 1.0880}
+        exchange1Digits={chartData?.exchange1Digits}
+        exchange2Digits={chartData?.exchange2Digits}
+        exchange3Digits={chartData?.exchange3Digits}
       />
       )}
       
 
-      {/* <DualExchangeChartModal
-        isOpen={isChartOpen}
-        onClose={() => setIsChartOpen(false)}
-        symbol={chartData_Example.symbol}
-        exchange1={ chartData_Example.exchange1}
-        exchange2={ chartData_Example.exchange2}
-        timeframe={ "1m"}
-        exchange1Bid={1.0875}
-        exchange1Ask={1.0878}
-        exchange2Bid={1.0876}
-        exchange2Ask={1.0879}
-
-      /> */}
-      {/* <Modal
-        title={`Chart Details - ${activeTab} on ${activeBroker}`}
-        width={isMobile ? "90%" : isTablet ? "80%" : "70%"}
-        open={isChartOpen}
-        onCancel={() => setIsChartOpen(false)}
-      >
-         <SingleChart
-      title="EUR/USD"
-      symbol="EURUSD"
-      data={data}
-      bidAsk={{ bid: 1.0875, ask: 1.0878 }}
-    />
-        
-
-      </Modal> */}
 
       <AccountModal open={modalConfig} onCancel={() => setModalConfig(false)} />
 
