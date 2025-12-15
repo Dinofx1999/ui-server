@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Modal } from 'antd';
 
 // ============================================================================
@@ -20,12 +20,11 @@ export interface ExchangeData {
   data: OHLCData[];
 }
 
-// Config cho hình dáng nến
 export interface CandleConfig {
-  width: number;           // Chiều rộng nến (px)
-  spacing: number;         // Khoảng cách giữa các nến (px)
-  wickWidth: number;       // Độ dày của bấc nến (px)
-  heightScale: number;     // Tỷ lệ chiều cao (1.0 = normal, >1 = cao hơn)
+  width: number;
+  spacing: number;
+  wickWidth: number;
+  heightScale: number;
 }
 
 export interface DualExchangeChartModalProps {
@@ -37,7 +36,6 @@ export interface DualExchangeChartModalProps {
   timeframe?: string;
   candleConfig?: CandleConfig | 'thin' | 'normal' | 'wide' | 'tall' | 'slim-tall';
 
-  // ✅ NEW: Bid/Ask realtime khác nhau cho từng exchange (đẩy từ Server)
   exchange1Bid?: number;
   exchange1Ask?: number;
   exchange2Bid?: number;
@@ -57,6 +55,12 @@ const CANDLE_PRESETS: Record<string, CandleConfig> = {
 };
 
 // ============================================================================
+// HELPERS
+// ============================================================================
+
+const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+
+// ============================================================================
 // COMPACT CHART WITH CONFIGURABLE CANDLES
 // ============================================================================
 
@@ -69,12 +73,18 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
   timeframe = "1H",
   candleConfig = 'slim-tall',
 
-  // ✅ NEW
   exchange1Bid,
   exchange1Ask,
   exchange2Bid,
   exchange2Ask,
 }) => {
+
+  // ✅ Responsive flags (không cần lib)
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+  const isTablet = typeof window !== 'undefined' ? window.innerWidth >= 640 && window.innerWidth < 1024 : false;
+
+  // ✅ Size modal responsive
+  const modalWidth = isMobile ? '95vw' : isTablet ? 920 : 800;
 
   const getCandleConfig = (): CandleConfig => {
     if (typeof candleConfig === 'string') return CANDLE_PRESETS[candleConfig] || CANDLE_PRESETS['normal'];
@@ -84,7 +94,7 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
   const candle = getCandleConfig();
 
   const baseConfig = {
-    chartHeight: 180,
+    chartHeight: isMobile ? 200 : 180,
     chartWidth: 280,
     fontSize: 8,
     timeY: 165,
@@ -101,7 +111,6 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
     scaleOffset: 15
   };
 
-  // ✅ NEW: số nến hiển thị
   const MAX_CANDLES = 10;
 
   // Component vẽ biểu đồ
@@ -109,30 +118,20 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
     data: OHLCData[];
     exchangeName: string;
     accentColor: string;
-
-    // ✅ NEW: bid/ask realtime cho chart này
     bid?: number;
     ask?: number;
-  }> = ({
-    data,
-    exchangeName,
-    accentColor,
-    bid,
-    ask
-  }) => {
+  }> = ({ data, exchangeName, accentColor, bid, ask }) => {
 
-    // ✅ Chỉ lấy 10 nến gần nhất
     const viewData = (data && data.length > MAX_CANDLES) ? data.slice(-MAX_CANDLES) : (data || []);
 
     const calculateChartData = (ohlcData: OHLCData[]) => {
-      // ✅ include bid/ask vào range để không bị “line” nằm ngoài chart
       const last = ohlcData[ohlcData.length - 1];
-      const bidPrice = (typeof bid === 'number') ? bid : last?.close;
-      const askPrice = (typeof ask === 'number') ? ask : last?.close;
+      const bidPrice_ = (typeof bid === 'number') ? bid : last?.close;
+      const askPrice_ = (typeof ask === 'number') ? ask : last?.close;
 
       const allPrices = ohlcData.flatMap(d => [d.high, d.low, d.open, d.close]);
-      if (typeof bidPrice === 'number') allPrices.push(bidPrice);
-      if (typeof askPrice === 'number') allPrices.push(askPrice);
+      if (typeof bidPrice_ === 'number') allPrices.push(bidPrice_);
+      if (typeof askPrice_ === 'number') allPrices.push(askPrice_);
 
       const maxPrice = Math.max(...allPrices);
       const minPrice = Math.min(...allPrices);
@@ -146,20 +145,15 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
       };
     };
 
-    // ✅ tránh crash khi viewData rỗng
     if (!viewData || viewData.length === 0) {
       return (
         <div style={{
           background: '#0f172a',
-          borderRadius: '8px',
+          borderRadius: 10,
           border: '1px solid #334155',
           overflow: 'hidden'
         }}>
-          <div style={{
-            padding: '10px',
-            color: '#94a3b8',
-            fontSize: '12px'
-          }}>
+          <div style={{ padding: 10, color: '#94a3b8', fontSize: 12 }}>
             Không có dữ liệu OHLC
           </div>
         </div>
@@ -168,7 +162,6 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
 
     const chartInfo = calculateChartData(viewData);
 
-    // ✅ NEW: chuẩn hóa bid/ask dùng cho line + header
     const last = viewData[viewData.length - 1];
     const bidPrice = (typeof bid === 'number') ? bid : (last?.close ?? 0);
     const askPrice = (typeof ask === 'number') ? ask : (last?.close ?? 0);
@@ -193,14 +186,7 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
 
       return (
         <g>
-          <line
-            x1={x}
-            y1={highY}
-            x2={x}
-            y2={lowY}
-            stroke={bodyColor}
-            strokeWidth={config.wickWidth}
-          />
+          <line x1={x} y1={highY} x2={x} y2={lowY} stroke={bodyColor} strokeWidth={config.wickWidth} />
           <rect
             x={x - halfWidth}
             y={bodyTop}
@@ -210,14 +196,7 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
             stroke={bodyColor}
             strokeWidth="1"
           />
-          <text
-            x={x}
-            y={config.timeY}
-            textAnchor="middle"
-            fill="#9ca3af"
-            fontSize={config.fontSize}
-            fontWeight="500"
-          >
+          <text x={x} y={config.timeY} textAnchor="middle" fill="#9ca3af" fontSize={config.fontSize} fontWeight="500">
             {candleData.time}
           </text>
         </g>
@@ -249,14 +228,8 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
                   strokeWidth="0.5"
                   strokeDasharray="3,3"
                 />
-                <text
-                  x="28"
-                  y={y + 3}
-                  textAnchor="end"
-                  fill="#9ca3af"
-                  fontSize={config.fontSize}
-                >
-                  {price.toFixed(4)}
+                <text x="28" y={y + 3} textAnchor="end" fill="#9ca3af" fontSize={config.fontSize}>
+                  {price.toFixed(2)}
                 </text>
               </g>
             );
@@ -265,80 +238,30 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
       );
     };
 
-    // ✅ NEW: Bid/Ask lines realtime (line ngang theo giá hiện tại)
     const BidAskLines: React.FC = () => {
       const bidY = chartInfo.scale(bidPrice);
       const askY = chartInfo.scale(askPrice);
 
       const xLeft = 30;
-      const xRight = config.chartWidth - 10 + 30;
+
+      // ✅ Mobile: label không bị chạm mép, dịch vào trong 10px
+      const BID_ASK_OFFSET_X = -35;
+      const xRight = config.chartWidth - 10 - BID_ASK_OFFSET_X;
 
       return (
         <g>
-          {/* ASK line */}
-          <line
-            x1={xLeft}
-            y1={askY}
-            x2={xRight}
-            y2={askY}
-            stroke="#fbbf24"
-            strokeWidth="1"
-            strokeDasharray="6,3"
-            opacity="0.95"
-          />
-          <rect
-            x={xRight - 44}
-            y={askY - 8}
-            width="44"
-            height="14"
-            rx="3"
-            fill="#0b1220"
-            stroke="#fbbf24"
-            strokeWidth="0.8"
-            opacity="0.95"
-          />
-          <text
-            x={xRight - 22}
-            y={askY + 2}
-            textAnchor="middle"
-            fill="#fbbf24"
-            fontSize={config.fontSize}
-            fontWeight="700"
-          >
-            ASK
+          {/* ASK */}
+          <line x1={xLeft} y1={askY} x2={xRight} y2={askY} stroke="#fbbf24" strokeWidth="1" strokeDasharray="6,3" opacity="0.95" />
+          <rect x={xRight - 54} y={askY - 8} width="54" height="14" rx="3" fill="#0b1220" stroke="#fbbf24" strokeWidth="0.8" opacity="0.95" />
+          <text x={xRight - 27} y={askY + 2} textAnchor="middle" fill="#fbbf24" fontSize={config.fontSize} fontWeight="800">
+            {askPrice.toFixed(2)}
           </text>
 
-          {/* BID line */}
-          <line
-            x1={xLeft}
-            y1={bidY}
-            x2={xRight}
-            y2={bidY}
-            stroke="#60a5fa"
-            strokeWidth="1"
-            strokeDasharray="4,4"
-            opacity="0.95"
-          />
-          <rect
-            x={xRight - 44}
-            y={bidY - 8}
-            width="44"
-            height="14"
-            rx="3"
-            fill="#0b1220"
-            stroke="#60a5fa"
-            strokeWidth="0.8"
-            opacity="0.95"
-          />
-          <text
-            x={xRight - 22}
-            y={bidY + 2}
-            textAnchor="middle"
-            fill="#60a5fa"
-            fontSize={config.fontSize}
-            fontWeight="700"
-          >
-            BID
+          {/* BID */}
+          <line x1={xLeft} y1={bidY} x2={xRight} y2={bidY} stroke="#60a5fa" strokeWidth="1" strokeDasharray="4,4" opacity="0.95" />
+          <rect x={xRight - 54} y={bidY - 8} width="54" height="14" rx="3" fill="#0b1220" stroke="#60a5fa" strokeWidth="0.8" opacity="0.95" />
+          <text x={xRight - 27} y={bidY + 2} textAnchor="middle" fill="#60a5fa" fontSize={config.fontSize} fontWeight="800">
+            {bidPrice.toFixed(2)}
           </text>
         </g>
       );
@@ -347,88 +270,51 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
     return (
       <div style={{
         background: '#0f172a',
-        borderRadius: '8px',
+        borderRadius: 10,
         border: '1px solid #334155',
         overflow: 'hidden'
       }}>
         {/* Header */}
         <div style={{
-          padding: '6px 10px',
+          padding: isMobile ? '8px 10px' : '6px 10px',
           borderBottom: '1px solid #334155',
           display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 6 : 0,
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: isMobile ? 'flex-start' : 'center',
           background: `linear-gradient(135deg, ${accentColor}15 0%, transparent 100%)`
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: accentColor
-            }}></div>
-            <span style={{ color: 'white', fontWeight: 600, fontSize: '13px' }}>{exchangeName}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: accentColor }} />
+            <span style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>{exchangeName}</span>
           </div>
 
-          <div style={{ display: 'flex', gap: '6px', fontSize: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <div>
-              <span style={{ color: '#94a3b8' }}>O: </span>
-              <span style={{ color: 'white', fontWeight: 500 }}>{viewData[0].open.toFixed(4)}</span>
-            </div>
-            <div>
-              <span style={{ color: '#94a3b8' }}>H: </span>
-              <span style={{ color: '#10b981', fontWeight: 500 }}>
-                {Math.max(...viewData.map(d => d.high)).toFixed(4)}
-              </span>
-            </div>
-            <div>
-              <span style={{ color: '#94a3b8' }}>L: </span>
-              <span style={{ color: '#ef4444', fontWeight: 500 }}>
-                {Math.min(...viewData.map(d => d.low)).toFixed(4)}
-              </span>
-            </div>
-            <div>
-              <span style={{ color: '#94a3b8' }}>C: </span>
-              <span style={{ color: '#3b82f6', fontWeight: 500 }}>
-                {viewData[viewData.length - 1].close.toFixed(4)}
-              </span>
-            </div>
-
-            {/* ✅ NEW: Bid/Ask realtime theo exchange */}
-            <div>
-              <span style={{ color: '#94a3b8' }}>Bid: </span>
-              <span style={{ color: '#60a5fa', fontWeight: 700 }}>
-                {bidPrice.toFixed(4)}
-              </span>
-            </div>
-            <div>
-              <span style={{ color: '#94a3b8' }}>Ask: </span>
-              <span style={{ color: '#fbbf24', fontWeight: 700 }}>
-                {askPrice.toFixed(4)}
-              </span>
-            </div>
+          {/* ✅ Mobile: chia 2 dòng nhỏ gọn */}
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 10,
+            fontSize: 10,
+            justifyContent: isMobile ? 'flex-start' : 'flex-end',
+            width: '100%'
+          }}>
+            <div><span style={{ color: '#94a3b8' }}>O:</span> <span style={{ color: 'white', fontWeight: 600 }}>{viewData[0].open.toFixed(2)}</span></div>
+            <div><span style={{ color: '#94a3b8' }}>H:</span> <span style={{ color: '#10b981', fontWeight: 700 }}>{Math.max(...viewData.map(d => d.high)).toFixed(2)}</span></div>
+            <div><span style={{ color: '#94a3b8' }}>L:</span> <span style={{ color: '#ef4444', fontWeight: 700 }}>{Math.min(...viewData.map(d => d.low)).toFixed(2)}</span></div>
+            <div><span style={{ color: '#94a3b8' }}>C:</span> <span style={{ color: '#3b82f6', fontWeight: 700 }}>{viewData[viewData.length - 1].close.toFixed(2)}</span></div>
+            <div><span style={{ color: '#94a3b8' }}>Bid:</span> <span style={{ color: '#60a5fa', fontWeight: 800 }}>{bidPrice.toFixed(2)}</span></div>
+            <div><span style={{ color: '#94a3b8' }}>Ask:</span> <span style={{ color: '#fbbf24', fontWeight: 800 }}>{askPrice.toFixed(2)}</span></div>
           </div>
         </div>
 
         {/* Chart area */}
-        <div style={{ padding: '8px', background: '#020617' }}>
+        <div style={{ padding: isMobile ? 8 : 8, background: '#020617' }}>
           <svg width="100%" height={config.chartHeight} viewBox={`0 0 ${config.chartWidth} ${config.chartHeight}`}>
-            <GridLines
-              scale={chartInfo.scale}
-              maxPrice={chartInfo.maxPrice}
-              minPrice={chartInfo.minPrice}
-            />
-
+            <GridLines scale={chartInfo.scale} maxPrice={chartInfo.maxPrice} minPrice={chartInfo.minPrice} />
             {viewData.map((candleData, index) => (
-              <Candlestick
-                key={index}
-                candle={candleData}
-                index={index}
-                scale={chartInfo.scale}
-              />
+              <Candlestick key={index} candle={candleData} index={index} scale={chartInfo.scale} />
             ))}
-
-            {/* ✅ NEW: Bid/Ask realtime lines */}
             <BidAskLines />
           </svg>
         </div>
@@ -436,10 +322,16 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
     );
   };
 
-  // Tính spread (giữ nguyên logic cũ close-close)
+  // ✅ Spread safe (mobile hay bị load data muộn)
   const calculateSpread = (): { close: string; average: string } => {
-    const close1 = exchange1.data[exchange1.data.length - 1].close;
-    const close2 = exchange2.data[exchange2.data.length - 1].close;
+    const d1 = exchange1?.data || [];
+    const d2 = exchange2?.data || [];
+    const last1 = d1.length ? d1[d1.length - 1] : null;
+    const last2 = d2.length ? d2[d2.length - 1] : null;
+
+    const close1 = last1?.close ?? 0;
+    const close2 = last2?.close ?? 0;
+
     const spread = Math.abs(close1 - close2);
     const avgSpread = (spread * 10000 / 2);
 
@@ -452,14 +344,14 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
     <Modal
       title={
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>💱</span>
-            <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#008670' }}>{symbol}</span>
-            <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#94a3b8', marginLeft: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 18 }}>💱</span>
+            <span style={{ fontSize: 18, fontWeight: 'bold', color: '#008670' }}>{symbol}</span>
+            <span style={{ fontSize: 11, fontWeight: 'normal', color: '#94a3b8' }}>
               So Sánh Giá
             </span>
           </div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
             Timeframe: {timeframe} | Real-time
           </div>
         </div>
@@ -467,26 +359,37 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
       open={isOpen}
       onCancel={onClose}
       footer={null}
-      width={800}
+      width={modalWidth as any}
       zIndex={1000}
       centered
+      style={{
+        top: isMobile ? 8 : undefined,
+      }}
       styles={{
-        body: { padding: '16px', background: '#0f172a' },
+        body: {
+          padding: isMobile ? 12 : 16,
+          background: '#0f172a',
+          maxHeight: isMobile ? '80vh' : 'auto',
+          overflowY: isMobile ? 'auto' : 'visible',
+        },
         header: {
           background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
           borderBottom: '1px solid #334155',
-          padding: '12px 16px'
+          padding: isMobile ? '10px 12px' : '12px 16px'
         },
-        content: { background: '#1e293b', border: '1px solid #334155' }
+        content: {
+          background: '#1e293b',
+          border: '1px solid #334155'
+        }
       }}
     >
       <div style={{ background: '#0f172a' }}>
         {/* Charts Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '12px',
-          marginBottom: '12px'
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+          gap: isMobile ? 10 : 12,
+          marginBottom: 12
         }}>
           <ChartView
             data={exchange1.data}
@@ -510,34 +413,32 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '20px',
-          fontSize: '11px',
-          padding: '10px',
+          gap: 14,
+          flexWrap: 'wrap',
+          fontSize: 11,
+          padding: isMobile ? 10 : 10,
           background: '#1e293b',
-          borderRadius: '8px',
+          borderRadius: 10,
           border: '1px solid #334155',
-          marginBottom: '12px'
+          marginBottom: 12
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ width: '12px', height: '12px', background: '#10b981', borderRadius: '2px' }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, background: '#10b981', borderRadius: 2 }} />
             <span style={{ color: '#cbd5e1' }}>Tăng</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ width: '12px', height: '12px', background: '#ef4444', borderRadius: '2px' }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, background: '#ef4444', borderRadius: 2 }} />
             <span style={{ color: '#cbd5e1' }}>Giảm</span>
           </div>
-
-          {/* Bid/Ask */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ width: '14px', height: '2px', background: '#60a5fa' }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 14, height: 2, background: '#60a5fa' }} />
             <span style={{ color: '#cbd5e1' }}>Bid</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ width: '14px', height: '2px', background: '#fbbf24' }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 14, height: 2, background: '#fbbf24' }} />
             <span style={{ color: '#cbd5e1' }}>Ask</span>
           </div>
-
-          <div style={{ color: '#94a3b8', fontSize: '10px', marginLeft: '8px' }}>
+          <div style={{ color: '#94a3b8', fontSize: 10 }}>
             * Spread khác nhau do thanh khoản
           </div>
         </div>
@@ -545,33 +446,30 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
         {/* Spread Info */}
         <div style={{
           background: '#1e293b',
-          borderRadius: '8px',
-          padding: '10px',
+          borderRadius: 10,
+          padding: isMobile ? 10 : 10,
           border: '1px solid #334155',
           display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 8 : 0,
           justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: '12px'
+          alignItems: isMobile ? 'flex-start' : 'center',
+          fontSize: 12
         }}>
-          <span style={{ color: '#cbd5e1', fontWeight: 500 }}>Spread:</span>
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Spread:</span>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div>
-              <span style={{ color: '#94a3b8', fontSize: '11px' }}>Close: </span>
+              <span style={{ color: '#94a3b8', fontSize: 11 }}>Close: </span>
               <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>{spread.close}</span>
             </div>
             <div>
-              <span style={{ color: '#94a3b8', fontSize: '11px' }}>Avg: </span>
+              <span style={{ color: '#94a3b8', fontSize: 11 }}>Avg: </span>
               <span style={{ color: '#06b6d4', fontWeight: 'bold' }}>{spread.average} pips</span>
             </div>
           </div>
         </div>
 
-        <div style={{
-          color: '#94a3b8',
-          fontSize: '10px',
-          marginTop: '10px',
-          textAlign: 'center'
-        }}>
+        <div style={{ color: '#94a3b8', fontSize: 10, marginTop: 10, textAlign: 'center' }}>
           ⚡ Cập nhật: Real-time | Độ trễ: &lt;100ms
         </div>
       </div>
