@@ -337,8 +337,14 @@ const groupedNews = groupNewsByMinute(filteredNews);
 
   let IP_Server = "116.105.227.149";
 const HandleGetNews = async () => {
-  const response = await axios.get(`${`http://${IP_Server}:5000`}/v1/api/admin/forex-news/impact/${typeHighNews}`);
+  try {
+    const response = await axios.get(`${`http://${IP_Server}:5000`}/v1/api/admin/forex-news/impact/${typeHighNews}`);
   return response.data;
+  } catch (error) {
+    console.error("Error fetching news:", error);
+    return null;
+  }
+  
 };
 
   useEffect(() => {
