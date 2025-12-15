@@ -22,6 +22,8 @@ import HistoryModal from '../Components/modal/modal.history';
 import AccountModal from '../Components/modal/modal.manager';
 import DualExchangeChartModal from '../Components/modal/modal.chart';
 import ImpactBadge from '../Components/Alert/Alert_News';
+import MiniCandleChart from "../Components/Chart/chart";
+import SingleChart from '../Components/Chart/chart.claude';
 
 
 
@@ -177,6 +179,7 @@ const [alert_, setAlert_] = useState(false);
   const [activeTab, setActiveTab] = useState("EURUSD");
 
   const [activeBroker, setActiveBroker] = useState("");
+  const [activeBrokerChart, setActiveBrokerChart] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
@@ -216,7 +219,28 @@ const [alert_, setAlert_] = useState(false);
   //Pagination
   const [pageSize_BrokerInfo, setPageSize_BrokerInfo] = useState(10);
 
+
   //data chart
+
+const [chartData, setChartData] = useState<{
+  symbol: string;
+  timeframe: string;
+  exchange1: any;
+  exchange2: any;
+  exchange1Bid?: number;
+  exchange1Ask?: number;
+  exchange2Bid?: number;
+  exchange2Ask?: number;
+} | null>(null);
+
+// 2️⃣ Realtime tick – thay đổi liên tục
+const [ticks, setTicks] = useState({
+  ex1Bid: 0,
+  ex1Ask: 0,
+  ex2Bid: 0,
+  ex2Ask: 0,
+});
+  
 
  
 
@@ -247,17 +271,76 @@ const handleCancelModalInfo = async () => {
   }
 };
 
- const chartData = {
-    symbol: "EUR/USD",
+function toNum(v: any, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function mapOHLC(ohlc: any[]) {
+  const arr = Array.isArray(ohlc) ? ohlc : [];
+
+  const normalized = arr
+    .slice(0, 10)
+    .sort((a, b) => String(a.time).localeCompare(String(b.time))); // "16:06" -> "16:15"
+
+  return normalized.map((c) => ({
+    time: String(c.time),
+    open: toNum(c.open),
+    high: toNum(c.high),
+    low: toNum(c.low),
+    close: toNum(c.close),
+  }));
+}
+
+function buildChartDataFromAB(payload: any, chartData_Example: any) {
+  const A = payload?.A;
+  const B = payload?.B;
+
+  const aData = mapOHLC(A?.ohlc);
+  const bData = mapOHLC(B?.ohlc);
+
+  return {
+    symbol: A?.symbol || B?.symbol || chartData_Example.symbol || "UNKNOWN",
+    timeframe: A?.timeframe || B?.timeframe || chartData_Example.timeframe || "1M",
+
+    exchange1: {
+      name: A?.Broker || "Broker A",
+      color: "#F0B90B",
+      data: aData.length ? aData : bData || chartData_Example.exchange1.data,
+    },
+
+    exchange2: {
+      name: B?.Broker || "Broker B",
+      color: "#5741D9",
+      data: bData.length ? bData : aData || chartData_Example.exchange2.data,
+    },
+
+    exchange1Bid: toNum(A?.bid),
+    exchange1Ask: toNum(A?.ask),
+    exchange2Bid: toNum(B?.bid),
+    exchange2Ask: toNum(B?.ask),
+  };
+}
+
+
+
+ const chartData_Example = {
+    symbol: "EURUSD",
     timeframe: "1H",
     exchange1: {
       name: "Broker 1",
       color: "#F0B90B",
       data: [
-        { time: "14:00", high: 1.0850, low: 1.0820, open: 1.0830, close: 1.0845 },
+        { time: "14:00", high: 1.0850, low: 1.0620, open: 1.0890, close: 1.0845 },
         { time: "15:00", high: 1.0870, low: 1.0840, open: 1.0845, close: 1.0865 },
         { time: "16:00", high: 1.0885, low: 1.0855, open: 1.0865, close: 1.0870 },
         { time: "17:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
       ]
     },
     exchange2: {
@@ -268,6 +351,12 @@ const handleCancelModalInfo = async () => {
         { time: "15:00", high: 1.0875, low: 1.0835, open: 1.0840, close: 1.0870 },
         { time: "16:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0875 },
         { time: "17:00", high: 1.0895, low: 1.0865, open: 1.0875, close: 1.0885 },
+        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
       ]
     }
   }
@@ -438,6 +527,8 @@ const HandleGetNews = async () => {
       autoReconnect: false,
       debug: true,
     });
+
+  
 
   useEffect(() => {
     if (!connected_analysis && isConnected) {
@@ -739,6 +830,23 @@ const HandleGetNews = async () => {
     localStorage.removeItem("user");
     navigate("/login");
   };
+
+  function pickBrokerPair(Data: any[], brokerAName: string) {
+  if (!Array.isArray(Data) || Data.length === 0) return null;
+
+  const brokerA = Data.find(
+    (item) => item.Broker === brokerAName
+  );
+
+  const brokerB = Data[0]; // mặc định Data[0]
+
+  if (!brokerA || !brokerB) return null;
+
+  return {
+    A: brokerA,
+    B: brokerB,
+  };
+}
 
   const columns_symbols: TableProps["columns"] = [
     {
@@ -1260,12 +1368,10 @@ const HandleGetNews = async () => {
       <Button
         type="primary"
         size="small"
-        disabled={record.Auto_Trade !== "true"}
         onClick={async () => {
           try {
-            console.log("Chart for:", record.symbol, record.Broker_);
+            setActiveBrokerChart(record.Broker);
             setIsChartOpen(true);
-            // Open chart modal or navigate to chart page
           } catch (error) {
             messageApi.open({
               type: "error",
@@ -1962,6 +2068,37 @@ const HandleGetNews = async () => {
     }
   }, [brokers]);
 
+//   function pickBrokerPair(Data: any[], brokerAName: string) {
+//   if (!Array.isArray(Data) || Data.length === 0) return null;
+
+//   const brokerA = Data.find(
+//     (item) => item.Broker === brokerAName
+//   );
+
+//   const brokerB = Data[0]; // mặc định Data[0]
+
+//   if (!brokerA || !brokerB) return null;
+
+//   return {
+//     A: brokerA,
+//     B: brokerB,
+//   };
+// }
+
+useEffect(() => {
+  if (!isChartOpen) return;
+  if (!symbols?.length) return;
+  if (!activeBrokerChart) return;
+
+  const pair = pickBrokerPair(symbols, activeBrokerChart);
+  if (!pair?.A || !pair?.B) return;
+
+  const next = buildChartDataFromAB(pair, chartData_Example);
+  setChartData(next);
+  console.log("📊 Broker Pair for Chart:", next);
+}, [symbols, activeBrokerChart, isChartOpen]);
+  
+
   const handleClickInfo = () => {
     setOpenModalInfo((prev) => !prev);
   };
@@ -2089,6 +2226,7 @@ const HandleGetNews = async () => {
         // if(error.response.data.code === 0)Eror_("Symbol đã tồn tại");
       });
   };
+
 
   const columns_SymbolConfig: TableProps<any>["columns"] = [
     {
@@ -2668,6 +2806,7 @@ useEffect(() => {
         }
       }}
     >
+      
       {/* ✅ Trusted Badge - Góc trên bên TRÁI */}
       {isTrusted && (
         <div
@@ -3166,14 +3305,51 @@ useEffect(() => {
         <p>Disconnected server at {new Date().toLocaleTimeString()} </p>
       </Modal>
       
-      <DualExchangeChartModal
+      {chartData &&(
+        <DualExchangeChartModal
         isOpen={isChartOpen}
         onClose={() => setIsChartOpen(false)}
-        symbol={chartData.symbol}
-        exchange1={chartData.exchange1}
-        exchange2={chartData.exchange2}
-        timeframe={chartData.timeframe}
+        symbol={chartData?.symbol|| activeTab}
+        exchange1={chartData?.exchange1}
+        exchange2={chartData?.exchange2}
+        timeframe={chartData?.timeframe || "1m"}
+        exchange1Bid={chartData?.exchange1Bid || 1.0875}
+        exchange1Ask={chartData?.exchange1Ask || 1.0878}
+        exchange2Bid={chartData?.exchange2Bid || 1.0876}
+        exchange2Ask={chartData?.exchange2Ask || 1.0879}
+
       />
+      )}
+      
+
+      {/* <DualExchangeChartModal
+        isOpen={isChartOpen}
+        onClose={() => setIsChartOpen(false)}
+        symbol={chartData_Example.symbol}
+        exchange1={ chartData_Example.exchange1}
+        exchange2={ chartData_Example.exchange2}
+        timeframe={ "1m"}
+        exchange1Bid={1.0875}
+        exchange1Ask={1.0878}
+        exchange2Bid={1.0876}
+        exchange2Ask={1.0879}
+
+      /> */}
+      {/* <Modal
+        title={`Chart Details - ${activeTab} on ${activeBroker}`}
+        width={isMobile ? "90%" : isTablet ? "80%" : "70%"}
+        open={isChartOpen}
+        onCancel={() => setIsChartOpen(false)}
+      >
+         <SingleChart
+      title="EUR/USD"
+      symbol="EURUSD"
+      data={data}
+      bidAsk={{ bid: 1.0875, ask: 1.0878 }}
+    />
+        
+
+      </Modal> */}
 
       <AccountModal open={modalConfig} onCancel={() => setModalConfig(false)} />
 
@@ -3396,6 +3572,7 @@ useEffect(() => {
       >
         <div style={{ overflowX: "auto" }}>
           <Table
+            rowKey={(record) => `${record.symbol}-${record.Broker}`}
             columns={columns_symbols}
             dataSource={Array.isArray(symbols) ? symbols : []}
             scroll={{ x: isMobile ? 500 : "max-content" }}
