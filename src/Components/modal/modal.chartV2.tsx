@@ -286,7 +286,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
       const bidY = chartInfo.scale(bidPrice);
       const askY = chartInfo.scale(askPrice);
 
-      const xLeft = 30;
+      const xLeft = 35;
       const OFFSET_X = -55;
       const xRight = config.chartWidth - 10 - OFFSET_X;
 
@@ -294,15 +294,15 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
         <g>
           {/* ASK */}
           <line x1={xLeft} y1={askY} x2={xRight} y2={askY} stroke="#fbbf24" strokeWidth="1" strokeDasharray="6,3" opacity="0.95" />
-          <rect x={xRight - 74} y={askY - 8} width="74" height="14" rx="3" fill="#0b1220" stroke="#fbbf24" strokeWidth="0.8" opacity="0.95" />
-          <text x={xRight - 37} y={askY + 2} textAnchor="middle" fill="#fbbf24" fontSize={config.fontSize} fontWeight="800">
+          <rect x={xRight - 74} y={askY - 8} width="59" height="14" rx="3" fill="#0b1220" stroke="#fbbf24" strokeWidth="0.8" opacity="0.95" />
+          <text x={xRight - 30} y={askY + 2} textAnchor="end" fill="#fbbf24" fontSize={config.fontSize} fontWeight="800">
             {fmt(askPrice)}
           </text>
 
           {/* BID */}
           <line x1={xLeft} y1={bidY} x2={xRight} y2={bidY} stroke="#60a5fa" strokeWidth="1" strokeDasharray="4,4" opacity="0.95" />
-          <rect x={xRight - 74} y={bidY - 8} width="74" height="14" rx="3" fill="#0b1220" stroke="#60a5fa" strokeWidth="0.8" opacity="0.95" />
-          <text x={xRight - 37} y={bidY + 2} textAnchor="middle" fill="#60a5fa" fontSize={config.fontSize} fontWeight="800">
+          <rect x={xRight - 74} y={bidY - 8} width="59" height="14" rx="3" fill="#0b1220" stroke="#60a5fa" strokeWidth="0.8" opacity="0.95" />
+          <text x={xRight - 30} y={bidY + 2} textAnchor="end" fill="#60a5fa" fontSize={config.fontSize} fontWeight="800">
             {fmt(bidPrice)}
           </text>
         </g>
