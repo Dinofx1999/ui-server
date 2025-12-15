@@ -3100,8 +3100,9 @@ useEffect(() => {
               whiteSpace: "nowrap",
             }}
             onClick={() => {
-              setActiveBrokerChart(item.Broker || item.provider);
-              setActiveTab(item.Symbol || item.pair);
+                setActiveBrokerChart(item.Broker || item.provider);
+                setActiveTab(item.Symbol || item.pair);
+                setIsChartOpen(true);
               console.log("Clicked action button", item.Symbol);
             }}
           >
