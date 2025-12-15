@@ -620,9 +620,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
           color: darkMode ? '#9ca3af' : '#6b7280',
         }}>
           {isMobile ? (
-            <>© {new Date().getFullYear()} DinoHunter</>
+            <>© {new Date().getFullYear()} DinoHunter 
+            <p>Đây Là Hệ Thống Phân Tích Nội Bộ Được Sử Dụng Cá Nhân</p>
+            <p>Chúng tôi miễn trừ mọi trách nhiệm, đối với cá nhân nào sử dụng hệ thống này.</p>
+            </>
           ) : (
-            <>© {new Date().getFullYear()} DinoHunter Trading Platform. All rights reserved.</>
+            <>© {new Date().getFullYear()} DinoHunter Trading Platform. All rights reserved.
+              <p>Đây Là Hệ Thống Phân Tích Nội Bộ Được Sử Dụng Cá Nhân</p>
+            <p>Chúng tôi miễn trừ mọi trách nhiệm, đối với cá nhân nào sử dụng hệ thống này.</p>
+            </>
           )}
         </div>
       </Footer>

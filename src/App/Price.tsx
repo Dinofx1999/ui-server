@@ -169,11 +169,12 @@ const Price: React.FC<PriceProps> = ({ isDark }) => {
   }, []);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
+const [roleUser, setRoleUser] = useState(localStorage.getItem("role") || "");
 const [alert, setAlert] = useState(false);
 const [alert_, setAlert_] = useState(false); 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("EURUSD");
+
   const [activeBroker, setActiveBroker] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [isMobile, setIsMobile] = useState(false);
@@ -3413,7 +3414,9 @@ useEffect(() => {
               gap: isMobile ? "8px" : "12px",
             }}
           >
-            <div
+
+            {!isMobile && (
+               <div
               style={{
                 width: isMobile ? "32px" : "40px",
                 height: isMobile ? "32px" : "40px",
@@ -3426,6 +3429,9 @@ useEffect(() => {
             >
               <span style={{ fontSize: isMobile ? "20px" : "24px" }}>📊</span>
             </div>
+            
+            )}
+           
             {!isMobile && (
               <div>
                 <div
@@ -3810,7 +3816,8 @@ const titles = g.items
                 </button>
 
                   {/* Spread 0 Button */}
-                  <button
+                  {roleUser.toUpperCase() === "ADMIN" && (
+                       <button
                     style={{
                       padding: "10px 20px",
                       background:
@@ -3858,9 +3865,12 @@ const titles = g.items
                    
                     Spread Config
                   </button>
+                  )}
+                 
 
                    {/* Config Button */}
-                  <button
+                   {roleUser.toUpperCase() === "ADMIN" && (
+                       <button
                       style={{
                         padding: "10px 20px",
                         background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
@@ -3903,6 +3913,8 @@ const titles = g.items
                     <ThunderboltOutlined />
                     Manager
                   </button>
+                   )}
+                  
               </Space>
               
 
@@ -3988,7 +4000,9 @@ const titles = g.items
 
             {/* Config Button - Mobile */}
             {/* Config Button */}
-                  <button
+
+            {roleUser.toUpperCase() === "ADMIN" && (
+                <button
                       style={{
                         padding: "10px 20px",
                         background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
@@ -4031,6 +4045,8 @@ const titles = g.items
                     <ThunderboltOutlined />
                     Manager
                   </button>
+            )}
+                  
 
             {/* History Button - Mobile */}
            <button
@@ -4061,9 +4077,9 @@ const titles = g.items
             >
               <HistoryOutlined /> History
             </button>
-
-
-            {/* Spread 0 Button - Mobile */}
+               {/* Spread 0 Button - Mobile */}
+          {roleUser.toUpperCase() === "ADMIN" && (
+           
              <button
                     style={{
                       padding: "10px 20px",
@@ -4111,7 +4127,9 @@ const titles = g.items
                   > <SettingOutlined />
                    
                     Spread Config
-                  </button>
+              </button>
+          )}
+            
           </div>
         )}
 

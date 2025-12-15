@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
+import { Button, Modal, Typography, Checkbox } from 'antd';
+
+const { Title, Paragraph, Text } = Typography;
 
 export default function ForexLogin() {
   const [username, setusername] = useState('');
@@ -7,43 +10,65 @@ export default function ForexLogin() {
   const [showPass, setShowPass] = useState(false);
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{type: 'success' | 'error'; text: string} | null>(null);
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // State cho Modal đăng ký
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
+  // ✅ State cho Modal miễn trừ
+  const [showTermsModal, setShowTermsModal] = useState(true);
+  const [checked, setChecked] = useState(false);
+
+  // ✅ Đã đồng ý miễn trừ hay chưa (lấy từ localStorage để lần sau khỏi hiện modal)
+  const [acceptedTerms, setAcceptedTerms] = useState(() => {
+    return localStorage.getItem('acceptedTerms') === 'true';
+  });
+
+  // ✅ Nếu user bấm "Đăng nhập" khi chưa đồng ý -> lưu cờ để đồng ý xong auto login lại
+  const pendingLoginRef = useRef(false);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
+
+    // ✅ CHẶN LOGIN: chưa đồng ý miễn trừ
+    if (!acceptedTerms) {
+      pendingLoginRef.current = true; // nhớ là user đang muốn login
+      setChecked(false);              // reset tick cho chắc
+      setShowTermsModal(true);        // bật modal
+      return;                         // không call API
+    }
+
     setLoading(true);
+
     try {
-        const resp = await axios.post(
+      const resp = await axios.post(
         'http://116.105.227.149:5000/auth/login',
+        { username, password: pass },
         {
-          username,
-          password: pass,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-    timeout: 10000,
-  }
-);
-        if (resp.data.success) {
-            setMsg({ type: 'success', text: 'Đăng nhập thành công!' });
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('accessToken', 'Bearer ' + resp.data.accessToken);
-            localStorage.setItem('refreshToken', resp.data.refreshToken);
-            localStorage.setItem('fullname',resp.data.user.fullname);
-            localStorage.setItem('role',resp.data.user.role);
-            localStorage.setItem('id_SECRET',resp.data.user.id_SECRET);
-            window.location.href = '/';
-        } else {
-            throw new Error(resp.data.message || 'Email hoặc mật khẩu không hợp lệ.');
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 10000,
         }
+      );
+
+      console.log('Login response:', resp.data);
+
+      if (resp.data.success) {
+        setMsg({ type: 'success', text: 'Đăng nhập thành công!' });
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('accessToken', 'Bearer ' + resp.data.accessToken);
+        localStorage.setItem('refreshToken', resp.data.refreshToken);
+        localStorage.setItem('fullname', resp.data.user.fullname);
+        localStorage.setItem('role', resp.data.user.role);
+        localStorage.setItem('id_SECRET', resp.data.user.id_SECRET);
+        window.location.href = '/';
+      } else {
+        throw new Error(resp.data.message || 'Email hoặc mật khẩu không hợp lệ.');
+      }
     } catch (err: any) {
-      setMsg({ type: 'error', text: err?.message || 'Có lỗi xảy ra.' });
+      setMsg({ type: 'error', text: err?.response.data.message || 'Có lỗi xảy ra.' });
+      console.log('Login response:', err?.response.data.message || 'Có lỗi xảy ra.');
+
     } finally {
       setLoading(false);
     }
@@ -51,6 +76,100 @@ export default function ForexLogin() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#060b10] text-gray-100">
+      {/* ✅ MODAL MIỄN TRỪ TRÁCH NHIỆM */}
+      <Modal
+        title={<p>Miễn Trừ Trách Nhiệm</p>}
+        width={800}
+        open={showTermsModal}
+        onCancel={() => {
+          setShowTermsModal(false);
+          pendingLoginRef.current = false; // nếu đóng modal thì hủy ý định login
+        }}
+        confirmLoading={loading}
+        footer={[
+          <Button
+            key="close"
+            onClick={() => {
+              setShowTermsModal(false);
+              pendingLoginRef.current = false;
+            }}
+          >
+            Đóng
+          </Button>,
+          <Button
+            key="accept"
+            type="primary"
+            disabled={!checked}
+            onClick={() => {
+              // ✅ Lưu vĩnh viễn để lần sau không hiện modal nữa
+              localStorage.setItem('acceptedTerms', 'true');
+
+              // ✅ update state
+              setAcceptedTerms(true);
+              setShowTermsModal(false);
+
+              // ✅ Nếu user đang pending login -> tự login lại
+              if (pendingLoginRef.current) {
+                pendingLoginRef.current = false;
+                handleSubmit({ preventDefault: () => {} } as any);
+              }
+            }}
+          >
+            Tôi đã hiểu & đồng ý
+          </Button>,
+        ]}
+      >
+        <Typography>
+          <Title level={5} style={{ marginTop: 0 }}>
+            Cảnh báo rủi ro
+          </Title>
+
+          <Paragraph>
+            Nội dung, dữ liệu, biểu đồ, phân tích, tín hiệu và/hoặc robot giao dịch (EA)
+            trên hệ thống <Text strong>chỉ mang tính tham khảo</Text> và{' '}
+            <Text strong>không phải</Text> là lời khuyên đầu tư/tài chính/pháp lý
+            hay cam kết lợi nhuận.
+          </Paragraph>
+
+          <Paragraph>
+            Giao dịch Forex/CFD/Crypto có <Text strong>rủi ro cao</Text>, có thể dẫn đến{' '}
+            <Text strong>mất toàn bộ vốn</Text>. Hiệu suất trong quá khứ không đảm bảo
+            kết quả tương lai. Đòn bẩy có thể khuếch đại cả lợi nhuận và thua lỗ.
+          </Paragraph>
+
+          <Paragraph>
+            Người dùng <Text strong>tự chịu trách nhiệm</Text> cho mọi quyết định giao dịch.
+            Chúng tôi không chịu trách nhiệm cho bất kỳ tổn thất, chi phí hay thiệt hại
+            trực tiếp/gián tiếp nào phát sinh từ việc sử dụng hệ thống.
+          </Paragraph>
+
+          <Paragraph>
+            Dữ liệu có thể đến từ bên thứ ba (broker/API) và có thể xảy ra{' '}
+            <Text strong>độ trễ, sai lệch giá, gián đoạn kết nối</Text>. EA/tự động hóa
+            có thể hoạt động khác nhau tùy broker, spread, slippage, server.
+          </Paragraph>
+
+          <Paragraph style={{ marginBottom: 8 }}>
+            Bằng việc tiếp tục sử dụng hệ thống, bạn xác nhận đã đọc, hiểu và đồng ý với
+            nội dung miễn trừ trách nhiệm này.
+          </Paragraph>
+
+         <Checkbox
+  checked={acceptedTerms || checked}
+  disabled={acceptedTerms}
+  onChange={(e) => setChecked(e.target.checked)}
+>
+  Tôi xác nhận đã đọc và hiểu các rủi ro, và tự chịu trách nhiệm về quyết định giao dịch.
+</Checkbox>
+
+{acceptedTerms && (
+  <Paragraph style={{ marginTop: 10 }}>
+    <Text type="success">Bạn đã đồng ý miễn trừ trách nhiệm.</Text>
+  </Paragraph>
+)}
+        </Typography>
+      </Modal>
+
       {/* Glow gradient */}
       <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-emerald-500/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
@@ -61,17 +180,17 @@ export default function ForexLogin() {
       {/* Ticker */}
       <div className="border-b border-white/10 bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-2">
-          <span className="text-xs tracking-widest text-emerald-400">MARKET TICKER</span>
+          <span className="text-xs tracking-widest text-emerald-400">DINO HUNTER</span>
           <div className="relative w-full overflow-hidden">
             <ul className="ticker flex gap-8 whitespace-nowrap text-sm text-gray-300">
               {[
-                {s:'EURUSD', p:'1.0843', ch:'+0.21%'},
-                {s:'GBPUSD', p:'1.2761', ch:'-0.08%'},
-                {s:'USDJPY', p:'149.62', ch:'+0.34%'},
-                {s:'XAUUSD', p:'2385.4', ch:'+0.12%'},
-                {s:'WTI',    p:'78.12',  ch:'-0.55%'},
-                {s:'BTCUSD', p:'71234',  ch:'+1.12%'},
-              ].map((i, idx)=>(
+                { s: 'EURUSD', p: '1.0843', ch: '+0.21%' },
+                { s: 'GBPUSD', p: '1.2761', ch: '-0.08%' },
+                { s: 'USDJPY', p: '149.62', ch: '+0.34%' },
+                { s: 'XAUUSD', p: '2385.4', ch: '+0.12%' },
+                { s: 'WTI', p: '78.12', ch: '-0.55%' },
+                { s: 'BTCUSD', p: '71234', ch: '+1.12%' },
+              ].map((i, idx) => (
                 <li key={idx} className="flex items-center gap-2">
                   <span className="text-gray-400">{i.s}</span>
                   <span className="font-semibold">{i.p}</span>
@@ -79,13 +198,13 @@ export default function ForexLogin() {
                 </li>
               ))}
               {[
-                {s:'EURUSD', p:'1.0843', ch:'+0.21%'},
-                {s:'GBPUSD', p:'1.2761', ch:'-0.08%'},
-                {s:'USDJPY', p:'149.62', ch:'+0.34%'},
-                {s:'XAUUSD', p:'2385.4', ch:'+0.12%'},
-                {s:'WTI',    p:'78.12',  ch:'-0.55%'},
-                {s:'BTCUSD', p:'71234',  ch:'+1.12%'},
-              ].map((i, idx)=>(
+                { s: 'EURUSD', p: '1.0843', ch: '+0.21%' },
+                { s: 'GBPUSD', p: '1.2761', ch: '-0.08%' },
+                { s: 'USDJPY', p: '149.62', ch: '+0.34%' },
+                { s: 'XAUUSD', p: '2385.4', ch: '+0.12%' },
+                { s: 'WTI', p: '78.12', ch: '-0.55%' },
+                { s: 'BTCUSD', p: '71234', ch: '+1.12%' },
+              ].map((i, idx) => (
                 <li key={`clone-${idx}`} className="flex items-center gap-2">
                   <span className="text-gray-400">{i.s}</span>
                   <span className="font-semibold">{i.p}</span>
@@ -109,6 +228,7 @@ export default function ForexLogin() {
             Bảng điều khiển tín hiệu, quản trị rủi ro, và số liệu thị trường theo thời gian thực.
             Đồng bộ dữ liệu với MT4/MT5, quản lý giao dịch.
           </p>
+          
 
           <ul className="mt-6 grid gap-3 text-sm text-gray-300">
             {[
@@ -116,13 +236,15 @@ export default function ForexLogin() {
               'Watchlist nhiều sản phẩm của các sàn Forex hàng đầu',
               'Quản lý lợi nhuận',
               'Auto Trade với MT4/MT5',
-            ].map((t, i)=>(
+            ].map((t, i) => (
               <li key={i} className="flex items-center gap-2">
                 <CheckIcon />
                 <span>{t}</span>
               </li>
             ))}
           </ul>
+
+          
 
           <div className="mt-8 flex items-center gap-4 text-xs text-gray-400">
             <div className="flex items-center gap-2">
@@ -137,7 +259,12 @@ export default function ForexLogin() {
               <PulseDot className="bg-purple-400" />
               MT4/MT5 Bridge
             </div>
+
+            
           </div>
+          <p className="mt-3 max-w-xl text-red-400">
+            (*) Đây là hệ thống phân tích nội bộ được sử dụng cá nhân. Chúng tôi miễn trừ mọi trách nhiệm, đối với cá nhân nào sử dụng hệ thống này.
+          </p>
         </div>
 
         {/* Right: form card */}
@@ -204,7 +331,7 @@ export default function ForexLogin() {
                   <button
                     type="button"
                     aria-label={showPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                    onClick={() => setShowPass(s => !s)}
+                    onClick={() => setShowPass((s) => !s)}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-gray-200"
                   >
                     {showPass ? <EyeOffIcon /> : <EyeIcon />}
@@ -218,11 +345,13 @@ export default function ForexLogin() {
                     type="checkbox"
                     className="h-4 w-4 rounded border-white/20 bg-white/5 accent-emerald-500"
                     checked={remember}
-                    onChange={(e)=>setRemember(e.target.checked)}
+                    onChange={(e) => setRemember(e.target.checked)}
                   />
                   <span className="text-gray-300">Ghi nhớ đăng nhập</span>
                 </label>
-                <a href="#" className="text-emerald-400 hover:text-emerald-300">Quên mật khẩu?</a>
+                <a href="#" className="text-emerald-400 hover:text-emerald-300">
+                  Quên mật khẩu?
+                </a>
               </div>
 
               <button
@@ -247,7 +376,7 @@ export default function ForexLogin() {
 
             <div className="mt-6 text-center text-sm text-gray-400">
               Chưa có tài khoản?{' '}
-              <button 
+              <button
                 onClick={() => setShowRegisterModal(true)}
                 className="text-emerald-400 hover:text-emerald-300 cursor-pointer"
               >
@@ -258,18 +387,35 @@ export default function ForexLogin() {
             {/* Terms */}
             <p className="mt-4 text-center text-[11px] leading-5 text-gray-500">
               Bằng việc đăng nhập, bạn đồng ý với{' '}
-              <a href="#" className="text-gray-400 underline hover:text-gray-300">Điều khoản</a> &{' '}
-              <a href="#" className="text-gray-400 underline hover:text-gray-300">Chính sách bảo mật</a>.
+              <a
+                onClick={() => {
+                  pendingLoginRef.current = false; // chỉ xem điều khoản, không auto login
+                  setChecked(false);
+                  setShowTermsModal(true);
+                }}
+                className="text-gray-400 underline hover:text-gray-300 cursor-pointer"
+              >
+                Điều khoản
+              </a>{' '}
+              &{' '}
+              <a
+                onClick={() => {
+                  pendingLoginRef.current = false; // chỉ xem điều khoản, không auto login
+                  setChecked(false);
+                  setShowTermsModal(true);
+                }}
+                className="text-gray-400 underline hover:text-gray-300 cursor-pointer"
+              >
+                Chính sách bảo mật
+              </a>
+              .
             </p>
           </div>
         </div>
       </section>
 
       {/* Modal Đăng ký */}
-      <RegisterModal 
-        isOpen={showRegisterModal} 
-        onClose={() => setShowRegisterModal(false)} 
-      />
+      <RegisterModal isOpen={showRegisterModal} onClose={() => setShowRegisterModal(false)} />
     </main>
   );
 }
@@ -282,17 +428,17 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
     confirmPassword: '',
     name: '',
     email: '',
-    rule: 'User'
+    rule: 'User',
   });
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{type: 'success' | 'error'; text: string} | null>(null);
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
 
@@ -320,7 +466,7 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           password: formData.password,
           name: formData.name,
           email: formData.email,
-          rule: formData.rule
+          rule: formData.rule,
         },
         {
           headers: {
@@ -339,7 +485,7 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           confirmPassword: '',
           name: '',
           email: '',
-          rule: 'User'
+          rule: 'User',
         });
         // Đóng modal sau 2 giây
         setTimeout(() => {
@@ -361,11 +507,8 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+
       {/* Modal Content */}
       <div className="relative z-10 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <div className="rounded-2xl border border-white/10 bg-[#0a1118] p-6 shadow-2xl md:p-8">
@@ -486,7 +629,7 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPass(s => !s)}
+                  onClick={() => setShowPass((s) => !s)}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-gray-200"
                 >
                   {showPass ? <EyeOffIcon /> : <EyeIcon />}
@@ -513,7 +656,7 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                 />
                 <button
                   type="button"
-                  onClick={() => setShowConfirmPass(s => !s)}
+                  onClick={() => setShowConfirmPass((s) => !s)}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-gray-200"
                 >
                   {showConfirmPass ? <EyeOffIcon /> : <EyeIcon />}
@@ -533,9 +676,9 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                 onChange={handleChange}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none ring-emerald-500/30 focus:border-emerald-500/40 focus:ring appearance-none cursor-pointer"
               >
-                <option value="User" className="bg-[#0a1118]">User</option>
-                {/* <option value="Admin" className="bg-[#0a1118]">Admin</option> */}
-                {/* <option value="Moderator" className="bg-[#0a1118]">Moderator</option> */}
+                <option value="User" className="bg-[#0a1118]">
+                  User
+                </option>
               </select>
             </div>
 
@@ -563,8 +706,14 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           {/* Footer */}
           <p className="mt-4 text-center text-[11px] leading-5 text-gray-500">
             Bằng việc đăng ký, bạn đồng ý với{' '}
-            <a href="#" className="text-gray-400 underline hover:text-gray-300">Điều khoản</a> &{' '}
-            <a href="#" className="text-gray-400 underline hover:text-gray-300">Chính sách bảo mật</a>.
+            <a href="#" className="text-gray-400 underline hover:text-gray-300">
+              Điều khoản
+            </a>{' '}
+            &{' '}
+            <a href="#" className="text-gray-400 underline hover:text-gray-300">
+              Chính sách bảo mật
+            </a>
+            .
           </p>
         </div>
       </div>
@@ -586,7 +735,7 @@ function Badge({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PulseDot({ className='' }: { className?: string }) {
+function PulseDot({ className = '' }: { className?: string }) {
   return (
     <span className={`relative inline-flex h-2.5 w-2.5 items-center justify-center rounded-full ${className}`}>
       <span className="absolute h-full w-full animate-ping rounded-full bg-current opacity-75" />
@@ -598,8 +747,15 @@ function PulseDot({ className='' }: { className?: string }) {
 function Spinner() {
   return (
     <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-      <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-      <path className="opacity-90" d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round"/>
+      <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+      <path
+        className="opacity-90"
+        d="M4 12a8 8 0 018-8"
+        stroke="currentColor"
+        strokeWidth="4"
+        fill="none"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -607,7 +763,10 @@ function Spinner() {
 function EyeIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
-      <path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5Zm0 12.5a5 5 0 1 1 0-10a5 5 0 0 1 0 10Z"/>
+      <path
+        fill="currentColor"
+        d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5Zm0 12.5a5 5 0 1 1 0-10a5 5 0 0 1 0 10Z"
+      />
     </svg>
   );
 }
@@ -615,7 +774,10 @@ function EyeIcon() {
 function EyeOffIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
-      <path fill="currentColor" d="M2.1 3.51L3.5 2.1l18.4 18.39l-1.4 1.41l-3.2-3.2A12.44 12.44 0 0 1 12 19.5C7 19.5 2.73 16.39 1 12a12.7 12.7 0 0 1 4.23-5.77L2.1 3.5ZM12 6.5a5.5 5.5 0 0 1 5.5 5.5c0 .67-.11 1.32-.33 1.92L13.08 9.83A2.98 2.98 0 0 0 9.83 6.9L8.58 5.66A5.46 5.46 0 0 1 12 6.5Zm0 11a5.5 5.5 0 0 0 5.5-5.5c0-.67-.11-1.32-.33-1.92l-4.09-4.09A5.5 5.5 0 0 0 6.5 12c0 .67.11 1.32.33 1.92l4.09 4.08A5.45 5.45 0 0 0 12 17.5Z"/>
+      <path
+        fill="currentColor"
+        d="M2.1 3.51L3.5 2.1l18.4 18.39l-1.4 1.41l-3.2-3.2A12.44 12.44 0 0 1 12 19.5C7 19.5 2.73 16.39 1 12a12.7 12.7 0 0 1 4.23-5.77L2.1 3.5ZM12 6.5a5.5 5.5 0 0 1 5.5 5.5c0 .67-.11 1.32-.33 1.92L13.08 9.83A2.98 2.98 0 0 0 9.83 6.9L8.58 5.66A5.46 5.46 0 0 1 12 6.5Zm0 11a5.5 5.5 0 0 0 5.5-5.5c0-.67-.11-1.32-.33-1.92l-4.09-4.09A5.5 5.5 0 0 0 6.5 12c0 .67.11 1.32.33 1.92l4.09 4.08A5.45 5.45 0 0 0 12 17.5Z"
+      />
     </svg>
   );
 }
@@ -623,7 +785,10 @@ function EyeOffIcon() {
 function LockIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4">
-      <path fill="currentColor" d="M17 8h-1V6a4 4 0 1 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-6 8.73V17a1 1 0 1 1 2 0v-.27a2 2 0 1 1-2 0ZM9 6a3 3 0 0 1 6 0v2H9V6Z"/>
+      <path
+        fill="currentColor"
+        d="M17 8h-1V6a4 4 0 1 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-6 8.73V17a1 1 0 1 1 2 0v-.27a2 2 0 1 1-2 0ZM9 6a3 3 0 0 1 6 0v2H9V6Z"
+      />
     </svg>
   );
 }
@@ -631,7 +796,10 @@ function LockIcon() {
 function MailIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
-      <path fill="currentColor" d="M20 4H4a2 2 0 0 0-2 2v1.2l10 5.9l10-5.9V6a2 2 0 0 0-2-2Zm0 4.25l-8 4.71l-8-4.71V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.25Z"/>
+      <path
+        fill="currentColor"
+        d="M20 4H4a2 2 0 0 0-2 2v1.2l10 5.9l10-5.9V6a2 2 0 0 0-2-2Zm0 4.25l-8 4.71l-8-4.71V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.25Z"
+      />
     </svg>
   );
 }
@@ -639,7 +807,7 @@ function MailIcon() {
 function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4 text-emerald-400">
-      <path fill="currentColor" d="m9 16.17l-3.88-3.88L3.71 13.7L9 19l12-12l-1.41-1.41z"/>
+      <path fill="currentColor" d="m9 16.17l-3.88-3.88L3.71 13.7L9 19l12-12l-1.41-1.41z" />
     </svg>
   );
 }
@@ -650,9 +818,12 @@ function LogoFX() {
       <svg viewBox="0 0 64 64" className="h-6 w-6 text-emerald-400">
         <path
           d="M12 44 V20 M20 52 V16 M28 36 V12 M36 48 V24 M44 40 V18 M52 50 V28"
-          stroke="currentColor" strokeWidth="4" strokeLinecap="round" fill="none"
+          stroke="currentColor"
+          strokeWidth="4"
+          strokeLinecap="round"
+          fill="none"
         />
-        <path d="M10 10h44v44H10z" stroke="currentColor" strokeOpacity=".25" strokeWidth="1" fill="none"/>
+        <path d="M10 10h44v44H10z" stroke="currentColor" strokeOpacity=".25" strokeWidth="1" fill="none" />
       </svg>
     </div>
   );
@@ -661,7 +832,7 @@ function LogoFX() {
 function CloseIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
-      <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z"/>
+      <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z" />
     </svg>
   );
 }
@@ -669,7 +840,7 @@ function CloseIcon() {
 function UserIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
-      <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4s-4 1.79-4 4s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+      <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4s-4 1.79-4 4s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
     </svg>
   );
 }
@@ -677,7 +848,7 @@ function UserIcon() {
 function UserPlusIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4">
-      <path fill="currentColor" d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4s-4 1.79-4 4s1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+      <path fill="currentColor" d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4s-4 1.79-4 4s1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
     </svg>
   );
 }
@@ -688,15 +859,15 @@ function CandlesBackdrop() {
       <svg className="absolute inset-0 h-full w-full opacity-[0.15]" viewBox="0 0 1000 600" preserveAspectRatio="none">
         <defs>
           <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeOpacity="0.06" strokeWidth="1"/>
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeOpacity="0.06" strokeWidth="1" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#grid)" />
       </svg>
 
       <div className="absolute inset-0">
-        {Array.from({length: 22}).map((_, i) => (
-          <Candle key={i} left={`${(i*4.5)%100}%`} />
+        {Array.from({ length: 22 }).map((_, i) => (
+          <Candle key={i} left={`${(i * 4.5) % 100}%`} />
         ))}
       </div>
     </div>
@@ -704,9 +875,9 @@ function CandlesBackdrop() {
 }
 
 function Candle({ left }: { left: string }) {
-  const h = 30 + Math.floor(Math.random()*180);
+  const h = 30 + Math.floor(Math.random() * 180);
   const bull = Math.random() > 0.45;
-  const body = Math.max(12, Math.floor(h*0.4));
+  const body = Math.max(12, Math.floor(h * 0.4));
   return (
     <div className="absolute bottom-10" style={{ left, transform: `translateX(-50%)` }}>
       <div className="mx-auto h-[180px] w-px bg-white/10" />
