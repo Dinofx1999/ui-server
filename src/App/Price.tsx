@@ -240,6 +240,47 @@ const [ticks, setTicks] = useState({
   ex2Bid: 0,
   ex2Ask: 0,
 });
+
+
+
+ const chartData_Example = {
+    symbol: "EURUSD",
+    timeframe: "1H",
+    exchange1: {
+      name: "Broker 1",
+      color: "#F0B90B",
+      data: [
+        { time: "14:00", high: 1.0850, low: 1.0620, open: 1.0890, close: 1.0845 },
+        { time: "15:00", high: 1.0870, low: 1.0840, open: 1.0845, close: 1.0865 },
+        { time: "16:00", high: 1.0885, low: 1.0855, open: 1.0865, close: 1.0870 },
+        { time: "17:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+      ]
+    },
+    exchange2: {
+      name: "Broker 2",
+      color: "#5741D9",
+      data: [
+        { time: "14:00", high: 1.0855, low: 1.0815, open: 1.0825, close: 1.0840 },
+        { time: "15:00", high: 1.0875, low: 1.0835, open: 1.0840, close: 1.0870 },
+        { time: "16:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0875 },
+        { time: "17:00", high: 1.0895, low: 1.0865, open: 1.0875, close: 1.0885 },
+        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+      ]
+    }
+  }
+
+
   
 
  
@@ -322,44 +363,6 @@ function buildChartDataFromAB(payload: any, chartData_Example: any) {
   };
 }
 
-
-
- const chartData_Example = {
-    symbol: "EURUSD",
-    timeframe: "1H",
-    exchange1: {
-      name: "Broker 1",
-      color: "#F0B90B",
-      data: [
-        { time: "14:00", high: 1.0850, low: 1.0620, open: 1.0890, close: 1.0845 },
-        { time: "15:00", high: 1.0870, low: 1.0840, open: 1.0845, close: 1.0865 },
-        { time: "16:00", high: 1.0885, low: 1.0855, open: 1.0865, close: 1.0870 },
-        { time: "17:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-      ]
-    },
-    exchange2: {
-      name: "Broker 2",
-      color: "#5741D9",
-      data: [
-        { time: "14:00", high: 1.0855, low: 1.0815, open: 1.0825, close: 1.0840 },
-        { time: "15:00", high: 1.0875, low: 1.0835, open: 1.0840, close: 1.0870 },
-        { time: "16:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0875 },
-        { time: "17:00", high: 1.0895, low: 1.0865, open: 1.0875, close: 1.0885 },
-        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-      ]
-    }
-  }
 
 
  useEffect(() => {

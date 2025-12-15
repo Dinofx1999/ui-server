@@ -161,10 +161,26 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
     }
 
     const chartInfo = calculateChartData(viewData);
+// ===== REALTIME CLOSE = BID =====
+const bidPrice = (typeof bid === 'number') ? bid : (viewData[viewData.length - 1]?.close ?? 0);
+const askPrice = (typeof ask === 'number') ? ask : bidPrice;
 
-    const last = viewData[viewData.length - 1];
-    const bidPrice = (typeof bid === 'number') ? bid : (last?.close ?? 0);
-    const askPrice = (typeof ask === 'number') ? ask : (last?.close ?? 0);
+// Clone data để không mutate props
+const realtimeData = [...viewData];
+
+// Patch nến cuối cùng = Bid realtime
+const lastIndex = realtimeData.length - 1;
+const lastCandle = realtimeData[lastIndex];
+
+if (lastCandle && typeof bidPrice === 'number') {
+  realtimeData[lastIndex] = {
+    ...lastCandle,
+    close: bidPrice,
+    high: Math.max(lastCandle.high, bidPrice),
+    low: Math.min(lastCandle.low, bidPrice),
+  };
+}
+
 
     const Candlestick: React.FC<{ candle: OHLCData; index: number; scale: (price: number) => number }> = ({
       candle: candleData,
@@ -302,7 +318,7 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
             <div><span style={{ color: '#94a3b8' }}>O:</span> <span style={{ color: 'white', fontWeight: 600 }}>{viewData[0].open.toFixed(2)}</span></div>
             <div><span style={{ color: '#94a3b8' }}>H:</span> <span style={{ color: '#10b981', fontWeight: 700 }}>{Math.max(...viewData.map(d => d.high)).toFixed(2)}</span></div>
             <div><span style={{ color: '#94a3b8' }}>L:</span> <span style={{ color: '#ef4444', fontWeight: 700 }}>{Math.min(...viewData.map(d => d.low)).toFixed(2)}</span></div>
-            <div><span style={{ color: '#94a3b8' }}>C:</span> <span style={{ color: '#3b82f6', fontWeight: 700 }}>{viewData[viewData.length - 1].close.toFixed(2)}</span></div>
+            <div><span style={{ color: '#94a3b8' }}>C:</span> <span style={{ color: '#3b82f6', fontWeight: 700 }}>{realtimeData[realtimeData.length - 1].close}</span></div>
             <div><span style={{ color: '#94a3b8' }}>Bid:</span> <span style={{ color: '#60a5fa', fontWeight: 800 }}>{bidPrice.toFixed(2)}</span></div>
             <div><span style={{ color: '#94a3b8' }}>Ask:</span> <span style={{ color: '#fbbf24', fontWeight: 800 }}>{askPrice.toFixed(2)}</span></div>
           </div>
@@ -312,7 +328,7 @@ const DualExchangeChartModal: React.FC<DualExchangeChartModalProps> = ({
         <div style={{ padding: isMobile ? 8 : 8, background: '#020617' }}>
           <svg width="100%" height={config.chartHeight} viewBox={`0 0 ${config.chartWidth} ${config.chartHeight}`}>
             <GridLines scale={chartInfo.scale} maxPrice={chartInfo.maxPrice} minPrice={chartInfo.minPrice} />
-            {viewData.map((candleData, index) => (
+            {realtimeData.map((candleData, index) => (
               <Candlestick key={index} candle={candleData} index={index} scale={chartInfo.scale} />
             ))}
             <BidAskLines />
