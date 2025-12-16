@@ -58,7 +58,7 @@ export interface TripleExchangeChartModalProps {
 // ============================================================================
 
 const CANDLE_PRESETS: Record<string, CandleConfig> = {
-  'slim-tall': { width: 8, spacing: 20, wickWidth: 1, heightScale: 1.4 },
+  'slim-tall': { width: 6, spacing: 20, wickWidth: 1, heightScale: 1.2 },
   'thin': { width: 12, spacing: 45, wickWidth: 1.5, heightScale: 1.2 },
   'normal': { width: 18, spacing: 55, wickWidth: 1.5, heightScale: 1.0 },
   'wide': { width: 24, spacing: 65, wickWidth: 2, heightScale: 1.0 },
@@ -76,7 +76,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
   exchange1,
   exchange2,
   exchange3,
-  timeframe = "1H",
+  timeframe = "1M",
   candleConfig = 'slim-tall',
 
   exchange1Bid,
@@ -119,7 +119,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
     scaleOffset: 15
   };
 
-  const MAX_CANDLES = 10;
+  const MAX_CANDLES = 9;
 
   // ============================================================================
   // CHART VIEW
@@ -230,14 +230,14 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             height={bodyHeight}
             fill={bodyColor}
             stroke={bodyColor}
-            strokeWidth="1"
+            strokeWidth="2"
           />
           <text
             x={x}
-            y={config.timeY}
+            y={config.timeY + 15}
             textAnchor="middle"
             fill="#9ca3af"
-            fontSize={config.fontSize}
+            fontSize={5}
             fontWeight="500"
           >
             {candleData.time}
@@ -287,20 +287,20 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
       const askY = chartInfo.scale(askPrice);
 
       const xLeft = 35;
-      const OFFSET_X = -55;
+      const OFFSET_X = -45;
       const xRight = config.chartWidth - 10 - OFFSET_X;
 
       return (
         <g>
           {/* ASK */}
-          <line x1={xLeft} y1={askY} x2={xRight} y2={askY} stroke="#fbbf24" strokeWidth="1" strokeDasharray="6,3" opacity="0.95" />
+          <line x1={xLeft} y1={askY} x2={xRight - 15} y2={askY} stroke="#fbbf24" strokeWidth="1" strokeDasharray="6,3" opacity="0.95" />
           <rect x={xRight - 74} y={askY - 8} width="59" height="14" rx="3" fill="#0b1220" stroke="#fbbf24" strokeWidth="0.8" opacity="0.95" />
           <text x={xRight - 30} y={askY + 2} textAnchor="end" fill="#fbbf24" fontSize={config.fontSize} fontWeight="800">
             {fmt(askPrice)}
           </text>
 
           {/* BID */}
-          <line x1={xLeft} y1={bidY} x2={xRight} y2={bidY} stroke="#60a5fa" strokeWidth="1" strokeDasharray="4,4" opacity="0.95" />
+          <line x1={xLeft} y1={bidY} x2={xRight -15} y2={bidY} stroke="#60a5fa" strokeWidth="1" strokeDasharray="4,4" opacity="0.95" />
           <rect x={xRight - 74} y={bidY - 8} width="59" height="14" rx="3" fill="#0b1220" stroke="#60a5fa" strokeWidth="0.8" opacity="0.95" />
           <text x={xRight - 30} y={bidY + 2} textAnchor="end" fill="#60a5fa" fontSize={config.fontSize} fontWeight="800">
             {fmt(bidPrice)}
@@ -314,14 +314,14 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
     return (
       <div style={{
         background: '#0f172a',
-        borderRadius: '8px',
+        borderRadius: '5px',
         border: '1px solid #334155',
         overflow: 'hidden'
       }}>
         {/* Header */}
         <div style={{
-          padding: '8px 10px',
-          borderBottom: '1px solid #334155',
+          padding: '10px 10px',
+          borderBottom: '1px solid #f0f2f6',
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           gap: isMobile ? 6 : 0,
@@ -353,7 +353,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
 
         {/* Chart area */}
         <div style={{ padding: '8px', background: '#020617' }}>
-          <svg width="100%" height={config.chartHeight} viewBox={`0 0 ${config.chartWidth} ${config.chartHeight}`}>
+          <svg width="100%" height={config.chartHeight } viewBox={`0 0 ${config.chartWidth} ${config.chartHeight}`}>
             <GridLines scale={chartInfo.scale} maxPrice={chartInfo.maxPrice} minPrice={chartInfo.minPrice} />
 
             {realtimeData.map((candleData, index) => (
@@ -502,6 +502,12 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
 
         <div style={{ color: '#94a3b8', fontSize: '10px', marginTop: '10px', textAlign: 'center' }}>
           ⚡ Cập nhật: Real-time | Độ trễ: &lt;100ms
+          <p>
+             <span style={{ fontWeight: 'bold' , color: '#cbd5e1' }}>{exchange3?.name || "Exchange 3"}</span> Chart là Của Sàn <span style={{ fontWeight: 'bold' , color: '#cbd5e1' }}>{exchange2?.name || "Exchange 2"}</span> | Giá Bid/Ask real-time lấy từ Sàn <span style={{ fontWeight: 'bold' , color: '#cbd5e1' }}>{exchange1?.name || "Exchange 1"}</span>
+          </p>
+          {/* <p>
+            Chart 3: Chart là Của Sàn {exchange2?.name || "Exchange 2"} | Giá Bid/Ask real-time lấy từ Sàn {exchange1?.name || "Exchange 1"}
+          </p> */}
         </div>
       </div>
     </Modal>

@@ -26,6 +26,7 @@ import ImpactBadge from '../Components/Alert/Alert_News';
 
 
 
+  
 import { RefreshCcw, Trash2 } from "lucide-react";
 
 import SpreadManagementModal from '../Components/modal/modal.configSpread';
@@ -79,8 +80,60 @@ import { useWebSocketBrokerInfo } from "../Hooks/ws.broker.info";
 import { useWebSocketSymbols } from "../Hooks/ws.symbol.brokers";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-const audio = new Audio("/sound/alert.wav");
 type ViewMode = "grid" | "list";
+
+const chartData_Example = {
+    symbol: "EURUSD",
+    timeframe: "1H",
+    exchange1: {
+      name: "Broker 1",
+      color: "#F0B90B",
+      data: [
+        { time: "14:00", high: 1.0850, low: 1.0620, open: 1.0890, close: 1.0845 },
+        { time: "15:00", high: 1.0870, low: 1.0840, open: 1.0845, close: 1.0865 },
+        { time: "16:00", high: 1.0885, low: 1.0855, open: 1.0865, close: 1.0870 },
+        { time: "17:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+      ]
+    },
+    exchange2: {
+      name: "Broker 2",
+      color: "#5741D9",
+      data: [
+        { time: "14:00", high: 1.0855, low: 1.0815, open: 1.0825, close: 1.0840 },
+        { time: "15:00", high: 1.0875, low: 1.0835, open: 1.0840, close: 1.0870 },
+        { time: "16:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0875 },
+        { time: "17:00", high: 1.0895, low: 1.0865, open: 1.0875, close: 1.0885 },
+        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+      ]
+    },
+    exchange3: {
+      name: "Broker 3",
+      color: "#10B981",
+      data: [
+        { time: "14:00", high: 1.0855, low: 1.0815, open: 1.0825, close: 1.0840 },
+        { time: "15:00", high: 1.0875, low: 1.0835, open: 1.0840, close: 1.0870 },
+        { time: "16:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0875 },
+        { time: "17:00", high: 1.0895, low: 1.0865, open: 1.0875, close: 1.0885 },
+        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
+      ]
+    },
+  };
 
 type Theme = {
   bg: string;
@@ -248,58 +301,7 @@ const [ticks, setTicks] = useState({
 
 
 
- const chartData_Example = {
-    symbol: "EURUSD",
-    timeframe: "1H",
-    exchange1: {
-      name: "Broker 1",
-      color: "#F0B90B",
-      data: [
-        { time: "14:00", high: 1.0850, low: 1.0620, open: 1.0890, close: 1.0845 },
-        { time: "15:00", high: 1.0870, low: 1.0840, open: 1.0845, close: 1.0865 },
-        { time: "16:00", high: 1.0885, low: 1.0855, open: 1.0865, close: 1.0870 },
-        { time: "17:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-      ]
-    },
-    exchange2: {
-      name: "Broker 2",
-      color: "#5741D9",
-      data: [
-        { time: "14:00", high: 1.0855, low: 1.0815, open: 1.0825, close: 1.0840 },
-        { time: "15:00", high: 1.0875, low: 1.0835, open: 1.0840, close: 1.0870 },
-        { time: "16:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0875 },
-        { time: "17:00", high: 1.0895, low: 1.0865, open: 1.0875, close: 1.0885 },
-        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-      ]
-    },
-    exchange3: {
-      name: "Broker 3",
-      color: "#10B981",
-      data: [
-        { time: "14:00", high: 1.0855, low: 1.0815, open: 1.0825, close: 1.0840 },
-        { time: "15:00", high: 1.0875, low: 1.0835, open: 1.0840, close: 1.0870 },
-        { time: "16:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0875 },
-        { time: "17:00", high: 1.0895, low: 1.0865, open: 1.0875, close: 1.0885 },
-        { time: "18:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "19:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "20:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "21:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "22:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-        { time: "23:00", high: 1.0890, low: 1.0860, open: 1.0870, close: 1.0880 },
-      ]
-    },
-  }
+ 
 
 
   
@@ -500,11 +502,23 @@ const HandleGetNews = async () => {
   }
   
 };
+useEffect(() => {
+  let isMounted = true;
 
+  HandleGetNews().then((data) => {
+    if (isMounted && data?.data) {
+      setHighNews(data.data);
+    }
+  });
+
+  return () => {
+    isMounted = false;
+  };
+}, []);
   useEffect(() => {
     HandleGetNews().then((data) => {
-      console.log("Forex News High Impact:",(data.data));
-      setHighNews((data.data));
+      console.log("Forex News High Impact:",(data?.data));
+      setHighNews((data?.data));
     });
   }, []);
 
@@ -2065,13 +2079,15 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-    if (openModalInfo) {
-      connect_Brokers();
-    } else {
-      disconnect_Brokers();
-    }
-    return () => disconnect_Brokers();
-  }, [openModalInfo, connect_Brokers, disconnect_Brokers]);
+  if (openModalInfo) {
+    connect_Brokers();
+  } else {
+    disconnect_Brokers();
+  }
+  return () => disconnect_Brokers();
+}, [openModalInfo]); // Chỉ giữ openModalInfo
+
+// Hoặc nếu ESLint báo lỗi, dùng useCallback trong custom hook
 
   useEffect(() => {
     if (openModalBrokerInfo) {
@@ -2080,7 +2096,7 @@ useEffect(() => {
       disconnect_BrokerInfo();
     }
     return () => disconnect_BrokerInfo();
-  }, [openModalBrokerInfo, connect_BrokerInfo, disconnect_BrokerInfo]);
+  }, [openModalBrokerInfo]);
 
   const shouldConnectSymbols = modalOpenSymbol || isChartOpen;
 
@@ -2089,15 +2105,13 @@ useEffect(() => {
   else disconnect_symbols();
 
   return () => disconnect_symbols();
-}, [shouldConnectSymbols, connect_symbols, disconnect_symbols]);
+}, [shouldConnectSymbols]);
 
 
 const rafRef = useRef<number | null>(null);
 
 useEffect(() => {
-  if (!isChartOpen) return;
-  if (!symbols?.length) return;
-  if (!activeBrokerChart) return;
+  if (!isChartOpen || !symbols?.length || !activeBrokerChart) return;
 
   if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
@@ -2110,8 +2124,10 @@ useEffect(() => {
   });
 
   return () => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = null;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
   };
 }, [symbols, activeBrokerChart, isChartOpen]);
 
@@ -2138,17 +2154,17 @@ useEffect(() => {
   }, [brokers]);
 
 
-useEffect(() => {
-  if (!isChartOpen) return;
-  if (!symbols?.length) return;
-  if (!activeBrokerChart) return;
+// useEffect(() => {
+//   if (!isChartOpen) return;
+//   if (!symbols?.length) return;
+//   if (!activeBrokerChart) return;
 
-  const pair = pickBrokerPair(symbols, activeBrokerChart);
-  if (!pair?.A || !pair?.B) return;
+//   const pair = pickBrokerPair(symbols, activeBrokerChart);
+//   if (!pair?.A || !pair?.B) return;
 
-  const next = buildChartDataFromAB(pair, chartData_Example);
-  setChartData(next);
-}, [symbols, activeBrokerChart, isChartOpen]);
+//   const next = buildChartDataFromAB(pair, chartData_Example);
+//   setChartData(next);
+// }, [symbols, activeBrokerChart, isChartOpen]);
   
 
   const handleClickInfo = () => {
@@ -2550,16 +2566,14 @@ useEffect(() => {
 
    const [type_1, setType_1] = useState<any[]>([]);
    const [type_2, setType_2] = useState<any[]>([]);
-  useEffect(() => {
-    if (analysis?.analysis) {
-      if(analysis?.analysis.Type_1 !== type_1){
-        setType_1(analysis?.analysis.Type_1 || []);
-      }
-      if(analysis?.analysis.Type_2 !== type_2){
-        setType_2(analysis?.analysis.Type_2 || []);
-      }
-    }
-}, [analysis?.analysis]);
+useEffect(() => {
+  if (analysis?.analysis?.Type_1) {
+    setType_1(analysis.analysis.Type_1);
+  }
+  if (analysis?.analysis?.Type_2) {
+    setType_2(analysis.analysis.Type_2);
+  }
+}, [analysis?.analysis?.Type_1, analysis?.analysis?.Type_2]); // Dùng dependencies chính xác
 
   const forexData: any[] = analysis?.analysis?.Type_1 || [];
 
