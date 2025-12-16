@@ -252,7 +252,7 @@ const BidAskLines = memo<{
   const askY = scale(askPrice);
 
   const xLeft = 35;
-  const OFFSET_X = -45;
+  const OFFSET_X = -35;
   const xRight = config.chartWidth - 10 - OFFSET_X;
 
   return (

@@ -1313,6 +1313,7 @@ useEffect(() => {
   title: "Action",
   key: "action",
   fixed: isMobile ? undefined : "right",
+  width: '200px',
   render: (_, record) => (
     <Space size="small" direction={isMobile ? "vertical" : "horizontal"}>
       {record.Status === "True" ? (
@@ -1459,7 +1460,6 @@ useEffect(() => {
       
     </Space>
   ),
-  width: isMobile ? 60 : 140,
 }
   ];
 
