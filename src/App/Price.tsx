@@ -27,7 +27,13 @@ import ImpactBadge from '../Components/Alert/Alert_News';
 
 
   
-import { RefreshCcw, Trash2 } from "lucide-react";
+import { RefreshCcw, Trash2 ,TrendingUp, 
+  TrendingDown, 
+  BarChart3, 
+  LineChart, 
+  CandlestickChart,
+  Activity,
+  PieChart} from "lucide-react";
 
 import SpreadManagementModal from '../Components/modal/modal.configSpread';
 
@@ -57,13 +63,14 @@ import {
   HistoryOutlined,
   ThunderboltOutlined,
   MenuOutlined,
+  LineChartOutlined
 } from "@ant-design/icons";
 import AutocompleteSearch from "../Components/Autocomplete";
 import type { TableProps } from "antd";
 import { Table, Drawer, message } from "antd";
 
 //Icon
-import { BidPriceIcon, LongCandleIcon } from "../Helpers/icon";
+import { BidPriceIcon, LongCandleIcon , } from "../Helpers/icon";
 
 //Helpers
 import {
@@ -918,7 +925,33 @@ useEffect(() => {
       dataIndex: "Broker",
       key: "Broker",
       render: (text: any, record: any) => (
-        <div
+       
+
+        <Space>
+
+          <Button
+        // type="primary"
+        size="small"
+        danger
+        // icon={<LineChartOutlined style={{ fontSize: '16px' }} />}
+        onClick={async () => {
+          try {
+            setActiveBrokerChart(record.Broker);
+            setIsChartOpen(true);
+            console.log("Open chart for:", record.symbol);
+          } catch (error) {
+            messageApi.open({
+              type: "error",
+              content: (error as Error).message,
+            });
+            handleLogout();
+          }
+        }}
+      >
+        <CandlestickChart size={16} color="#f0792f" />
+      </Button>
+
+           <div
           style={{
             color: "#a00101",
             fontSize: isMobile ? "13px" : "14px",
@@ -936,6 +969,8 @@ useEffect(() => {
               <span>{text}</span>
             )}
         </div>
+          
+        </Space>
       ),
       sorter: (a: any, b: any) => a.Broker.localeCompare(b.Broker),
       fixed: isMobile ? undefined : "left",
@@ -1421,25 +1456,7 @@ useEffect(() => {
         {isMobile ? "BUY" : "BUY"}
       </Button>
 
-      <Button
-        type="primary"
-        size="small"
-        onClick={async () => {
-          try {
-            setActiveBrokerChart(record.Broker);
-            setIsChartOpen(true);
-            console.log("Open chart for:", record.symbol);
-          } catch (error) {
-            messageApi.open({
-              type: "error",
-              content: (error as Error).message,
-            });
-            handleLogout();
-          }
-        }}
-      >
-        Chart
-      </Button>
+      
     </Space>
   ),
   width: isMobile ? 60 : 140,
