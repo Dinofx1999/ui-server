@@ -252,37 +252,33 @@ const BidAskLines = memo<{
   const bidY = scale(bidPrice);
   const askY = scale(askPrice);
 
-  const xLeft = 35;
-  const OFFSET_X = -35;
-  const xRight = config.chartWidth - 10 - OFFSET_X;
-
   return (
     <g>
       {/* ASK Line */}
       <line
-        x1={xLeft}
+        x1={config.bidAskXLeft}
         y1={askY}
-        x2={xRight - 15}
+        x2={config.bidAskXRight - config.bidAskLineOffset}
         y2={askY}
         stroke={THEME.price.ask}
-        strokeWidth="1.5"
+        strokeWidth={config.bidAskStrokeWidth}
         strokeDasharray="6,3"
         opacity="0.95"
       />
       <rect
-        x={xRight - 74}
-        y={askY - 8}
-        width="59"
-        height="14"
-        rx="3"
+        x={config.bidAskXRight - config.bidAskLabelWidth + config.bidAskRectOffset}
+        y={askY - config.bidAskLabelHeight / 2}
+        width={config.bidAskLabelWidth}
+        height={config.bidAskLabelHeight}
+        rx={config.bidAskLabelRadius}
         fill={THEME.background.tertiary}
         stroke={THEME.price.ask}
-        strokeWidth="0.8"
+        strokeWidth={config.bidAskRectStroke}
         opacity="0.95"
       />
       <text
-        x={xRight - 30}
-        y={askY + 2}
+        x={config.bidAskXRight - config.bidAskLabelOffset + config.bidAskTextExtraOffset}
+        y={askY + config.bidAskTextYOffset}
         textAnchor="end"
         fill={THEME.price.ask}
         fontSize={config.fontSize}
@@ -293,29 +289,29 @@ const BidAskLines = memo<{
 
       {/* BID Line */}
       <line
-        x1={xLeft}
+        x1={config.bidAskXLeft}
         y1={bidY}
-        x2={xRight - 15}
+        x2={config.bidAskXRight - config.bidAskLineOffset}
         y2={bidY}
         stroke={THEME.price.bid}
-        strokeWidth="1.5"
+        strokeWidth={config.bidAskStrokeWidth}
         strokeDasharray="4,4"
         opacity="0.95"
       />
       <rect
-        x={xRight - 74}
-        y={bidY - 8}
-        width="59"
-        height="14"
-        rx="3"
+        x={config.bidAskXRight - config.bidAskLabelWidth + config.bidAskRectOffset}
+        y={bidY - config.bidAskLabelHeight / 2}
+        width={config.bidAskLabelWidth}
+        height={config.bidAskLabelHeight}
+        rx={config.bidAskLabelRadius}
         fill={THEME.background.tertiary}
         stroke={THEME.price.bid}
-        strokeWidth="0.8"
+        strokeWidth={config.bidAskRectStroke}
         opacity="0.95"
       />
       <text
-        x={xRight - 30}
-        y={bidY + 2}
+        x={config.bidAskXRight - config.bidAskLabelOffset + config.bidAskTextExtraOffset}
+        y={bidY + config.bidAskTextYOffset}
         textAnchor="end"
         fill={THEME.price.bid}
         fontSize={config.fontSize}
@@ -342,12 +338,13 @@ const ChartView = memo<ChartViewProps>(({
   isMobile = false,
   scaleFactor = 1, // ✅ default
 }) => {
-  const DIGITS = Math.max(0, safeNumber(digits, 2));
+   const DIGITS = Math.max(0, safeNumber(digits, 2));
 
-  // ✅ Config calculation (scale theo zoom)
+  // ✅ Config calculation - TẤT CẢ được scale
   const config = useMemo(() => {
     const candle = CANDLE_PRESETS['slim-tall'];
-    const s = Math.max(0.8, Math.min(2.2, scaleFactor)); // ✅ clamp an toàn
+    const s = Math.max(0.8, Math.min(2.2, scaleFactor));
+    
     return {
       chartHeight: Math.round(CHART_CONFIG.baseHeight * s),
       chartWidth: Math.round(CHART_CONFIG.baseWidth * s),
@@ -362,6 +359,22 @@ const ChartView = memo<ChartViewProps>(({
 
       scaleHeight: 115 * candle.heightScale * s,
       scaleOffset: 15 * s,
+      
+      // ✅ BidAsk Lines - TẤT CẢ giá trị được scale
+      bidAskXLeft: 35 * s,
+      bidAskXRight: (CHART_CONFIG.baseWidth - 10) * s,
+      bidAskLabelWidth: 59 * s,
+      bidAskLabelHeight: 14 * s,
+      bidAskLabelRadius: 3 * s,
+      bidAskLabelOffset: 30 * s,
+      
+      // ✅ NEW: Các offset khác
+      bidAskLineOffset: 15 * s,        // offset cho line x2
+      bidAskRectOffset: 15 * s,        // offset cho rect x position  
+      bidAskTextExtraOffset: 35 * s,   // offset thêm cho text position
+      bidAskTextYOffset: 2 * s,        // offset Y cho text
+      bidAskStrokeWidth: 1.5 * s,      // stroke width của line
+      bidAskRectStroke: 0.8 * s,       // stroke width của rect
     };
   }, [scaleFactor]);
 
@@ -571,6 +584,10 @@ const StatItem: React.FC<{
 // MAIN MODAL COMPONENT
 // ============================================================================
 
+// ============================================================================
+// MAIN MODAL COMPONENT
+// ============================================================================
+
 const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
   isOpen,
   onClose,
@@ -592,21 +609,28 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
 }) => {
   const { isMobile, isTablet } = useResponsive();
 
-  // ✅ NEW: Zoom state
+  // ✅ NEW: Zoom state + Full Screen state
   const [isZoom, setIsZoom] = React.useState(false);
+  const [isFullScreen, setIsFullScreen] = React.useState(false);
 
-  // ✅ Modal width theo Zoom
+  // ✅ Modal width theo Zoom & Full Screen
   const modalWidth = useMemo(() => {
+    if (isFullScreen) {
+      return isMobile ? '99vw' : '98vw';
+    }
     if (isMobile) return isZoom ? '99vw' : '95vw';
     if (isTablet) return isZoom ? 1400 : 1100;
     return isZoom ? 1600 : 1200;
-  }, [isMobile, isTablet, isZoom]);
+  }, [isMobile, isTablet, isZoom, isFullScreen]);
 
-  // ✅ Chart scale theo Zoom (đồng bộ 3 chart)
+  // ✅ Chart scale theo Zoom & Full Screen (đồng bộ 3 chart)
   const scaleFactor = useMemo(() => {
+    if (isFullScreen) {
+      return isMobile ? 1.5 : 2.0;
+    }
     if (isMobile) return isZoom ? 1.15 : 1.0;
     return isZoom ? 1.45 : 1.0;
-  }, [isMobile, isZoom]);
+  }, [isMobile, isZoom, isFullScreen]);
 
   const handleClose = useCallback(() => {
     onClose();
@@ -615,6 +639,14 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
   const toggleZoom = useCallback(() => {
     setIsZoom((prev) => !prev);
   }, []);
+
+  const toggleFullScreen = useCallback(() => {
+    setIsFullScreen((prev) => !prev);
+    // Khi bật Full Screen, tự động tắt Zoom thường
+    if (!isFullScreen) {
+      setIsZoom(false);
+    }
+  }, [isFullScreen]);
 
   return (
     <Modal
@@ -634,20 +666,44 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             </div>
           </div>
 
-          {/* ✅ Right controls */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
+          {/* ✅ Right controls - Zoom Buttons */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
+            {/* Regular Zoom Button */}
             <Tooltip title={isZoom ? 'Thu nhỏ Modal' : 'Phóng to Modal'}>
               <Button
                 size="small"
                 onClick={toggleZoom}
+                disabled={isFullScreen} // Disable khi đang Full Screen
                 style={{
-                  borderColor: THEME.border.default,
-                  background: THEME.background.tertiary,
-                  color: THEME.text.primary,
+                  borderColor: isZoom ? '#10b981' : THEME.border.default,
+                  background: isZoom ? 'rgba(16, 185, 129, 0.1)' : THEME.background.tertiary,
+                  color: isZoom ? '#10b981' : THEME.text.primary,
                   fontWeight: 700,
+                  transition: 'all 0.3s ease',
+                  opacity: isFullScreen ? 0.5 : 1,
                 }}
               >
-                {isZoom ? '🔎- Zoom' : '🔎+ Zoom'}
+                {isZoom ? '🔍 Zoom On' : '🔍 Zoom'}
+              </Button>
+            </Tooltip>
+
+            {/* Full Screen Button */}
+            <Tooltip title={isFullScreen ? 'Thoát Full Screen' : 'Mở Full Screen'}>
+              <Button
+                size="small"
+                onClick={toggleFullScreen}
+                style={{
+                  borderColor: isFullScreen ? '#3b82f6' : THEME.border.default,
+                  background: isFullScreen 
+                    ? 'rgba(59, 130, 246, 0.15)' 
+                    : 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%)',
+                  color: isFullScreen ? '#60a5fa' : THEME.text.primary,
+                  fontWeight: 700,
+                  transition: 'all 0.3s ease',
+                  boxShadow: isFullScreen ? '0 0 12px rgba(59, 130, 246, 0.3)' : 'none',
+                }}
+              >
+                {isFullScreen ? '⛶ Exit Full' : '⛶ Full Screen'}
               </Button>
             </Tooltip>
           </div>
@@ -661,19 +717,23 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
       centered
       styles={{
         body: {
-          padding: isMobile ? '12px' : '16px',
+          padding: isMobile ? '12px' : isFullScreen ? '20px' : '16px',
           background: THEME.background.primary,
-          maxHeight: isMobile ? '80vh' : isZoom ? '90vh' : undefined, // ✅ zoom thì cao hơn
-          overflowY: isMobile || isZoom ? 'auto' : undefined,
+          maxHeight: isFullScreen ? '92vh' : isMobile ? '80vh' : isZoom ? '90vh' : undefined,
+          overflowY: isMobile || isZoom || isFullScreen ? 'auto' : undefined,
         },
         header: {
-          background: `linear-gradient(135deg, ${THEME.background.primary} 0%, ${THEME.background.secondary} 100%)`,
-          borderBottom: `1px solid ${THEME.border.default}`,
+          background: isFullScreen
+            ? `linear-gradient(135deg, #1e293b 0%, #0f172a 100%)`
+            : `linear-gradient(135deg, ${THEME.background.primary} 0%, ${THEME.background.secondary} 100%)`,
+          borderBottom: `1px solid ${isFullScreen ? '#3b82f6' : THEME.border.default}`,
           padding: isMobile ? '10px 12px' : '12px 16px',
+          boxShadow: isFullScreen ? '0 2px 8px rgba(59, 130, 246, 0.2)' : 'none',
         },
         content: {
           background: THEME.background.secondary,
-          border: `1px solid ${THEME.border.default}`,
+          border: `1px solid ${isFullScreen ? '#3b82f6' : THEME.border.default}`,
+          boxShadow: isFullScreen ? '0 8px 32px rgba(0, 0, 0, 0.4)' : 'none',
         },
       }}
     >
@@ -683,7 +743,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-            gap: isMobile ? '10px' : '12px',
+            gap: isMobile ? '10px' : isFullScreen ? '16px' : '12px',
             marginBottom: '12px',
           }}
         >
@@ -695,7 +755,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             ask={exchange1Ask}
             digits={exchange1Digits}
             isMobile={isMobile}
-            scaleFactor={scaleFactor} // ✅ NEW
+            scaleFactor={scaleFactor}
           />
           <ChartView
             data={exchange2?.data || []}
@@ -705,7 +765,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             ask={exchange2Ask}
             digits={exchange2Digits}
             isMobile={isMobile}
-            scaleFactor={scaleFactor} // ✅ NEW
+            scaleFactor={scaleFactor}
           />
           <ChartView
             data={exchange3?.data || []}
@@ -715,7 +775,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             ask={exchange3Ask}
             digits={exchange3Digits}
             isMobile={isMobile}
-            scaleFactor={scaleFactor} // ✅ NEW
+            scaleFactor={scaleFactor}
           />
         </div>
 
