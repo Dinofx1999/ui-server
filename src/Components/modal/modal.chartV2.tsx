@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, memo } from 'react';
-import { Modal, Spin } from 'antd';
+import { Modal, Spin, Button, Tooltip } from 'antd';
 
 // ============================================================================
 // CONSTANTS - Extract to separate file if needed
@@ -101,6 +101,7 @@ interface ChartViewProps {
   ask?: number;
   digits?: number;
   isMobile?: boolean;
+  scaleFactor?: number; // ✅ NEW: scale chart theo Zoom
 }
 
 // ============================================================================
@@ -186,7 +187,7 @@ const Candlestick = memo<{
         y={config.timeY + 15}
         textAnchor="middle"
         fill={THEME.text.muted}
-        fontSize={5}
+        fontSize={Math.max(5, config.fontSize * 0.9)} // ✅ scale theo zoom
         fontWeight="500"
       >
         {candle.time}
@@ -339,26 +340,30 @@ const ChartView = memo<ChartViewProps>(({
   ask,
   digits = 2,
   isMobile = false,
+  scaleFactor = 1, // ✅ default
 }) => {
   const DIGITS = Math.max(0, safeNumber(digits, 2));
 
-  // ✅ Config calculation
+  // ✅ Config calculation (scale theo zoom)
   const config = useMemo(() => {
     const candle = CANDLE_PRESETS['slim-tall'];
+    const s = Math.max(0.8, Math.min(2.2, scaleFactor)); // ✅ clamp an toàn
     return {
-      chartHeight: CHART_CONFIG.baseHeight,
-      chartWidth: CHART_CONFIG.baseWidth,
-      fontSize: CHART_CONFIG.baseFontSize,
-      timeY: 165,
+      chartHeight: Math.round(CHART_CONFIG.baseHeight * s),
+      chartWidth: Math.round(CHART_CONFIG.baseWidth * s),
+      fontSize: Math.max(8, Math.round(CHART_CONFIG.baseFontSize * s)),
+      timeY: Math.round(165 * s),
       gridSteps: CHART_CONFIG.gridSteps,
-      candleWidth: candle.width,
-      candleSpacing: candle.spacing,
-      wickWidth: candle.wickWidth,
-      candleStartX: 55,
-      scaleHeight: 115 * candle.heightScale,
-      scaleOffset: 15,
+
+      candleWidth: candle.width * s,
+      candleSpacing: candle.spacing * s,
+      wickWidth: candle.wickWidth * s,
+      candleStartX: 55 * s,
+
+      scaleHeight: 115 * candle.heightScale * s,
+      scaleOffset: 15 * s,
     };
-  }, []);
+  }, [scaleFactor]);
 
   // ✅ Process data
   const viewData = useMemo(() => {
@@ -491,7 +496,7 @@ const ChartView = memo<ChartViewProps>(({
             style={{
               display: 'flex',
               gap: '10px',
-              fontSize: '10px',
+              fontSize: `${Math.max(10, Math.round(10 * scaleFactor))}px`, // ✅ scale
               flexWrap: 'wrap',
               justifyContent: isMobile ? 'flex-start' : 'flex-end',
               width: '100%',
@@ -587,25 +592,64 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
 }) => {
   const { isMobile, isTablet } = useResponsive();
 
-  const modalWidth = isMobile ? '95vw' : isTablet ? 1100 : 1200;
+  // ✅ NEW: Zoom state
+  const [isZoom, setIsZoom] = React.useState(false);
+
+  // ✅ Modal width theo Zoom
+  const modalWidth = useMemo(() => {
+    if (isMobile) return isZoom ? '99vw' : '95vw';
+    if (isTablet) return isZoom ? 1400 : 1100;
+    return isZoom ? 1600 : 1200;
+  }, [isMobile, isTablet, isZoom]);
+
+  // ✅ Chart scale theo Zoom (đồng bộ 3 chart)
+  const scaleFactor = useMemo(() => {
+    if (isMobile) return isZoom ? 1.15 : 1.0;
+    return isZoom ? 1.45 : 1.0;
+  }, [isMobile, isZoom]);
 
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
 
+  const toggleZoom = useCallback(() => {
+    setIsZoom((prev) => !prev);
+  }, []);
+
   return (
     <Modal
       title={
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '18px' }}>💱</span>
-            <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#008670' }}>{symbol}</span>
-            <span style={{ fontSize: '11px', fontWeight: 'normal', color: THEME.text.muted, marginLeft: '4px' }}>
-              So Sánh Giá (3 Broker)
-            </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+          {/* Left title */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '18px' }}>💱</span>
+              <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#008670' }}>{symbol}</span>
+              <span style={{ fontSize: '11px', fontWeight: 'normal', color: THEME.text.muted, marginLeft: '4px' }}>
+                So Sánh Giá (3 Broker)
+              </span>
+            </div>
+            <div style={{ fontSize: '11px', color: THEME.text.muted, marginTop: '4px' }}>
+              Timeframe: M1 | Real-time
+            </div>
           </div>
-          <div style={{ fontSize: '11px', color: THEME.text.muted, marginTop: '4px' }}>
-            Timeframe: M1 | Real-time
+
+          {/* ✅ Right controls */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
+            <Tooltip title={isZoom ? 'Thu nhỏ Modal' : 'Phóng to Modal'}>
+              <Button
+                size="small"
+                onClick={toggleZoom}
+                style={{
+                  borderColor: THEME.border.default,
+                  background: THEME.background.tertiary,
+                  color: THEME.text.primary,
+                  fontWeight: 700,
+                }}
+              >
+                {isZoom ? '🔎- Zoom' : '🔎+ Zoom'}
+              </Button>
+            </Tooltip>
           </div>
         </div>
       }
@@ -619,8 +663,8 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
         body: {
           padding: isMobile ? '12px' : '16px',
           background: THEME.background.primary,
-          maxHeight: isMobile ? '80vh' : undefined,
-          overflowY: isMobile ? 'auto' : undefined,
+          maxHeight: isMobile ? '80vh' : isZoom ? '90vh' : undefined, // ✅ zoom thì cao hơn
+          overflowY: isMobile || isZoom ? 'auto' : undefined,
         },
         header: {
           background: `linear-gradient(135deg, ${THEME.background.primary} 0%, ${THEME.background.secondary} 100%)`,
@@ -651,6 +695,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             ask={exchange1Ask}
             digits={exchange1Digits}
             isMobile={isMobile}
+            scaleFactor={scaleFactor} // ✅ NEW
           />
           <ChartView
             data={exchange2?.data || []}
@@ -660,6 +705,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             ask={exchange2Ask}
             digits={exchange2Digits}
             isMobile={isMobile}
+            scaleFactor={scaleFactor} // ✅ NEW
           />
           <ChartView
             data={exchange3?.data || []}
@@ -669,6 +715,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             ask={exchange3Ask}
             digits={exchange3Digits}
             isMobile={isMobile}
+            scaleFactor={scaleFactor} // ✅ NEW
           />
         </div>
 

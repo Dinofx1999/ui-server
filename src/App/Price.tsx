@@ -2120,6 +2120,8 @@ useEffect(() => {
 useEffect(() => {
   if (shouldConnectSymbols) connect_symbols();
   else disconnect_symbols();
+  
+  
 
   return () => disconnect_symbols();
 }, [shouldConnectSymbols]);
