@@ -3679,8 +3679,8 @@ useEffect(() => {
             rowKey={(record) => `${record.symbol}`}
             columns={columns_broker_info}
             dataSource={
-              Array.isArray(brokerInfo?.data?.OHLC_Symbols)
-                ? brokerInfo?.data?.OHLC_Symbols
+              Array.isArray(brokerInfo?.data)
+                ? brokerInfo?.data
                 : []
             }
             scroll={{ x: isMobile ? 500 : "max-content" }}
