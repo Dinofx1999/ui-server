@@ -85,6 +85,7 @@ import { useWebSocketAnalysis } from "../Hooks/ws.analysis";
 import { useWebSocketBrokers } from "../Hooks/ws.brokers";
 import { useWebSocketBrokerInfo } from "../Hooks/ws.broker.info";
 import { useWebSocketSymbols } from "../Hooks/ws.symbol.brokers";
+import {useChartWS} from "../Hooks/ws.chart";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 type ViewMode = "grid" | "list";
@@ -141,6 +142,62 @@ const chartData_Example = {
       ]
     },
   };
+// Danh sách màu mặc định cho các broker
+const DEFAULT_COLORS = [
+  "#F0B90B", // Vàng
+  "#5741D9", // Tím
+  "#10B981", // Xanh lá
+  "#EF4444", // Đỏ
+  "#3B82F6", // Xanh dương
+  "#F59E0B", // Cam
+  "#8B5CF6", // Tím nhạt
+  "#EC4899", // Hồng
+];
+
+function transformServerDataToChartData(serverData : any, timeframe = "1M") {
+  const colors = [
+    "#F0B90B", "#5741D9", "#10B981", "#EF4444", 
+    "#3B82F6", "#F59E0B", "#8B5CF6", "#EC4899"
+  ];
+
+  const result: Record<string, any> = {
+    symbol: serverData.symbol,
+    timeframe: timeframe,
+  };
+
+  serverData.charts.forEach((chart:any, index:any) => {
+    // Kiểm tra xem có dùng bid_mdf/ask_mdf không
+    const useMdf = chart.title?.includes("mdf");
+    const bid = parseFloat(useMdf ? chart.bid_mdf : chart.bid);
+    const ask = parseFloat(useMdf ? chart.ask_mdf : chart.ask);
+    const spread = parseFloat(useMdf ? chart.spread_mdf : chart.spread);
+    
+    // Thêm exchange
+    let Chart_Name = chart.Broker;
+    if(index === 2) Chart_Name = serverData.charts[0]?.Broker + " | " +serverData.charts[1]?.Broker ;
+    result[`exchange${index + 1}`] = {
+      name: Chart_Name,
+      color: colors[index % colors.length],
+      bid: bid,
+      ask: ask,
+      spread: spread,
+      digit: Number(chart.digit),
+      data: chart.ohlc.map((candle:any) => ({
+        time: candle.time,
+        open: parseFloat(candle.open),
+        high: parseFloat(candle.high),
+        low: parseFloat(candle.low),
+        close: parseFloat(candle.close),
+      })),
+    };
+    
+    // Thêm Bid_X và Ask_X ở root level
+    result[`Bid_${index + 1}`] = bid;
+    result[`Ask_${index + 1}`] = ask;
+  });
+
+  return result;
+}
 
 type Theme = {
   bg: string;
@@ -278,8 +335,9 @@ const [alert_, setAlert_] = useState(false);
   //Pagination
   const [pageSize_BrokerInfo, setPageSize_BrokerInfo] = useState(10);
 
-
-  //data chart
+//Data
+const [dataChart, setDataChart] = useState<any | null>(null);
+//data chart
 
 const [chartData, setChartData] = useState<{
   symbol: string;
@@ -572,6 +630,24 @@ useEffect(() => {
       autoReconnect: false,
       debug: true,
     });
+
+const { data, connected, error } = useChartWS(
+  isChartOpen
+    ? {
+        activeTab,
+        activeBrokerChart,
+        baseUrl: `ws://${IP_Server}:8004`,
+      }
+    : null
+);
+
+useEffect(() => {
+  if (!isChartOpen) return;
+  if (!data) return;
+  setDataChart(transformServerDataToChartData(data, "1M"));
+  console.log(data);
+}, [isChartOpen, data]);
+
 
   const {
     brokerInfo,
@@ -2129,26 +2205,6 @@ useEffect(() => {
 
 const rafRef = useRef<number | null>(null);
 
-useEffect(() => {
-  if (!isChartOpen || !symbols?.length || !activeBrokerChart) return;
-
-  if (rafRef.current) cancelAnimationFrame(rafRef.current);
-
-  rafRef.current = requestAnimationFrame(() => {
-    const pair = pickBrokerPair(symbols, activeBrokerChart);
-    if (!pair?.A || !pair?.B) return;
-
-    const next = buildChartDataFromAB(pair, chartData_Example);
-    setChartData(next);
-  });
-
-  return () => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-  };
-}, [symbols, activeBrokerChart, isChartOpen]);
 
 
 
@@ -3395,25 +3451,25 @@ useEffect(() => {
       >
         <p>Disconnected server at {new Date().toLocaleTimeString()} </p>
       </Modal>
-      
-      {chartData &&(
+
+      {dataChart && (
       <TripleExchangeChartModal
         isOpen={isChartOpen}
         onClose={() => setIsChartOpen(false)}
-        symbol={chartData?.symbol|| activeTab}
-        exchange1={chartData?.exchange1 || null}
-        exchange2={chartData?.exchange2 || null}
-        exchange3={chartData?.exchange3 || null}
-        timeframe={chartData?.timeframe || "1m"}
-        exchange1Bid={chartData?.exchange1Bid || 1.0875}
-        exchange1Ask={chartData?.exchange1Ask || 1.0878}
-        exchange2Bid={chartData?.exchange2Bid || 1.0876}
-        exchange2Ask={chartData?.exchange2Ask || 1.0879}
-        exchange3Bid={chartData?.exchange3Bid || 1.0877}
-        exchange3Ask={chartData?.exchange3Ask || 1.0880}
-        exchange1Digits={chartData?.exchange1Digits}
-        exchange2Digits={chartData?.exchange2Digits}
-        exchange3Digits={chartData?.exchange3Digits}
+        symbol={dataChart?.symbol || activeTab}
+        exchange1={dataChart?.exchange1 || null}
+        exchange2={dataChart?.exchange2 || null}
+        exchange3={dataChart?.exchange3 || null}
+        timeframe={dataChart?.timeframe || "1m"}
+        exchange1Bid={dataChart?.exchange1?.bid || 1.0875}
+        exchange1Ask={dataChart?.exchange1?.ask || 1.0878}
+        exchange2Bid={dataChart?.exchange2?.bid || 1.0876}
+        exchange2Ask={dataChart?.exchange2?.ask || 1.0879}
+        exchange3Bid={dataChart?.exchange3?.bid || 1.0877}
+        exchange3Ask={dataChart?.exchange3?.ask || 1.0880}
+        exchange1Digits={dataChart?.exchange1?.digit}
+        exchange2Digits={dataChart?.exchange2?.digit}
+        exchange3Digits={dataChart?.exchange2?.digit}
       />
       )}
       
