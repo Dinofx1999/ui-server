@@ -174,7 +174,7 @@ function transformServerDataToChartData(serverData : any, timeframe = "1M") {
     
     // Thêm exchange
     let Chart_Name = chart.Broker;
-    if(index === 2) Chart_Name = serverData.charts[0]?.Broker + " | " +serverData.charts[1]?.Broker ;
+    if(index === 2) Chart_Name = serverData.charts[0]?.Broker + " MDF ";
     result[`exchange${index + 1}`] = {
       name: Chart_Name,
       color: colors[index % colors.length],
@@ -645,7 +645,6 @@ useEffect(() => {
   if (!isChartOpen) return;
   if (!data) return;
   setDataChart(transformServerDataToChartData(data, "1M"));
-  console.log(data);
 }, [isChartOpen, data]);
 
 
@@ -3469,7 +3468,10 @@ useEffect(() => {
         exchange3Ask={dataChart?.exchange3?.ask || 1.0880}
         exchange1Digits={dataChart?.exchange1?.digit}
         exchange2Digits={dataChart?.exchange2?.digit}
-        exchange3Digits={dataChart?.exchange2?.digit}
+        exchange3Digits={dataChart?.exchange3?.digit}
+        exchange1Spread={dataChart?.exchange1?.spread}
+        exchange2Spread={dataChart?.exchange2?.spread}
+        exchange3Spread={dataChart?.exchange3?.spread}
       />
       )}
       
