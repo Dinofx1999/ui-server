@@ -1,5 +1,15 @@
 import React, { useMemo, useCallback, memo } from 'react';
-import { Modal, Spin, Button, Tooltip } from 'antd';
+import { Modal, Spin, Button, Tooltip, message } from 'antd';
+import {normalizeBrokerName} from '../../Helpers/text';
+import axios from 'axios';
+
+import { RefreshCcw, Trash2 ,TrendingUp, 
+  TrendingDown, 
+  BarChart3, 
+  LineChart, 
+  CandlestickChart,
+  Activity,
+  PieChart} from "lucide-react";
 
 // ============================================================================
 // CONSTANTS
@@ -110,8 +120,8 @@ interface ChartViewProps {
   accentColor: string;
 
   bid?: number; // Bid1
-  ask?: number; // Ask1 (can be overridden)
-  spread?: number; // points (for UI only)
+  ask?: number; // Ask1
+  spread?: number; // points (UI)
   digits?: number;
 
   isMobile?: boolean;
@@ -119,13 +129,13 @@ interface ChartViewProps {
 
   // Pair 2 (only chart3 uses)
   bid2?: number;
-  ask2?: number;
+  ask2?: number; // if not provided, can be computed from bid2+spread2Points
   digits2?: number;
-  label2?: string; // exchange name for pair2
+  label2?: string;
 
-  // ✅ NEW: Ask1 = Bid1 + Spread2(points)
+  // ✅ Pair2: Ask2 = Bid2 + Spread2(points)
   spread2Points?: number;
-  ask1FromBidPlusSpread2?: boolean;
+  ask2FromBidPlusSpread2?: boolean;
 }
 
 // ============================================================================
@@ -260,15 +270,13 @@ const GridLines = memo<{
 GridLines.displayName = 'GridLines';
 
 // ============================================================================
-// BID/ASK LINES
-// - Price box on RIGHT (centered to line Y)
-// - Exchange label on LEFT on the line
+// BID/ASK LINES (Label left on line, Price box right centered)
 // ============================================================================
 
 const PriceBox = memo<{
   x: number;
   yLine: number;
-  yOffset: number; // only shift box/text (avoid overlap)
+  yOffset: number;
   width: number;
   height: number;
   radius: number;
@@ -305,8 +313,25 @@ const PriceBox = memo<{
 
     return (
       <>
-        <rect x={x} y={rectY} width={width} height={height} rx={radius} fill={fill} stroke={stroke} strokeWidth={strokeWidth} opacity="0.95" />
-        <text x={x + textPaddingX} y={textY} textAnchor="start" fill={textColor} fontSize={fontSize} fontWeight={fontWeight}>
+        <rect
+          x={x}
+          y={rectY}
+          width={width}
+          height={height}
+          rx={radius}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          opacity="0.95"
+        />
+        <text
+          x={x + textPaddingX}
+          y={textY}
+          textAnchor="start"
+          fill={textColor}
+          fontSize={fontSize}
+          fontWeight={fontWeight}
+        >
           {text}
         </text>
       </>
@@ -327,7 +352,15 @@ const ExchangeLineLabel = memo<{
 }>(({ x, yLine, yOffset, text, color, fontSize, fontWeight = 800, textYOffset }) => {
   const yLabel = yLine + yOffset;
   return (
-    <text x={x} y={yLabel + textYOffset} textAnchor="start" fill={color} fontSize={fontSize} fontWeight={fontWeight} opacity="0.95">
+    <text
+      x={x}
+      y={yLabel + textYOffset}
+      textAnchor="start"
+      fill={color}
+      fontSize={fontSize}
+      fontWeight={fontWeight}
+      opacity="0.95"
+    >
       {text}
     </text>
   );
@@ -449,7 +482,7 @@ const BidAskLinesDual = memo<{
   const priceBoxX = config.bidAskXRight - config.priceBoxWidth;
   const labelX = config.bidAskXLeft + config.exchangeLabelInset;
 
-  // Only move box/text if too close (line stays exact)
+  // only move box/text if too close (line stays exact)
   const minGap = config.priceBoxHeight * 0.95;
   const calcBoxOffset = (yA: number, yB: number, direction: 1 | -1) => {
     const gap = Math.abs(yA - yB);
@@ -636,9 +669,8 @@ const ChartView = memo<ChartViewProps>(({
   digits2,
   label2,
 
-  // NEW
   spread2Points,
-  ask1FromBidPlusSpread2 = false,
+  ask2FromBidPlusSpread2 = false,
 }) => {
   const DIGITS = Math.max(0, safeNumber(digits, 2));
   const DIGITS2 = Math.max(0, safeNumber(digits2 ?? digits, 2));
@@ -662,17 +694,14 @@ const ChartView = memo<ChartViewProps>(({
       scaleHeight: 115 * candle.heightScale * s,
       scaleOffset: 15 * s,
 
-      // BidAsk lines
-      bidAskXLeft: 35 * s,
-      bidAskXRight: (CHART_CONFIG.baseWidth + 10) * s,
+      bidAskXLeft: (35) * s,
+      bidAskXRight: (CHART_CONFIG.baseWidth + 30) * s,
       bidAskStrokeWidth: 1.5 * s,
 
-      // Exchange label on line (left)
       exchangeLabelInset: 6 * s,
       exchangeLabelFontSize: Math.max(7, Math.round(7 * s)),
       exchangeLabelTextYOffset: 2 * s,
 
-      // Price box on right
       priceBoxWidth: 64 * s,
       priceBoxHeight: 14 * s,
       priceBoxRadius: 3 * s,
@@ -688,25 +717,15 @@ const ChartView = memo<ChartViewProps>(({
     return data.length > CHART_CONFIG.maxCandles ? data.slice(-CHART_CONFIG.maxCandles) : data;
   }, [data]);
 
-  // ✅ Ask1 can be forced: Ask1 = Bid1 + Spread2(points)
+  // Pair1 realtime
   const { bidPrice, askPrice, realtimeData } = useMemo(() => {
-    if (!viewData.length) {
-      return { bidPrice: 0, askPrice: 0, realtimeData: [] as OHLCData[] };
-    }
+    if (!viewData.length) return { bidPrice: 0, askPrice: 0, realtimeData: [] as OHLCData[] };
 
     const lastCandle = viewData[viewData.length - 1];
     const bidP = safeNumber(bid, lastCandle.close);
+    const askP = safeNumber(ask, lastCandle.close);
 
-    // default ask
-    let askP = safeNumber(ask, lastCandle.close);
-
-    // ✅ force: Ask1 = Bid1 + Spread2(points)
-    if (ask1FromBidPlusSpread2 && Number.isFinite(bidP)) {
-      const sp2Pts = safeNumber(spread2Points, 0);
-      askP = bidP + pointsToPrice(sp2Pts, DIGITS);
-    }
-
-    // realtime update (use bid as close)
+    // realtime update candle (use bid as close)
     const rtData = [...viewData];
     const lastIndex = rtData.length - 1;
 
@@ -720,22 +739,28 @@ const ChartView = memo<ChartViewProps>(({
     }
 
     return { bidPrice: bidP, askPrice: askP, realtimeData: rtData };
-  }, [viewData, bid, ask, ask1FromBidPlusSpread2, spread2Points, DIGITS]);
+  }, [viewData, bid, ask]);
 
-  // Pair2 values
+  // Pair2: compute Ask2 = Bid2 + Spread2(points) when enabled
   const { bidPrice2, askPrice2 } = useMemo(() => {
     if (!viewData.length) return { bidPrice2: Number.NaN, askPrice2: Number.NaN };
 
     const lastCandle = viewData[viewData.length - 1];
     const b2 = safeNumber(bid2, Number.NaN);
-    const a2 = safeNumber(ask2, Number.NaN);
-
     const fallback = lastCandle.close;
-    return {
-      bidPrice2: Number.isFinite(b2) ? b2 : fallback,
-      askPrice2: Number.isFinite(a2) ? a2 : fallback,
-    };
-  }, [viewData, bid2, ask2]);
+
+    const bid2Final = Number.isFinite(b2) ? b2 : fallback;
+
+    let ask2Final = safeNumber(ask2, Number.NaN);
+    if (!Number.isFinite(ask2Final)) ask2Final = fallback;
+
+    if (ask2FromBidPlusSpread2 && Number.isFinite(bid2Final)) {
+      const sp2Pts = safeNumber(spread2Points, 0);
+      ask2Final = bid2Final + pointsToPrice(sp2Pts, DIGITS2);
+    }
+
+    return { bidPrice2: bid2Final, askPrice2: ask2Final };
+  }, [viewData, bid2, ask2, ask2FromBidPlusSpread2, spread2Points, DIGITS2]);
 
   const chartInfo = useMemo(() => {
     if (!realtimeData.length) return { maxPrice: 0, minPrice: 0, priceRange: 1, scale: (_: number) => 0 };
@@ -786,7 +811,7 @@ const ChartView = memo<ChartViewProps>(({
     );
   }
 
-  const hasSecondPair = Number.isFinite(bid2 as any) || Number.isFinite(ask2 as any);
+  const hasSecondPair = Number.isFinite(bid2 as any) || ask2FromBidPlusSpread2 || Number.isFinite(ask2 as any);
 
   return (
     <div
@@ -907,6 +932,44 @@ const StatItem: React.FC<{
 // MAIN MODAL
 // ============================================================================
 
+
+export async function Handle_ResetSymbol(
+  symbol: string,
+  exchangeName: string,
+  messageApi: { success: (s: string) => void; error: (s: string) => void }
+) {
+  try {
+    const exchangeName_ = normalizeBrokerName(exchangeName);
+
+    const accessToken = localStorage.getItem("accessToken") || "";
+    const resp: any = await axios.get(
+      `http://116.105.227.149:5000/v1/api/${exchangeName_}/${symbol}/reset`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${accessToken}`,
+        },
+        timeout: 10000,
+      }
+    );
+
+    if (resp?.data?.code === 1) {
+      messageApi.success(`Gửi Reset Broker: ${exchangeName} thành công!`);
+    } else {
+      messageApi.error(
+        `Gửi yêu cầu Reset Broker: ${exchangeName} thất bại!${
+          resp?.data?.mess ? " , " + resp.data.mess : ""
+        }`
+      );
+    }
+
+    return resp?.data;
+  } catch (error: any) {
+    messageApi.error(String(error?.message ?? error));
+    throw error;
+  }
+}
+
 const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
   isOpen,
   onClose,
@@ -935,6 +998,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
 
   const [isZoom, setIsZoom] = React.useState(false);
   const [isFullScreen, setIsFullScreen] = React.useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
 
   const modalWidth = useMemo(() => {
     if (isFullScreen) return isMobile ? '99vw' : '98vw';
@@ -973,8 +1037,47 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
               Timeframe: {timeframe} | Real-time
             </div>
           </div>
+          {contextHolder}
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
+            <Tooltip title={`Reset ${symbol} , Broker ${exchange1?.name || 'Exchange 1'}`}>
+              <Button
+                size="small"
+                onClick={() => {
+                  Handle_ResetSymbol(symbol, exchange1?.name , messageApi);
+                }}
+                disabled={isFullScreen}
+                style={{
+                  borderColor: isZoom ? '#10b981' : THEME.border.default,
+                  background: 'rgb(174, 101, 0)',
+                  color: isZoom ? '#10b981' : THEME.text.primary,
+                  fontWeight: 700,
+                  transition: 'all 0.3s ease',
+                  opacity: isFullScreen ? 0.5 : 1,
+                }}
+              >
+                <RefreshCcw size={14} /> {exchange1?.name || 'Exchange 1'}
+              </Button>
+            </Tooltip>
+            <Tooltip title={isZoom ? 'Thu nhỏ Modal' : 'Phóng to Modal'}>
+              <Button
+                size="small"
+                onClick={() => {
+                  Handle_ResetSymbol(symbol, 'all', messageApi);
+                }}
+                disabled={isFullScreen}
+                style={{
+                  borderColor: isZoom ? '#10b981' : THEME.border.default,
+                  background: 'rgba(0, 142, 106, 0.875)',
+                  color: isZoom ? '#10b981' : THEME.text.primary,
+                  fontWeight: 700,
+                  transition: 'all 0.3s ease',
+                  opacity: isFullScreen ? 0.5 : 1,
+                }}
+              >
+                <RefreshCcw size={14} /> {symbol} All
+              </Button>
+            </Tooltip>
             <Tooltip title={isZoom ? 'Thu nhỏ Modal' : 'Phóng to Modal'}>
               <Button
                 size="small"
@@ -1075,25 +1178,27 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             scaleFactor={scaleFactor}
           />
 
-          {/* ✅ Chart 3: Ask1 = Bid1 + Spread2(points) */}
+          {/* ✅ Chart 3 theo đúng yêu cầu:
+              - Candle/Bid1/Ask1/Spread1 = Exchange3
+              - Bid2 = Exchange2
+              - Ask2 = Bid2 + Spread2(points) (Spread2 = Exchange2Spread)
+           */}
           <ChartView
             data={exchange3?.data || []}
             exchangeName={exchange3?.name || 'Exchange 3'}
             accentColor={exchange3?.color || '#10b981'}
             bid={exchange3Bid}
-            ask={exchange3Ask} // will be overridden by rule below
+            ask={exchange3Ask}
             spread={exchange3Spread}
             digits={exchange3Digits}
             isMobile={isMobile}
             scaleFactor={scaleFactor}
-            // Pair2 default: Exchange1
             bid2={exchange2Bid}
-            ask2={exchange2Ask}
+            // ask2 sẽ auto tính theo bid2+spread2Points
             digits2={exchange2Digits}
-            label2={exchange2?.name || 'Exchange 1'}
-            // ✅ IMPORTANT: Spread2 is POINTS
-            spread2Points={exchange1Spread}
-            ask1FromBidPlusSpread2={false}
+            label2={exchange2?.name || 'Exchange 2'}
+            spread2Points={exchange2Spread}
+            ask2FromBidPlusSpread2={true}
           />
         </div>
 

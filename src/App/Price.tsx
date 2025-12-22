@@ -70,7 +70,7 @@ import type { TableProps } from "antd";
 import { Table, Drawer, message } from "antd";
 
 //Icon
-import { BidPriceIcon, LongCandleIcon , } from "../Helpers/icon";
+import { BidPriceIcon, LongCandleIcon} from "../Helpers/icon";
 
 //Helpers
 import {
@@ -171,17 +171,19 @@ function transformServerDataToChartData(serverData : any, timeframe = "1M") {
     const bid = parseFloat(useMdf ? chart.bid_mdf : chart.bid);
     const ask = parseFloat(useMdf ? chart.ask_mdf : chart.ask);
     const spread = parseFloat(useMdf ? chart.spread_mdf : chart.spread);
-    
+    const digit = parseFloat(useMdf ? serverData.charts[1].digit : chart.digit);
     // Thêm exchange
     let Chart_Name = chart.Broker;
-    if(index === 2) Chart_Name = serverData.charts[0]?.Broker + " MDF ";
+    if(index === 2){
+      Chart_Name = serverData.charts[0]?.Broker + " MDF ";  
+    } 
     result[`exchange${index + 1}`] = {
       name: Chart_Name,
       color: colors[index % colors.length],
       bid: bid,
       ask: ask,
       spread: spread,
-      digit: Number(chart.digit),
+      digit: Number(digit),
       data: chart.ohlc.map((candle:any) => ({
         time: candle.time,
         open: parseFloat(candle.open),

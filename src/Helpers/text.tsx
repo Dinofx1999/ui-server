@@ -33,3 +33,10 @@ export function formatNewsMessage(newsArray:any) {
     .map((item:any) => `[${item.timeLabel.trim()}] ${item.currency} | ${item.name}`)
     .join(' , ');
 };
+  
+export function normalizeBrokerName(input = '') {
+  return String(input)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-');
+}
