@@ -743,6 +743,7 @@ useEffect(() => {
       title: "Version",
       dataIndex: "version",
       key: "version",
+      sorter: (a: any, b: any) => a.version.localeCompare(b.version),
       render: (v) => (
         <div style={{ textAlign: "center" }}>
           <Tag color="cyan">v{v}</Tag>
@@ -829,6 +830,7 @@ useEffect(() => {
       title: "Time Now",
       dataIndex: "timecurent",
       key: "timecurent",
+      sorter: (a: any, b: any) => a.timecurent.localeCompare(b.timecurent),
       render: (t: any) => (
         <Tooltip title={t}>
           <span>{t?.replace(".", "/").replace(".", "/")}</span>
@@ -837,7 +839,30 @@ useEffect(() => {
       width: 180,
     },
     ...(isMobile
-      ? []
+      ? [
+        {
+            title: "Last Updated",
+            dataIndex: "timeUpdated",
+            key: "timeUpdated",
+            render: (t: any) => {
+              const d = parseDotDate(t);
+              const color = freshnessColor(t);
+              return (
+                <Space>
+                  <Tooltip title={t}>
+                    <span>{d ? d.toLocaleString() : t}</span>
+                  </Tooltip>
+                </Space>
+              );
+            },
+            sorter: (a: any, b: any) => {
+              const da = parseDotDate(a.timeUpdated)?.getTime() ?? 0;
+              const db = parseDotDate(b.timeUpdated)?.getTime() ?? 0;
+              return da - db;
+            },
+            width: 220,
+          },
+      ]
       : [
           {
             title: "Last Updated",
@@ -1714,7 +1739,7 @@ useEffect(() => {
           </div>
         );
       },
-      sorter: (a: any, b: any) => a.timedelay.localeCompare(b.timedelay),
+      sorter: (a: any, b: any) => a.timedelay - b.timedelay,
     },
     {
       title: "Time Current",
