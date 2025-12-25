@@ -1403,7 +1403,7 @@ useEffect(() => {
             try {
               const AccessToken = localStorage.getItem("accessToken") || "";
               const resp: any = await axios.get(
-                `http://${IP_Server}:5000/v1/api/${record.Broker_}/${record.symbol}/reset`,
+                `http://${IP_Server}:5000/v1/api/${record.broker_}/${record.symbol}/reset`,
                 {
                   headers: {
                     "Content-Type": "application/json",
@@ -1415,12 +1415,12 @@ useEffect(() => {
               if (resp?.data.code === 1) {
                 messageApi.open({
                   type: "success",
-                  content: `Send Reset ${record.symbol} -> ${record.Broker} thành công!`,
+                  content: `Send Reset ${record.symbol} -> ${record.broker} thành công!`,
                 });
               } else {
                 messageApi.open({
                   type: "error",
-                  content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.Broker} thất bại!`,
+                  content: `Gửi yêu cầu Reset ${record.symbol} cho broker ${record.broker} thất bại!`,
                 });
               }
             } catch (error) {
@@ -1428,7 +1428,7 @@ useEffect(() => {
                 type: "error",
                 content: (error as Error).message,
               });
-              handleLogout();
+              // handleLogout();
             }
           }}
         >
