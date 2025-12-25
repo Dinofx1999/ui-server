@@ -31,8 +31,8 @@ const THEME = {
     muted: '#94a3b8',
   },
   candle: {
-    bullish: '#10b981',
-    bearish: '#ef4444',
+    bullish: '#25fe29',
+    bearish: '#f80505',
   },
   price: {
     bid: '#60a5fa',
