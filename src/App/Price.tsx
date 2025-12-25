@@ -991,16 +991,16 @@ useEffect(() => {
   const columns_symbols: TableProps["columns"] = [
     {
       title: "STT",
-      dataIndex: "Index",
-      key: "Index",
-      render: (text: any, record: any) => <a>{record.Index}</a>,
+      dataIndex: "indexBroker",
+      key: "indexBroker",
+      render: (text: any, record: any) => <a>{record.indexBroker}</a>,
       fixed: isMobile ? undefined : "left",
       width: isMobile ? 50 : 60,
     },
     {
       title: "Broker",
-      dataIndex: "Broker",
-      key: "Broker",
+      dataIndex: "broker",
+      key: "broker",
       render: (text: any, record: any) => (
        
 
@@ -3700,7 +3700,7 @@ useEffect(() => {
       >
         <div style={{ overflowX: "auto" }}>
           <Table
-            rowKey={(record) => `${record.symbol}-${record.Broker}`}
+            rowKey={(record) => `${record.symbol}-${record.broker}`}
             columns={columns_symbols}
             dataSource={Array.isArray(symbols) ? symbols : []}
             scroll={{ x: isMobile ? 500 : "max-content" }}
