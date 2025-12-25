@@ -1013,7 +1013,7 @@ useEffect(() => {
         // icon={<LineChartOutlined style={{ fontSize: '16px' }} />}
         onClick={async () => {
           try {
-            setActiveBrokerChart(record.Broker);
+            setActiveBrokerChart(record.broker);
             setIsChartOpen(true);
             console.log("Open chart for:", record.symbol);
           } catch (error) {
@@ -1021,7 +1021,7 @@ useEffect(() => {
               type: "error",
               content: (error as Error).message,
             });
-            handleLogout();
+            // handleLogout();
           }
         }}
       >
