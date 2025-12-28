@@ -1248,9 +1248,9 @@ useEffect(() => {
       align: "center" as const,
     },
     {
-      title: "Time Cr",
-      dataIndex: "timeCrr",
-      key: "timeCrr",
+      title: "Time Current",
+      dataIndex: "timecurrent",
+      key: "timecurrent",
       render: (text: any, record: any) => {
         const sessions = Array.isArray(record.timetrade)
           ? record.timetrade
@@ -1475,13 +1475,13 @@ useEffect(() => {
         type="primary"
         size="small"
         danger
-        disabled={record.Auto_Trade !== "true"}
+        disabled={record.auto_trade !== "true"}
         onClick={async () => {
           try {
             const AccessToken = localStorage.getItem("accessToken") || "";
             const Key_SECRET = localStorage.getItem("id_SECRET") || "";
             const Symbol = record.symbol;
-            const Broker_ = record.Broker_;
+            const Broker_ = record.broker_;
             const Price = record.bid;
             const resp: any = await axios.get(
               `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/SELL/${Price}/${Key_SECRET}/order`,
@@ -1518,13 +1518,13 @@ useEffect(() => {
       <Button
         type="primary"
         size="small"
-        disabled={record.Auto_Trade !== "true"}
+        disabled={record.auto_trade !== "true"}
         onClick={async () => {
           try {
             const AccessToken = localStorage.getItem("accessToken") || "";
             const Key_SECRET = localStorage.getItem("id_SECRET") || "";
             const Symbol = record.symbol;
-            const Broker_ = record.Broker_;
+            const Broker_ = record.broker_;
             const Price = record.ask;
             const resp: any = await axios.get(
               `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/BUY/${Price}/${Key_SECRET}/order`,
