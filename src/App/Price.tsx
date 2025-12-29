@@ -168,14 +168,20 @@ function transformServerDataToChartData(serverData : any, timeframe = "1M") {
   serverData.charts.forEach((chart:any, index:any) => {
     // Kiểm tra xem có dùng bid_mdf/ask_mdf không
     const useMdf = chart.title?.includes("mdf");
-    const bid = parseFloat(useMdf ? chart.bid_mdf : chart.bid);
-    const ask = parseFloat(useMdf ? chart.ask_mdf : chart.ask);
-    const spread = parseFloat(useMdf ? chart.spread_mdf : chart.spread);
-    const digit = parseFloat(useMdf ? serverData.charts[1].digit : chart.digit);
+    let bid = parseFloat(useMdf ? chart.bid_mdf : chart.bid);
+    let ask = parseFloat(useMdf ? chart.ask_mdf : chart.ask);
+    let spread = parseFloat(useMdf ? chart.spread_mdf : chart.spread);
+    let digit = parseFloat(useMdf ? serverData.charts[1].digit : chart.digit);
     // Thêm exchange
     let Chart_Name = chart.Broker;
+    // let Bid_mdf = serverData.charts[0].bid_mdf;
+    // let Ask_mdf = serverData.charts[0].ask_mdf;
     if(index === 2){
       Chart_Name = serverData.charts[0]?.Broker + " MDF ";  
+      bid = serverData.charts[0].bid_mdf;
+      ask = serverData.charts[0].ask_mdf;
+      spread = serverData.charts[0].spread_mdf;
+      digit = serverData.charts[0].digit;
     } 
     result[`exchange${index + 1}`] = {
       name: Chart_Name,
