@@ -1505,12 +1505,12 @@ useEffect(() => {
             if (resp?.data.code === 1) {
               messageApi.open({
                 type: "success",
-                content: `Send SELL ${record.symbol} -> ${record.Broker} thành công!`,
+                content: `Send SELL ${record.symbol} -> ${record.broker} thành công!`,
               });
             } else {
               messageApi.open({
                 type: "error",
-                content: `Gửi yêu cầu SELL ${record.symbol} cho broker ${record.Broker} thất bại!`,
+                content: `Gửi yêu cầu SELL ${record.symbol} cho broker ${record.broker} thất bại!`,
               });
             }
           } catch (error) {
@@ -1548,12 +1548,12 @@ useEffect(() => {
             if (resp?.data.code === 1) {
               messageApi.open({
                 type: "success",
-                content: `Send BUY ${record.symbol} -> ${record.Broker} thành công!`,
+                content: `Send BUY ${record.symbol} -> ${record.broker} thành công!`,
               });
             } else {
               messageApi.open({
                 type: "error",
-                content: `Gửi yêu cầu BUY ${record.symbol} cho broker ${record.Broker} thất bại!`,
+                content: `Gửi yêu cầu BUY ${record.symbol} cho broker ${record.broker} thất bại!`,
               });
             }
           } catch (error) {
