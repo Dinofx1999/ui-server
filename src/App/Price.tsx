@@ -50,7 +50,7 @@ import {
 import { ClockCircleOutlined} from "@ant-design/icons";
 import { ReloadOutlined, DeleteOutlined } from "@ant-design/icons";
 import { green, red } from "@ant-design/colors";
-import { calculatePercentage , formatSecondsToTime ,formatNewsMessage } from "../Helpers/text";
+import { calculatePercentage , formatSecondsToTime ,calcAskPrice ,formatDecimal} from "../Helpers/text";
 import {
   SearchOutlined,
   AppstoreOutlined,
@@ -179,9 +179,10 @@ function transformServerDataToChartData(serverData : any, timeframe = "1M") {
     if(index === 2){
       Chart_Name = serverData.charts[0]?.Broker + " MDF ";  
       bid = serverData.charts[0].bid_mdf;
-      ask = serverData.charts[0].ask_mdf;
+      
       spread = serverData.charts[0].spread_mdf;
-      digit = serverData.charts[0].digit;
+      digit = serverData.charts[1].digit;
+      ask = Number(calcAskPrice(bid, spread, digit));
     } 
     result[`exchange${index + 1}`] = {
       name: Chart_Name,
@@ -1119,17 +1120,19 @@ useEffect(() => {
       dataIndex: "bid",
       key: "bid",
       width: isMobile ? 50 : 120,
-      render: (text: any) => (
-        <div
+      render: (text: any , record: any) => (
+        <Tooltip title={`Digits: ${record.digit}`}>
+          <div
           style={{
             color: "#d90606",
             fontSize: "14px",
             fontWeight: 500,
           }}
         >
-          <span>{text}</span>
+          <span>{formatDecimal(text, Number(record.digit))}</span>
         </div>
-      ),
+        </Tooltip>
+    ),
       sorter: (a: any, b: any) => Number(a.bid) - Number(b.bid),
     },
     {
