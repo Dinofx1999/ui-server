@@ -24,6 +24,8 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   HourglassOutlined,
+  PlusOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import dayjs, { Dayjs } from "dayjs";
@@ -34,17 +36,22 @@ dayjs.extend(customParseFormat);
 const { Title, Text } = Typography;
 const timeFormat = "HH:mm:ss";
 
+type TimeRange = { start: Dayjs | null; end: Dayjs | null };
+
 const AccountModal = ({ open, onCancel }: any) => {
   const [autoTrade, setAutoTrade] = useState(false);
   const [sendTelegram, setSendTelegram] = useState(false);
   const [dataTable, setDataTable] = useState([]);
-  const [startTime, setStartTime] = useState<Dayjs | null>(null);
-  const [endTime, setEndTime] = useState<Dayjs | null>(null);
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
   const [delayBrokerStop, setDelayBrokerStop] = useState<number>(0);
   const [loadingDelay, setLoadingDelay] = useState(false);
   const [typeAnalysis, setTypeAnalysis] = useState("type1");
+
+  // ✅ NEW: nhiều khung giờ
+  const [timeRanges, setTimeRanges] = useState<TimeRange[]>([
+    { start: null, end: null },
+  ]);
 
   const API_BASE_URL = "http://116.105.227.149:5000/v1/api";
   const ACCESS_TOKEN = localStorage.getItem("accessToken") || "";
@@ -62,10 +69,29 @@ const AccountModal = ({ open, onCancel }: any) => {
       if (response.data?.data) {
         setAutoTrade(response.data.data.AutoTrade);
         setSendTelegram(response.data.data.sendTelegram);
-        const start = response.data.data.TimeStopReset?.start ?? null;
-        const end = response.data.data.TimeStopReset?.end ?? null;
-        setStartTime(start ? dayjs(start, timeFormat) : null);
-        setEndTime(end ? dayjs(end, timeFormat) : null);
+
+        // ✅ NEW: support 2 dạng TimeStopReset:
+        // - dạng cũ: {start,end}
+        // - dạng mới: [{start,end},...]
+        const tsr = response.data.data.TimeStopReset;
+
+        if (Array.isArray(tsr)) {
+          const mapped = tsr.map((r: any) => ({
+            start: r?.start ? dayjs(r.start, timeFormat) : null,
+            end: r?.end ? dayjs(r.end, timeFormat) : null,
+          }));
+          setTimeRanges(mapped.length ? mapped : [{ start: null, end: null }]);
+        } else {
+          const start = tsr?.start ?? null;
+          const end = tsr?.end ?? null;
+          setTimeRanges([
+            {
+              start: start ? dayjs(start, timeFormat) : null,
+              end: end ? dayjs(end, timeFormat) : null,
+            },
+          ]);
+        }
+
         setDelayBrokerStop(response.data.data.Delay_Stop ?? 0);
         setTypeAnalysis(response.data.data.Type_Analysis ?? "type1");
       } else {
@@ -206,49 +232,14 @@ const AccountModal = ({ open, onCancel }: any) => {
     },
   ];
 
-  const handleUpdateTime = async () => {
-    setLoading(true);
+  async function updateConfigAdmin(payload: any, mess: String) {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/admin/config`,
-        {
-          TimeStopReset: {
-            start: startTime ? startTime.format(timeFormat) : null,
-            end: endTime ? endTime.format(timeFormat) : null,
-          },
+      const response = await axios.put(`${API_BASE_URL}/admin/config`, payload, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: ACCESS_TOKEN,
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: ACCESS_TOKEN,
-          },
-        }
-      );
-
-      if (response.data?.success) {
-        messageApi.success("Cập nhật thời gian thành công!");
-      } else {
-        messageApi.error("Cập nhật thời gian thất bại");
-      }
-    } catch (error) {
-      messageApi.error("Lỗi khi kết nối đến server");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  async function updateConfigAdmin(payload: any , mess:String) {
-    try {
-      const response = await axios.put(
-        `${API_BASE_URL}/admin/config`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: ACCESS_TOKEN,
-          },
-        }
-      );
+      });
 
       if (response.data?.success) {
         messageApi.success(`Cập Nhật ${mess} Thành Công!`);
@@ -271,6 +262,64 @@ const AccountModal = ({ open, onCancel }: any) => {
     }
   };
 
+  // ✅ NEW: add/remove/update time ranges
+  const addTimeRange = () => {
+    setTimeRanges((prev) => [...prev, { start: null, end: null }]);
+  };
+
+  const removeTimeRange = (idx: number) => {
+    setTimeRanges((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      return next.length ? next : [{ start: null, end: null }];
+    });
+  };
+
+  const updateTimeRange = (
+    idx: number,
+    key: "start" | "end",
+    value: Dayjs | null
+  ) => {
+    setTimeRanges((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [key]: value };
+      return next;
+    });
+  };
+
+  // ✅ NEW: update TimeStopReset as array
+  const handleUpdateTime = async () => {
+    setLoading(true);
+    try {
+      const payloadRanges = timeRanges.map((r) => ({
+        start: r.start ? r.start.format(timeFormat) : null,
+        end: r.end ? r.end.format(timeFormat) : null,
+      }));
+
+      const response = await axios.put(
+        `${API_BASE_URL}/admin/config`,
+        {
+          TimeStopReset: payloadRanges, // ✅ gửi mảng
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: ACCESS_TOKEN,
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        messageApi.success("Cập nhật thời gian thành công!");
+      } else {
+        messageApi.error("Cập nhật thời gian thất bại");
+      }
+    } catch (error) {
+      messageApi.error("Lỗi khi kết nối đến server");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Modal
       open={open}
@@ -288,9 +337,7 @@ const AccountModal = ({ open, onCancel }: any) => {
               justifyContent: "center",
             }}
           >
-            <ThunderboltOutlined
-              style={{ fontSize: "20px", color: "white" }}
-            />
+            <ThunderboltOutlined style={{ fontSize: "20px", color: "white" }} />
           </div>
           <div>
             <Title level={4} style={{ margin: 0 }}>
@@ -342,9 +389,7 @@ const AccountModal = ({ open, onCancel }: any) => {
           }}
         >
           <Space>
-            <ThunderboltOutlined
-              style={{ fontSize: "18px", color: "#52c41a" }}
-            />
+            <ThunderboltOutlined style={{ fontSize: "18px", color: "#52c41a" }} />
             <div>
               <Text strong style={{ fontSize: "15px" }}>
                 Auto Trade
@@ -361,9 +406,7 @@ const AccountModal = ({ open, onCancel }: any) => {
               setAutoTrade(value);
               updateConfigAdmin({ AutoTrade: value }, "Auto Trade");
             }}
-            style={{
-              background: autoTrade ? "#52c41a" : undefined,
-            }}
+            style={{ background: autoTrade ? "#52c41a" : undefined }}
           />
         </div>
 
@@ -397,9 +440,7 @@ const AccountModal = ({ open, onCancel }: any) => {
               setSendTelegram(value);
               updateConfigAdmin({ Send_Telegram: value }, "Send Telegram");
             }}
-            style={{
-              background: sendTelegram ? "#1890ff" : undefined,
-            }}
+            style={{ background: sendTelegram ? "#1890ff" : undefined }}
           />
         </div>
 
@@ -442,66 +483,63 @@ const AccountModal = ({ open, onCancel }: any) => {
               type="primary"
               loading={loadingDelay}
               onClick={handleUpdateDelay}
-              style={{
-                background: "#fa8c16",
-                borderColor: "#fa8c16",
-              }}
+              style={{ background: "#fa8c16", borderColor: "#fa8c16" }}
             >
               Cập Nhật
             </Button>
           </Space>
         </div>
+
         {/* Type Phân Tích */}
-<div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "16px",
-    background: "#fafafa",
-    borderRadius: "8px",
-    marginTop: "12px",
-    border: "1px solid #f0f0f0",
-  }}
->
-  <Space>
-    <HourglassOutlined style={{ fontSize: "18px", color: "#fa8c16" }} />
-    <div>
-      <Text strong style={{ fontSize: "15px" }}>
-        Type Analysis
-      </Text>
-      <br />
-      <Text type="secondary" style={{ fontSize: "12px" }}>
-        Thời gian phân tích loại (Giây)
-      </Text>
-    </div>
-  </Space>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "16px",
+            background: "#fafafa",
+            borderRadius: "8px",
+            marginTop: "12px",
+            border: "1px solid #f0f0f0",
+          }}
+        >
+          <Space>
+            <HourglassOutlined style={{ fontSize: "18px", color: "#fa8c16" }} />
+            <div>
+              <Text strong style={{ fontSize: "15px" }}>
+                Type Analysis
+              </Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: "12px" }}>
+                Thời gian phân tích loại (Giây)
+              </Text>
+            </div>
+          </Space>
 
-  <Space>
-    <Select
-      value={typeAnalysis}
-      onChange={(value) => {
-        setTypeAnalysis(value);
-        updateConfigAdmin({ Type_Analysis: value }, "Type Analysis");
-      }}
-      style={{ width: 140 }}
-      placeholder="Chọn Type"
-    >
-      <Select.Option value="type1">
-        <Tooltip title="Phân tích kiểu 1 – tốc độ nhanh, phù hợp realtime">
-          Type 1
-        </Tooltip>
-      </Select.Option>
+          <Space>
+            <Select
+              value={typeAnalysis}
+              onChange={(value) => {
+                setTypeAnalysis(value);
+                updateConfigAdmin({ Type_Analysis: value }, "Type Analysis");
+              }}
+              style={{ width: 140 }}
+              placeholder="Chọn Type"
+            >
+              <Select.Option value="type1">
+                <Tooltip title="Phân tích kiểu 1 – tốc độ nhanh, phù hợp realtime">
+                  Type 1
+                </Tooltip>
+              </Select.Option>
 
-      <Select.Option value="type2">
-        <Tooltip title="Phân tích kiểu 2 – chính xác hơn, xử lý sâu">
-          Type 2
-        </Tooltip>
-      </Select.Option>
-    </Select>
-  </Space>
-</div>
-
+              <Select.Option value="type2">
+                <Tooltip title="Phân tích kiểu 2 – chính xác hơn, xử lý sâu">
+                  Type 2
+                </Tooltip>
+              </Select.Option>
+            </Select>
+          </Space>
+        </div>
 
         <Divider style={{ margin: "20px 0" }} />
 
@@ -523,66 +561,87 @@ const AccountModal = ({ open, onCancel }: any) => {
             }}
           >
             <Space>
-              <ClockCircleOutlined
-                style={{ fontSize: "18px", color: "#722ed1" }}
-              />
+              <ClockCircleOutlined style={{ fontSize: "18px", color: "#722ed1" }} />
               <div>
                 <Text strong style={{ fontSize: "15px" }}>
                   Thời Gian Dừng Reset
                 </Text>
                 <br />
                 <Text type="secondary" style={{ fontSize: "12px" }}>
-                  Cấu hình khung giờ tạm dừng hệ thống
+                  Cấu hình khung giờ tạm dừng hệ thống (nhiều khung)
                 </Text>
               </div>
             </Space>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <div style={{ flex: 1, minWidth: "200px" }}>
-              <Text type="secondary" style={{ fontSize: "12px" }}>
-                Thời gian bắt đầu
-              </Text>
-              <TimePicker
-                value={startTime}
-                format={timeFormat}
-                onChange={setStartTime}
-                style={{ width: "100%", marginTop: "4px" }}
-                size="large"
-                placeholder="Chọn giờ bắt đầu"
-              />
-            </div>
-
+          {/* ✅ NEW: render list */}
+          {timeRanges.map((r, idx) => (
             <div
+              key={idx}
               style={{
-                fontSize: "20px",
-                color: "#722ed1",
-                marginTop: "20px",
+                display: "flex",
+                gap: "12px",
+                alignItems: "center",
+                flexWrap: "wrap",
+                marginBottom: idx === timeRanges.length - 1 ? 0 : 12,
+                padding: "10px",
+                background: "rgba(255,255,255,0.6)",
+                borderRadius: "8px",
+                border: "1px solid #e6e6ff",
               }}
             >
-              →
-            </div>
+              <div style={{ flex: 1, minWidth: "200px" }}>
+                <Text type="secondary" style={{ fontSize: "12px" }}>
+                  Thời gian bắt đầu
+                </Text>
+                <TimePicker
+                  value={r.start}
+                  format={timeFormat}
+                  onChange={(v) => updateTimeRange(idx, "start", v)}
+                  style={{ width: "100%", marginTop: "4px" }}
+                  size="large"
+                  placeholder="Chọn giờ bắt đầu"
+                />
+              </div>
 
-            <div style={{ flex: 1, minWidth: "200px" }}>
-              <Text type="secondary" style={{ fontSize: "12px" }}>
-                Thời gian kết thúc
-              </Text>
-              <TimePicker
-                value={endTime}
-                format={timeFormat}
-                onChange={setEndTime}
-                style={{ width: "100%", marginTop: "4px" }}
-                size="large"
-                placeholder="Chọn giờ kết thúc"
-              />
+              <div style={{ fontSize: "20px", color: "#722ed1", marginTop: "20px" }}>
+                →
+              </div>
+
+              <div style={{ flex: 1, minWidth: "200px" }}>
+                <Text type="secondary" style={{ fontSize: "12px" }}>
+                  Thời gian kết thúc
+                </Text>
+                <TimePicker
+                  value={r.end}
+                  format={timeFormat}
+                  onChange={(v) => updateTimeRange(idx, "end", v)}
+                  style={{ width: "100%", marginTop: "4px" }}
+                  size="large"
+                  placeholder="Chọn giờ kết thúc"
+                />
+              </div>
+
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                style={{ marginTop: "20px" }}
+                onClick={() => removeTimeRange(idx)}
+              >
+                Xóa
+              </Button>
             </div>
+          ))}
+
+          <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
+            <Button
+              icon={<PlusOutlined />}
+              type="dashed"
+              onClick={addTimeRange}
+              style={{ borderRadius: 8 }}
+            >
+              Thêm khung giờ
+            </Button>
 
             <Button
               type="primary"
@@ -594,8 +653,7 @@ const AccountModal = ({ open, onCancel }: any) => {
                 border: "none",
                 borderRadius: "8px",
                 fontWeight: 600,
-                marginTop: "20px",
-                minWidth: "120px",
+                minWidth: "140px",
               }}
             >
               Cập Nhật
