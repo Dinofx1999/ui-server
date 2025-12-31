@@ -1121,6 +1121,43 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
     return isZoom ? 1.45 : 1.0;
   }, [isMobile, isZoom, isFullScreen]);
 
+  async function HandleOrder(type:string , record: any, messageApi: { open: (arg: { type: 'success' | 'error'; content: string }) => void }) {
+     try {
+            const AccessToken = localStorage.getItem("accessToken") || "";
+            const Key_SECRET = localStorage.getItem("id_SECRET") || "";
+            const Symbol = record.symbol;
+            const Broker_ = record.broker_;
+            const Price = record.price;
+            let IP_Server = "116.105.227.149";
+            const resp: any = await axios.get(
+              `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/${type}/${Price}/${Key_SECRET}/order`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `${AccessToken}`,
+                },
+                timeout: 10000,
+              }
+            );
+            if (resp?.data.code === 1) {
+              messageApi.open({
+                type: "success",
+                content: `Send BUY ${record.symbol} -> ${record.broker} thành công!`,
+              });
+            } else {
+              messageApi.open({
+                type: "error",
+                content: `Gửi yêu cầu BUY ${record.symbol} cho broker ${record.broker} thất bại!`,
+              });
+            }
+          } catch (error) {
+            messageApi.open({
+              type: "error",
+              content: (error as Error).message,
+            });
+          }
+  }
+
   const handleClose = useCallback(() => onClose(), [onClose]);
 
   const toggleZoom = useCallback(() => setIsZoom((prev) => !prev), []);
@@ -1144,7 +1181,54 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
           {contextHolder}
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
+             <Button
+                size="small"
+                onClick={() => {
+                  const record = {
+                    symbol: symbol,
+                    broker_: exchange1?.name || 'Exchange 1',
+                    broker: exchange1?.name || 'Exchange 1',
+                    price: exchange1Bid,
+                  };
+                  HandleOrder("SELL", record, messageApi);
+                }}
+                disabled={isFullScreen}
+                style={{
+                  borderColor: isZoom ? '#b91010' : THEME.border.default,
+                  background: '#b91010',
+                  color: isZoom ? '#10b981' : THEME.text.primary,
+                  fontWeight: 700,
+                  transition: 'all 0.3s ease',
+                  opacity: isFullScreen ? 0.5 : 1,
+                }}
+              >
+                <TrendingDown size={14} /> SELL
+              </Button>
+              <Button
+                size="small"
+                onClick={() => {
+                  const record = {
+                    symbol: symbol,
+                    broker_: exchange1?.name || 'Exchange 1',
+                    broker: exchange1?.name || 'Exchange 1',
+                    price: exchange1Ask,
+                  };
+                  HandleOrder("BUY", record, messageApi);
+                }}
+                disabled={isFullScreen}
+                style={{
+                  borderColor: isZoom ? '#1b1bff' : THEME.border.default,
+                  background: '#1b1bff',
+                  color: isZoom ? '#10b981' : THEME.text.primary,
+                  fontWeight: 700,
+                  transition: 'all 0.3s ease',
+                  opacity: isFullScreen ? 0.5 : 1,
+                }}
+              >
+                <TrendingUp size={14} /> BUY
+              </Button>
             <Tooltip title={`Reset ${symbol} , Broker ${exchange1?.name || 'Exchange 1'}`}>
+             
               <Button
                 size="small"
                 onClick={() => {
