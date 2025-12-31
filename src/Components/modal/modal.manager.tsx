@@ -52,8 +52,9 @@ const AccountModal = ({ open, onCancel }: any) => {
   const [timeRanges, setTimeRanges] = useState<TimeRange[]>([
     { start: null, end: null },
   ]);
-
-  const API_BASE_URL = "http://116.105.227.149:5000/v1/api";
+ 
+  const API_URL = "http://116.105.227.149:5000";
+  const API_BASE_URL = `${API_URL}/v1/api`;
   const ACCESS_TOKEN = localStorage.getItem("accessToken") || "";
 
   async function getSpreadPlus() {
@@ -223,14 +224,37 @@ const AccountModal = ({ open, onCancel }: any) => {
           checked={value}
           checkedChildren={<CheckCircleOutlined />}
           unCheckedChildren={<CloseCircleOutlined />}
-          onChange={(checked) => {
-            console.log("Switch toggled:", checked, record);
+          onChange={() => {
+            updateStatusAccount(record._id, !value, "Trạng Thái");
+            console.log("Switch toggled:");
             // Handle activation toggle here
           }}
         />
       ),
     },
   ];
+ async function updateStatusAccount(id_: any, status: boolean, mess: String) {
+    try {
+      const response = await axios.put(`${API_URL}/auth/account-user/${id_}`, {
+            actived: status,
+        }, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: ACCESS_TOKEN,
+        },
+        
+      });
+
+      if (response.data?.ok) {
+        getData_Table();
+        messageApi.success(`Cập Nhật ${mess} Thành Công!`);
+      } else {
+        messageApi.error(`Cập Nhật ${mess} Thất Bại!`);
+      }
+    } catch (error) {
+      messageApi.error("Lỗi khi kết nối đến server");
+    }
+  }
 
   async function updateConfigAdmin(payload: any, mess: String) {
     try {
@@ -673,7 +697,6 @@ const AccountModal = ({ open, onCancel }: any) => {
         <Title level={5} style={{ marginBottom: "16px", color: "#262626" }}>
           👥 Danh Sách Tài Khoản
         </Title>
-
         <Table
           columns={columns}
           dataSource={dataTable}
