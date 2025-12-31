@@ -1,15 +1,19 @@
 import React, { useMemo, useCallback, memo } from 'react';
 import { Modal, Spin, Button, Tooltip, message } from 'antd';
-import {normalizeBrokerName} from '../../Helpers/text';
+import { normalizeBrokerName } from '../../Helpers/text';
 import axios from 'axios';
 
-import { RefreshCcw, Trash2 ,TrendingUp, 
-  TrendingDown, 
-  BarChart3, 
-  LineChart, 
+import {
+  RefreshCcw,
+  Trash2,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  LineChart,
   CandlestickChart,
   Activity,
-  PieChart} from "lucide-react";
+  PieChart,
+} from 'lucide-react';
 
 // ============================================================================
 // CONSTANTS
@@ -35,11 +39,13 @@ const THEME = {
     bearish: '#f80505',
   },
   price: {
-    bid: '#60a5fa',
-    ask: '#fbbf24',
     spread: '#f97316',
 
-    // Pair 2 colors
+    // ✅ Pair 1 colors (Chart 1)
+    bid1: '#60a5fa',
+    ask1: '#fbbf24',
+
+    // ✅ Pair 2 colors (Chart 2)
     bid2: '#a78bfa',
     ask2: '#fb7185',
   },
@@ -61,6 +67,12 @@ const CHART_CONFIG = {
   gridSteps: 3,
   animationDuration: 200,
 } as const;
+
+// ✅ FIX: giữ 3 khung chart đều nhau (header cố định, chart fill)
+const CARD_MIN_HEIGHT = 430; // desktop
+const CARD_MIN_HEIGHT_MOBILE = 360;
+const HEADER_HEIGHT = 78; // desktop
+const HEADER_HEIGHT_MOBILE = 96;
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -136,6 +148,14 @@ interface ChartViewProps {
   // ✅ Pair2: Ask2 = Bid2 + Spread2(points)
   spread2Points?: number;
   ask2FromBidPlusSpread2?: boolean;
+
+  // ✅ per-chart colors (pair 1)
+  bidColor?: string;
+  askColor?: string;
+
+  // ✅ per-chart colors (pair 2)
+  bid2Color?: string;
+  ask2Color?: string;
 }
 
 // ============================================================================
@@ -324,14 +344,7 @@ const PriceBox = memo<{
           strokeWidth={strokeWidth}
           opacity="0.95"
         />
-        <text
-          x={x + textPaddingX}
-          y={textY}
-          textAnchor="start"
-          fill={textColor}
-          fontSize={fontSize}
-          fontWeight={fontWeight}
-        >
+        <text x={x + textPaddingX} y={textY} textAnchor="start" fill={textColor} fontSize={fontSize} fontWeight={fontWeight}>
           {text}
         </text>
       </>
@@ -352,15 +365,7 @@ const ExchangeLineLabel = memo<{
 }>(({ x, yLine, yOffset, text, color, fontSize, fontWeight = 800, textYOffset }) => {
   const yLabel = yLine + yOffset;
   return (
-    <text
-      x={x}
-      y={yLabel + textYOffset}
-      textAnchor="start"
-      fill={color}
-      fontSize={fontSize}
-      fontWeight={fontWeight}
-      opacity="0.95"
-    >
+    <text x={x} y={yLabel + textYOffset} textAnchor="start" fill={color} fontSize={fontSize} fontWeight={fontWeight} opacity="0.95">
       {text}
     </text>
   );
@@ -374,7 +379,11 @@ const BidAskLines = memo<{
   config: any;
   digits: number;
   label1?: string;
-}>(({ bidPrice, askPrice, scale, config, digits, label1 }) => {
+
+  // ✅ per-chart colors
+  bidColor: string;
+  askColor: string;
+}>(({ bidPrice, askPrice, scale, config, digits, label1, bidColor, askColor }) => {
   const bidY = scale(bidPrice);
   const askY = scale(askPrice);
 
@@ -389,7 +398,7 @@ const BidAskLines = memo<{
         y1={askY}
         x2={config.bidAskXRight}
         y2={askY}
-        stroke={THEME.price.ask}
+        stroke={askColor}
         strokeWidth={config.bidAskStrokeWidth}
         strokeDasharray="6,3"
         opacity="0.95"
@@ -399,7 +408,7 @@ const BidAskLines = memo<{
         yLine={askY}
         yOffset={0}
         text={label1 ? `${label1} ASK` : 'ASK'}
-        color={THEME.price.ask}
+        color={askColor}
         fontSize={config.exchangeLabelFontSize}
         textYOffset={config.exchangeLabelTextYOffset}
       />
@@ -410,14 +419,14 @@ const BidAskLines = memo<{
         width={config.priceBoxWidth}
         height={config.priceBoxHeight}
         radius={config.priceBoxRadius}
-        stroke={THEME.price.ask}
+        stroke={askColor}
         strokeWidth={config.priceBoxStroke}
         fill={THEME.background.tertiary}
         text={formatPrice(askPrice, digits)}
         textPaddingX={config.priceBoxTextPaddingX}
         textYOffset={config.priceBoxTextYOffset}
         fontSize={config.priceBoxFontSize}
-        textColor={THEME.price.ask}
+        textColor={askColor}
       />
 
       {/* BID */}
@@ -426,7 +435,7 @@ const BidAskLines = memo<{
         y1={bidY}
         x2={config.bidAskXRight}
         y2={bidY}
-        stroke={THEME.price.bid}
+        stroke={bidColor}
         strokeWidth={config.bidAskStrokeWidth}
         strokeDasharray="4,4"
         opacity="0.95"
@@ -436,7 +445,7 @@ const BidAskLines = memo<{
         yLine={bidY}
         yOffset={0}
         text={label1 ? `${label1} BID` : 'BID'}
-        color={THEME.price.bid}
+        color={bidColor}
         fontSize={config.exchangeLabelFontSize}
         textYOffset={config.exchangeLabelTextYOffset}
       />
@@ -447,14 +456,14 @@ const BidAskLines = memo<{
         width={config.priceBoxWidth}
         height={config.priceBoxHeight}
         radius={config.priceBoxRadius}
-        stroke={THEME.price.bid}
+        stroke={bidColor}
         strokeWidth={config.priceBoxStroke}
         fill={THEME.background.tertiary}
         text={formatPrice(bidPrice, digits)}
         textPaddingX={config.priceBoxTextPaddingX}
         textYOffset={config.priceBoxTextYOffset}
         fontSize={config.priceBoxFontSize}
-        textColor={THEME.price.bid}
+        textColor={bidColor}
       />
     </g>
   );
@@ -472,444 +481,551 @@ const BidAskLinesDual = memo<{
   digits2: number;
   label1?: string;
   label2?: string;
-}>(({ bidPrice, askPrice, bidPrice2, askPrice2, scale, config, digits, digits2, label1, label2 }) => {
-  const bidY1 = scale(bidPrice);
-  const askY1 = scale(askPrice);
 
-  const bidY2 = scale(bidPrice2);
-  const askY2 = scale(askPrice2);
+  // ✅ per-chart colors
+  bidColor1: string;
+  askColor1: string;
+  bidColor2: string;
+  askColor2: string;
+}>(
+  ({
+    bidPrice,
+    askPrice,
+    bidPrice2,
+    askPrice2,
+    scale,
+    config,
+    digits,
+    digits2,
+    label1,
+    label2,
+    bidColor1,
+    askColor1,
+    bidColor2,
+    askColor2,
+  }) => {
+    const bidY1 = scale(bidPrice);
+    const askY1 = scale(askPrice);
 
-  const priceBoxX = config.bidAskXRight - config.priceBoxWidth;
-  const labelX = config.bidAskXLeft + config.exchangeLabelInset;
+    const bidY2 = scale(bidPrice2);
+    const askY2 = scale(askPrice2);
 
-  // only move box/text if too close (line stays exact)
-  const minGap = config.priceBoxHeight * 0.95;
-  const calcBoxOffset = (yA: number, yB: number, direction: 1 | -1) => {
-    const gap = Math.abs(yA - yB);
-    if (gap >= minGap) return 0;
-    return direction * (minGap - gap);
-  };
+    const priceBoxX = config.bidAskXRight - config.priceBoxWidth;
+    const labelX = config.bidAskXLeft + config.exchangeLabelInset;
 
-  const offsetAsk1 = calcBoxOffset(askY1, askY2, -1);
-  const offsetBid1 = calcBoxOffset(bidY1, bidY2, -1);
-  const offsetAsk2 = calcBoxOffset(askY2, askY1, 1);
-  const offsetBid2 = calcBoxOffset(bidY2, bidY1, 1);
+    const minGap = config.priceBoxHeight * 0.95;
+    const calcBoxOffset = (yA: number, yB: number, direction: 1 | -1) => {
+      const gap = Math.abs(yA - yB);
+      if (gap >= minGap) return 0;
+      return direction * (minGap - gap);
+    };
 
-  return (
-    <g>
-      {/* Pair 1 ASK */}
-      <line
-        x1={config.bidAskXLeft}
-        y1={askY1}
-        x2={config.bidAskXRight}
-        y2={askY1}
-        stroke={THEME.price.ask}
-        strokeWidth={config.bidAskStrokeWidth}
-        strokeDasharray="6,3"
-        opacity="0.95"
-      />
-      <ExchangeLineLabel
-        x={labelX}
-        yLine={askY1}
-        yOffset={0}
-        text={label1 ? `${label1} ASK` : 'ASK'}
-        color={THEME.price.ask}
-        fontSize={config.exchangeLabelFontSize}
-        textYOffset={config.exchangeLabelTextYOffset}
-      />
-      <PriceBox
-        x={priceBoxX}
-        yLine={askY1}
-        yOffset={offsetAsk1}
-        width={config.priceBoxWidth}
-        height={config.priceBoxHeight}
-        radius={config.priceBoxRadius}
-        stroke={THEME.price.ask}
-        strokeWidth={config.priceBoxStroke}
-        fill={THEME.background.tertiary}
-        text={formatPrice(askPrice, digits)}
-        textPaddingX={config.priceBoxTextPaddingX}
-        textYOffset={config.priceBoxTextYOffset}
-        fontSize={config.priceBoxFontSize}
-        textColor={THEME.price.ask}
-      />
+    const offsetAsk1 = calcBoxOffset(askY1, askY2, -1);
+    const offsetBid1 = calcBoxOffset(bidY1, bidY2, -1);
+    const offsetAsk2 = calcBoxOffset(askY2, askY1, 1);
+    const offsetBid2 = calcBoxOffset(bidY2, bidY1, 1);
 
-      {/* Pair 1 BID */}
-      <line
-        x1={config.bidAskXLeft}
-        y1={bidY1}
-        x2={config.bidAskXRight}
-        y2={bidY1}
-        stroke={THEME.price.bid}
-        strokeWidth={config.bidAskStrokeWidth}
-        strokeDasharray="4,4"
-        opacity="0.95"
-      />
-      <ExchangeLineLabel
-        x={labelX}
-        yLine={bidY1}
-        yOffset={0}
-        text={label1 ? `${label1} BID` : 'BID'}
-        color={THEME.price.bid}
-        fontSize={config.exchangeLabelFontSize}
-        textYOffset={config.exchangeLabelTextYOffset}
-      />
-      <PriceBox
-        x={priceBoxX}
-        yLine={bidY1}
-        yOffset={offsetBid1}
-        width={config.priceBoxWidth}
-        height={config.priceBoxHeight}
-        radius={config.priceBoxRadius}
-        stroke={THEME.price.bid}
-        strokeWidth={config.priceBoxStroke}
-        fill={THEME.background.tertiary}
-        text={formatPrice(bidPrice, digits)}
-        textPaddingX={config.priceBoxTextPaddingX}
-        textYOffset={config.priceBoxTextYOffset}
-        fontSize={config.priceBoxFontSize}
-        textColor={THEME.price.bid}
-      />
+    return (
+      <g>
+        {/* Pair 1 ASK */}
+        <line
+          x1={config.bidAskXLeft}
+          y1={askY1}
+          x2={config.bidAskXRight}
+          y2={askY1}
+          stroke={askColor1}
+          strokeWidth={config.bidAskStrokeWidth}
+          strokeDasharray="6,3"
+          opacity="0.95"
+        />
+        <ExchangeLineLabel
+          x={labelX}
+          yLine={askY1}
+          yOffset={0}
+          text={label1 ? `${label1} ASK` : 'ASK'}
+          color={askColor1}
+          fontSize={config.exchangeLabelFontSize}
+          textYOffset={config.exchangeLabelTextYOffset}
+        />
+        <PriceBox
+          x={priceBoxX}
+          yLine={askY1}
+          yOffset={offsetAsk1}
+          width={config.priceBoxWidth}
+          height={config.priceBoxHeight}
+          radius={config.priceBoxRadius}
+          stroke={askColor1}
+          strokeWidth={config.priceBoxStroke}
+          fill={THEME.background.tertiary}
+          text={formatPrice(askPrice, digits)}
+          textPaddingX={config.priceBoxTextPaddingX}
+          textYOffset={config.priceBoxTextYOffset}
+          fontSize={config.priceBoxFontSize}
+          textColor={askColor1}
+        />
 
-      {/* Pair 2 ASK */}
-      <line
-        x1={config.bidAskXLeft}
-        y1={askY2}
-        x2={config.bidAskXRight}
-        y2={askY2}
-        stroke={THEME.price.ask2}
-        strokeWidth={config.bidAskStrokeWidth}
-        strokeDasharray="8,2"
-        opacity="0.95"
-      />
-      <ExchangeLineLabel
-        x={labelX}
-        yLine={askY2}
-        yOffset={0}
-        text={label2 ? `${label2} ASK` : 'ASK2'}
-        color={THEME.price.ask2}
-        fontSize={config.exchangeLabelFontSize}
-        textYOffset={config.exchangeLabelTextYOffset}
-      />
-      <PriceBox
-        x={priceBoxX}
-        yLine={askY2}
-        yOffset={offsetAsk2}
-        width={config.priceBoxWidth}
-        height={config.priceBoxHeight}
-        radius={config.priceBoxRadius}
-        stroke={THEME.price.ask2}
-        strokeWidth={config.priceBoxStroke}
-        fill={THEME.background.tertiary}
-        text={formatPrice(askPrice2, digits2)}
-        textPaddingX={config.priceBoxTextPaddingX}
-        textYOffset={config.priceBoxTextYOffset}
-        fontSize={config.priceBoxFontSize}
-        textColor={THEME.price.ask2}
-      />
+        {/* Pair 1 BID */}
+        <line
+          x1={config.bidAskXLeft}
+          y1={bidY1}
+          x2={config.bidAskXRight}
+          y2={bidY1}
+          stroke={bidColor1}
+          strokeWidth={config.bidAskStrokeWidth}
+          strokeDasharray="4,4"
+          opacity="0.95"
+        />
+        <ExchangeLineLabel
+          x={labelX}
+          yLine={bidY1}
+          yOffset={0}
+          text={label1 ? `${label1} BID` : 'BID'}
+          color={bidColor1}
+          fontSize={config.exchangeLabelFontSize}
+          textYOffset={config.exchangeLabelTextYOffset}
+        />
+        <PriceBox
+          x={priceBoxX}
+          yLine={bidY1}
+          yOffset={offsetBid1}
+          width={config.priceBoxWidth}
+          height={config.priceBoxHeight}
+          radius={config.priceBoxRadius}
+          stroke={bidColor1}
+          strokeWidth={config.priceBoxStroke}
+          fill={THEME.background.tertiary}
+          text={formatPrice(bidPrice, digits)}
+          textPaddingX={config.priceBoxTextPaddingX}
+          textYOffset={config.priceBoxTextYOffset}
+          fontSize={config.priceBoxFontSize}
+          textColor={bidColor1}
+        />
 
-      {/* Pair 2 BID */}
-      <line
-        x1={config.bidAskXLeft}
-        y1={bidY2}
-        x2={config.bidAskXRight}
-        y2={bidY2}
-        stroke={THEME.price.bid2}
-        strokeWidth={config.bidAskStrokeWidth}
-        strokeDasharray="2,6"
-        opacity="0.95"
-      />
-      <ExchangeLineLabel
-        x={labelX}
-        yLine={bidY2}
-        yOffset={0}
-        text={label2 ? `${label2} BID` : 'BID2'}
-        color={THEME.price.bid2}
-        fontSize={config.exchangeLabelFontSize}
-        textYOffset={config.exchangeLabelTextYOffset}
-      />
-      <PriceBox
-        x={priceBoxX}
-        yLine={bidY2}
-        yOffset={offsetBid2}
-        width={config.priceBoxWidth}
-        height={config.priceBoxHeight}
-        radius={config.priceBoxRadius}
-        stroke={THEME.price.bid2}
-        strokeWidth={config.priceBoxStroke}
-        fill={THEME.background.tertiary}
-        text={formatPrice(bidPrice2, digits2)}
-        textPaddingX={config.priceBoxTextPaddingX}
-        textYOffset={config.priceBoxTextYOffset}
-        fontSize={config.priceBoxFontSize}
-        textColor={THEME.price.bid2}
-      />
-    </g>
-  );
-});
+        {/* Pair 2 ASK */}
+        <line
+          x1={config.bidAskXLeft}
+          y1={askY2}
+          x2={config.bidAskXRight}
+          y2={askY2}
+          stroke={askColor2}
+          strokeWidth={config.bidAskStrokeWidth}
+          strokeDasharray="8,2"
+          opacity="0.95"
+        />
+        <ExchangeLineLabel
+          x={labelX}
+          yLine={askY2}
+          yOffset={0}
+          text={label2 ? `${label2} ASK` : 'ASK2'}
+          color={askColor2}
+          fontSize={config.exchangeLabelFontSize}
+          textYOffset={config.exchangeLabelTextYOffset}
+        />
+        <PriceBox
+          x={priceBoxX}
+          yLine={askY2}
+          yOffset={offsetAsk2}
+          width={config.priceBoxWidth}
+          height={config.priceBoxHeight}
+          radius={config.priceBoxRadius}
+          stroke={askColor2}
+          strokeWidth={config.priceBoxStroke}
+          fill={THEME.background.tertiary}
+          text={formatPrice(askPrice2, digits2)}
+          textPaddingX={config.priceBoxTextPaddingX}
+          textYOffset={config.priceBoxTextYOffset}
+          fontSize={config.priceBoxFontSize}
+          textColor={askColor2}
+        />
+
+        {/* Pair 2 BID */}
+        <line
+          x1={config.bidAskXLeft}
+          y1={bidY2}
+          x2={config.bidAskXRight}
+          y2={bidY2}
+          stroke={bidColor2}
+          strokeWidth={config.bidAskStrokeWidth}
+          strokeDasharray="2,6"
+          opacity="0.95"
+        />
+        <ExchangeLineLabel
+          x={labelX}
+          yLine={bidY2}
+          yOffset={0}
+          text={label2 ? `${label2} BID` : 'BID2'}
+          color={bidColor2}
+          fontSize={config.exchangeLabelFontSize}
+          textYOffset={config.exchangeLabelTextYOffset}
+        />
+        <PriceBox
+          x={priceBoxX}
+          yLine={bidY2}
+          yOffset={offsetBid2}
+          width={config.priceBoxWidth}
+          height={config.priceBoxHeight}
+          radius={config.priceBoxRadius}
+          stroke={bidColor2}
+          strokeWidth={config.priceBoxStroke}
+          fill={THEME.background.tertiary}
+          text={formatPrice(bidPrice2, digits2)}
+          textPaddingX={config.priceBoxTextPaddingX}
+          textYOffset={config.priceBoxTextYOffset}
+          fontSize={config.priceBoxFontSize}
+          textColor={bidColor2}
+        />
+      </g>
+    );
+  }
+);
 BidAskLinesDual.displayName = 'BidAskLinesDual';
 
 // ============================================================================
 // CHART VIEW
 // ============================================================================
 
-const ChartView = memo<ChartViewProps>(({
-  data,
-  exchangeName,
-  accentColor,
-  bid,
-  ask,
-  spread,
-  digits = 2,
-  isMobile = false,
-  scaleFactor = 1,
+const ChartView = memo<ChartViewProps>(
+  ({
+    data,
+    exchangeName,
+    accentColor,
+    bid,
+    ask,
+    spread,
+    digits = 2,
+    isMobile = false,
+    scaleFactor = 1,
 
-  bid2,
-  ask2,
-  digits2,
-  label2,
+    bid2,
+    ask2,
+    digits2,
+    label2,
 
-  spread2Points,
-  ask2FromBidPlusSpread2 = false,
-}) => {
-  const DIGITS = Math.max(0, safeNumber(digits, 2));
-  const DIGITS2 = Math.max(0, safeNumber(digits2 ?? digits, 2));
+    spread2Points,
+    ask2FromBidPlusSpread2 = false,
 
-  const config = useMemo(() => {
-    const candle = CANDLE_PRESETS['slim-tall'];
-    const s = Math.max(0.8, Math.min(2.2, scaleFactor));
+    bidColor,
+    askColor,
+    bid2Color,
+    ask2Color,
+  }) => {
+    const DIGITS = Math.max(0, safeNumber(digits, 2));
+    const DIGITS2 = Math.max(0, safeNumber(digits2 ?? digits, 2));
 
-    return {
-      chartHeight: Math.round(CHART_CONFIG.baseHeight * s),
-      chartWidth: Math.round(CHART_CONFIG.baseWidth * s),
-      fontSize: Math.max(8, Math.round(CHART_CONFIG.baseFontSize * s)),
-      timeY: Math.round(165 * s),
-      gridSteps: CHART_CONFIG.gridSteps,
+    // ✅ colors resolved per chart
+    const bidC = bidColor ?? THEME.price.bid1;
+    const askC = askColor ?? THEME.price.ask1;
+    const bid2C = bid2Color ?? THEME.price.bid2;
+    const ask2C = ask2Color ?? THEME.price.ask2;
 
-      candleWidth: candle.width * s,
-      candleSpacing: candle.spacing * s,
-      wickWidth: candle.wickWidth * s,
-      candleStartX: 55 * s,
+    const config = useMemo(() => {
+      const candle = CANDLE_PRESETS['slim-tall'];
+      const s = Math.max(0.8, Math.min(2.2, scaleFactor));
 
-      scaleHeight: 115 * candle.heightScale * s,
-      scaleOffset: 15 * s,
+      return {
+        chartHeight: Math.round(CHART_CONFIG.baseHeight * s),
+        chartWidth: Math.round(CHART_CONFIG.baseWidth * s),
+        fontSize: Math.max(8, Math.round(CHART_CONFIG.baseFontSize * s)),
+        timeY: Math.round(165 * s),
+        gridSteps: CHART_CONFIG.gridSteps,
 
-      bidAskXLeft: (35) * s,
-      bidAskXRight: (CHART_CONFIG.baseWidth + 30) * s,
-      bidAskStrokeWidth: 1.5 * s,
+        candleWidth: candle.width * s,
+        candleSpacing: candle.spacing * s,
+        wickWidth: candle.wickWidth * s,
+        candleStartX: 55 * s,
 
-      exchangeLabelInset: 6 * s,
-      exchangeLabelFontSize: Math.max(7, Math.round(7 * s)),
-      exchangeLabelTextYOffset: 2 * s,
+        scaleHeight: 115 * candle.heightScale * s,
+        scaleOffset: 15 * s,
 
-      priceBoxWidth: 64 * s,
-      priceBoxHeight: 14 * s,
-      priceBoxRadius: 3 * s,
-      priceBoxStroke: 0.85 * s,
-      priceBoxFontSize: Math.max(8, Math.round(8 * s)),
-      priceBoxTextPaddingX: 6 * s,
-      priceBoxTextYOffset: 2 * s,
-    };
-  }, [scaleFactor]);
+        bidAskXLeft: 35 * s,
+        bidAskXRight: (CHART_CONFIG.baseWidth + 30) * s,
+        bidAskStrokeWidth: 1.5 * s,
 
-  const viewData = useMemo(() => {
-    if (!data?.length) return [];
-    return data.length > CHART_CONFIG.maxCandles ? data.slice(-CHART_CONFIG.maxCandles) : data;
-  }, [data]);
+        exchangeLabelInset: 6 * s,
+        exchangeLabelFontSize: Math.max(7, Math.round(7 * s)),
+        exchangeLabelTextYOffset: 2 * s,
 
-  // Pair1 realtime
-  const { bidPrice, askPrice, realtimeData } = useMemo(() => {
-    if (!viewData.length) return { bidPrice: 0, askPrice: 0, realtimeData: [] as OHLCData[] };
-
-    const lastCandle = viewData[viewData.length - 1];
-    const bidP = safeNumber(bid, lastCandle.close);
-    const askP = safeNumber(ask, lastCandle.close);
-
-    // realtime update candle (use bid as close)
-    const rtData = [...viewData];
-    const lastIndex = rtData.length - 1;
-
-    if (Number.isFinite(bidP)) {
-      rtData[lastIndex] = {
-        ...rtData[lastIndex],
-        close: bidP,
-        high: Math.max(rtData[lastIndex].high, bidP),
-        low: Math.min(rtData[lastIndex].low, bidP),
+        priceBoxWidth: 64 * s,
+        priceBoxHeight: 14 * s,
+        priceBoxRadius: 3 * s,
+        priceBoxStroke: 0.85 * s,
+        priceBoxFontSize: Math.max(8, Math.round(8 * s)),
+        priceBoxTextPaddingX: 6 * s,
+        priceBoxTextYOffset: 2 * s,
       };
+    }, [scaleFactor]);
+
+    const viewData = useMemo(() => {
+      if (!data?.length) return [];
+      return data.length > CHART_CONFIG.maxCandles ? data.slice(-CHART_CONFIG.maxCandles) : data;
+    }, [data]);
+
+    // Pair1 realtime
+    const { bidPrice, askPrice, realtimeData } = useMemo(() => {
+      if (!viewData.length) return { bidPrice: 0, askPrice: 0, realtimeData: [] as OHLCData[] };
+
+      const lastCandle = viewData[viewData.length - 1];
+      const bidP = safeNumber(bid, lastCandle.close);
+      const askP = safeNumber(ask, lastCandle.close);
+
+      const rtData = [...viewData];
+      const lastIndex = rtData.length - 1;
+
+      if (Number.isFinite(bidP)) {
+        rtData[lastIndex] = {
+          ...rtData[lastIndex],
+          close: bidP,
+          high: Math.max(rtData[lastIndex].high, bidP),
+          low: Math.min(rtData[lastIndex].low, bidP),
+        };
+      }
+
+      return { bidPrice: bidP, askPrice: askP, realtimeData: rtData };
+    }, [viewData, bid, ask]);
+
+    // Pair2: compute Ask2 = Bid2 + Spread2(points) when enabled
+    const { bidPrice2, askPrice2 } = useMemo(() => {
+      if (!viewData.length) return { bidPrice2: Number.NaN, askPrice2: Number.NaN };
+
+      const lastCandle = viewData[viewData.length - 1];
+      const b2 = safeNumber(bid2, Number.NaN);
+      const fallback = lastCandle.close;
+
+      const bid2Final = Number.isFinite(b2) ? b2 : fallback;
+
+      let ask2Final = safeNumber(ask2, Number.NaN);
+      if (!Number.isFinite(ask2Final)) ask2Final = fallback;
+
+      if (ask2FromBidPlusSpread2 && Number.isFinite(bid2Final)) {
+        const sp2Pts = safeNumber(spread2Points, 0);
+        ask2Final = bid2Final + pointsToPrice(sp2Pts, DIGITS2);
+      }
+
+      return { bidPrice2: bid2Final, askPrice2: ask2Final };
+    }, [viewData, bid2, ask2, ask2FromBidPlusSpread2, spread2Points, DIGITS2]);
+
+    const chartInfo = useMemo(() => {
+      if (!realtimeData.length) return { maxPrice: 0, minPrice: 0, priceRange: 1, scale: (_: number) => 0 };
+
+      const allPrices = realtimeData.flatMap((d) => [d.high, d.low, d.open, d.close]);
+
+      if (Number.isFinite(bidPrice)) allPrices.push(bidPrice);
+      if (Number.isFinite(askPrice)) allPrices.push(askPrice);
+      if (Number.isFinite(bidPrice2)) allPrices.push(bidPrice2);
+      if (Number.isFinite(askPrice2)) allPrices.push(askPrice2);
+
+      const maxPrice = Math.max(...allPrices);
+      const minPrice = Math.min(...allPrices);
+      const priceRange = maxPrice - minPrice || 1e-9;
+
+      return {
+        maxPrice,
+        minPrice,
+        priceRange,
+        scale: (price: number) => ((maxPrice - price) / priceRange) * config.scaleHeight + config.scaleOffset,
+      };
+    }, [realtimeData, bidPrice, askPrice, bidPrice2, askPrice2, config]);
+
+    const stats = useMemo(() => {
+      if (!realtimeData.length) return null;
+      return {
+        open: realtimeData[0].open,
+        high: Math.max(...realtimeData.map((d) => d.high)),
+        low: Math.min(...realtimeData.map((d) => d.low)),
+        close: realtimeData[realtimeData.length - 1].close,
+      };
+    }, [realtimeData]);
+
+    if (!viewData.length) {
+      return (
+        <div
+          style={{
+            background: THEME.background.primary,
+            borderRadius: '8px',
+            border: `1px solid ${THEME.border.default}`,
+            padding: '40px 20px',
+            textAlign: 'center',
+          }}
+        >
+          <Spin />
+          <div style={{ color: THEME.text.muted, fontSize: '12px', marginTop: '12px' }}>Đang tải dữ liệu...</div>
+        </div>
+      );
     }
 
-    return { bidPrice: bidP, askPrice: askP, realtimeData: rtData };
-  }, [viewData, bid, ask]);
+    const hasSecondPair = Number.isFinite(bid2 as any) || ask2FromBidPlusSpread2 || Number.isFinite(ask2 as any);
 
-  // Pair2: compute Ask2 = Bid2 + Spread2(points) when enabled
-  const { bidPrice2, askPrice2 } = useMemo(() => {
-    if (!viewData.length) return { bidPrice2: Number.NaN, askPrice2: Number.NaN };
+    // ✅ FIX: header cố định chiều cao để 3 chart không bị lệch
+    const headerH = isMobile ? HEADER_HEIGHT_MOBILE : HEADER_HEIGHT;
 
-    const lastCandle = viewData[viewData.length - 1];
-    const b2 = safeNumber(bid2, Number.NaN);
-    const fallback = lastCandle.close;
-
-    const bid2Final = Number.isFinite(b2) ? b2 : fallback;
-
-    let ask2Final = safeNumber(ask2, Number.NaN);
-    if (!Number.isFinite(ask2Final)) ask2Final = fallback;
-
-    if (ask2FromBidPlusSpread2 && Number.isFinite(bid2Final)) {
-      const sp2Pts = safeNumber(spread2Points, 0);
-      ask2Final = bid2Final + pointsToPrice(sp2Pts, DIGITS2);
-    }
-
-    return { bidPrice2: bid2Final, askPrice2: ask2Final };
-  }, [viewData, bid2, ask2, ask2FromBidPlusSpread2, spread2Points, DIGITS2]);
-
-  const chartInfo = useMemo(() => {
-    if (!realtimeData.length) return { maxPrice: 0, minPrice: 0, priceRange: 1, scale: (_: number) => 0 };
-
-    const allPrices = realtimeData.flatMap((d) => [d.high, d.low, d.open, d.close]);
-
-    if (Number.isFinite(bidPrice)) allPrices.push(bidPrice);
-    if (Number.isFinite(askPrice)) allPrices.push(askPrice);
-    if (Number.isFinite(bidPrice2)) allPrices.push(bidPrice2);
-    if (Number.isFinite(askPrice2)) allPrices.push(askPrice2);
-
-    const maxPrice = Math.max(...allPrices);
-    const minPrice = Math.min(...allPrices);
-    const priceRange = maxPrice - minPrice || 1e-9;
-
-    return {
-      maxPrice,
-      minPrice,
-      priceRange,
-      scale: (price: number) => ((maxPrice - price) / priceRange) * config.scaleHeight + config.scaleOffset,
-    };
-  }, [realtimeData, bidPrice, askPrice, bidPrice2, askPrice2, config]);
-
-  const stats = useMemo(() => {
-    if (!realtimeData.length) return null;
-    return {
-      open: realtimeData[0].open,
-      high: Math.max(...realtimeData.map((d) => d.high)),
-      low: Math.min(...realtimeData.map((d) => d.low)),
-      close: realtimeData[realtimeData.length - 1].close,
-    };
-  }, [realtimeData]);
-
-  if (!viewData.length) {
     return (
       <div
         style={{
           background: THEME.background.primary,
-          borderRadius: '8px',
+          borderRadius: '5px',
           border: `1px solid ${THEME.border.default}`,
-          padding: '40px 20px',
-          textAlign: 'center',
+          overflow: 'hidden',
+          transition: 'all 0.3s ease',
+
+          // ✅ NEW: giúp 3 khung luôn stretch đều nhau trong grid
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          minHeight: isMobile ? CARD_MIN_HEIGHT_MOBILE : CARD_MIN_HEIGHT,
         }}
       >
-        <Spin />
-        <div style={{ color: THEME.text.muted, fontSize: '12px', marginTop: '12px' }}>Đang tải dữ liệu...</div>
+        {/* Header */}
+        <div
+          style={{
+            padding: '10px',
+            borderBottom: `1px solid ${THEME.border.light}`,
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? 6 : 0,
+            justifyContent: 'space-between',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            background: `linear-gradient(135deg, ${accentColor}15 0%, transparent 100%)`,
+
+            // ✅ NEW: FIX height
+            height: headerH,
+            minHeight: headerH,
+            maxHeight: headerH,
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+            <div
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: accentColor,
+                boxShadow: `0 0 8px ${accentColor}`,
+                flex: '0 0 auto',
+              }}
+            />
+            {/* ✅ NEW: tránh broker name dài làm header cao lên */}
+            <Tooltip title={exchangeName}>
+              <span
+                style={{
+                  color: THEME.text.primary,
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: isMobile ? 260 : 170,
+                  display: 'inline-block',
+                }}
+              >
+                {exchangeName}
+              </span>
+            </Tooltip>
+
+            {hasSecondPair && (
+              <span style={{ marginLeft: 8, fontSize: 10, color: THEME.text.muted, flex: '0 0 auto' }}>(Bid/Ask x2)</span>
+            )}
+          </div>
+
+          {stats && (
+            <div
+              style={{
+                display: 'flex',
+                gap: '10px',
+                fontSize: `${Math.max(10, Math.round(7 * scaleFactor))}px`,
+                flexWrap: 'wrap',
+                justifyContent: isMobile ? 'flex-start' : 'flex-end',
+                width: '100%',
+
+                // ✅ NEW: giữ header không đội chiều cao
+                overflow: 'hidden',
+                maxHeight: headerH - 8,
+              }}
+            >
+              <StatItem label="O" value={formatPrice(stats.open, DIGITS)} color={THEME.text.primary} />
+              <StatItem label="H" value={formatPrice(stats.high, DIGITS)} color={THEME.candle.bullish} />
+              <StatItem label="L" value={formatPrice(stats.low, DIGITS)} color={THEME.candle.bearish} />
+              <StatItem label="C" value={formatPrice(stats.close, DIGITS)} color="#3b82f6" />
+
+              <StatItem label="Spread" value={formatPrice(safeNumber(spread, 0), 0)} color={THEME.price.spread} weight={900} />
+              <StatItem label="Bid" value={formatPrice(bidPrice, DIGITS)} color={bidC} weight={900} />
+              <StatItem label="Ask" value={formatPrice(askPrice, DIGITS)} color={askC} weight={900} />
+
+              {hasSecondPair && (
+                <>
+                  <StatItem label="Bid2" value={formatPrice(bidPrice2, DIGITS2)} color={bid2C} weight={900} />
+                  <StatItem label="Ask2" value={formatPrice(askPrice2, DIGITS2)} color={ask2C} weight={900} />
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Chart */}
+        <div
+          style={{
+            padding: '8px',
+            background: THEME.background.tertiary,
+
+            // ✅ NEW: phần chart fill đều chiều cao còn lại
+            flex: 1,
+            display: 'flex',
+            alignItems: 'stretch',
+          }}
+        >
+          <svg
+            width="100%"
+            height="100%"
+            viewBox={`0 0 ${config.chartWidth} ${config.chartHeight}`}
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <GridLines
+              scale={chartInfo.scale}
+              maxPrice={chartInfo.maxPrice}
+              minPrice={chartInfo.minPrice}
+              config={config}
+              digits={DIGITS}
+            />
+
+            {realtimeData.map((candle, index) => (
+              <Candlestick key={`${candle.time}-${index}`} candle={candle} index={index} scale={chartInfo.scale} config={config} />
+            ))}
+
+            {hasSecondPair ? (
+              <BidAskLinesDual
+                bidPrice={bidPrice}
+                askPrice={askPrice}
+                bidPrice2={bidPrice2}
+                askPrice2={askPrice2}
+                scale={chartInfo.scale}
+                config={config}
+                digits={DIGITS}
+                digits2={DIGITS2}
+                label1={exchangeName}
+                label2={label2}
+                bidColor1={bidC}
+                askColor1={askC}
+                bidColor2={bid2C}
+                askColor2={ask2C}
+              />
+            ) : (
+              <BidAskLines
+                bidPrice={bidPrice}
+                askPrice={askPrice}
+                scale={chartInfo.scale}
+                config={config}
+                digits={DIGITS}
+                label1={exchangeName}
+                bidColor={bidC}
+                askColor={askC}
+              />
+            )}
+          </svg>
+        </div>
       </div>
     );
   }
-
-  const hasSecondPair = Number.isFinite(bid2 as any) || ask2FromBidPlusSpread2 || Number.isFinite(ask2 as any);
-
-  return (
-    <div
-      style={{
-        background: THEME.background.primary,
-        borderRadius: '5px',
-        border: `1px solid ${THEME.border.default}`,
-        overflow: 'hidden',
-        transition: 'all 0.3s ease',
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: '10px',
-          borderBottom: `1px solid ${THEME.border.light}`,
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? 6 : 0,
-          justifyContent: 'space-between',
-          alignItems: isMobile ? 'flex-start' : 'center',
-          background: `linear-gradient(135deg, ${accentColor}15 0%, transparent 100%)`,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div
-            style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: accentColor,
-              boxShadow: `0 0 8px ${accentColor}`,
-            }}
-          />
-          <span style={{ color: THEME.text.primary, fontWeight: 700, fontSize: '13px' }}>{exchangeName}</span>
-          {hasSecondPair && <span style={{ marginLeft: 8, fontSize: 10, color: THEME.text.muted }}>(Bid/Ask x2)</span>}
-        </div>
-
-        {stats && (
-          <div
-            style={{
-              display: 'flex',
-              gap: '10px',
-              fontSize: `${Math.max(10, Math.round(7 * scaleFactor))}px`,
-              flexWrap: 'wrap',
-              justifyContent: isMobile ? 'flex-start' : 'flex-end',
-              width: '100%',
-            }}
-          >
-            <StatItem label="O" value={formatPrice(stats.open, DIGITS)} color={THEME.text.primary} />
-            <StatItem label="H" value={formatPrice(stats.high, DIGITS)} color={THEME.candle.bullish} />
-            <StatItem label="L" value={formatPrice(stats.low, DIGITS)} color={THEME.candle.bearish} />
-            <StatItem label="C" value={formatPrice(stats.close, DIGITS)} color="#3b82f6" />
-
-            <StatItem label="Spread" value={formatPrice(safeNumber(spread, 0), 0)} color={THEME.price.spread} weight={900} />
-            <StatItem label="Bid" value={formatPrice(bidPrice, DIGITS)} color={THEME.price.bid} weight={900} />
-            <StatItem label="Ask" value={formatPrice(askPrice, DIGITS)} color={THEME.price.ask} weight={900} />
-
-            {hasSecondPair && (
-              <>
-                <StatItem label="Bid2" value={formatPrice(bidPrice2, DIGITS2)} color={THEME.price.bid2} weight={900} />
-                <StatItem label="Ask2" value={formatPrice(askPrice2, DIGITS2)} color={THEME.price.ask2} weight={900} />
-              </>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Chart */}
-      <div style={{ padding: '8px', background: THEME.background.tertiary }}>
-        <svg width="100%" height={config.chartHeight} viewBox={`0 0 ${config.chartWidth} ${config.chartHeight}`}>
-          <GridLines scale={chartInfo.scale} maxPrice={chartInfo.maxPrice} minPrice={chartInfo.minPrice} config={config} digits={DIGITS} />
-
-          {realtimeData.map((candle, index) => (
-            <Candlestick key={`${candle.time}-${index}`} candle={candle} index={index} scale={chartInfo.scale} config={config} />
-          ))}
-
-          {hasSecondPair ? (
-            <BidAskLinesDual
-              bidPrice={bidPrice}
-              askPrice={askPrice}
-              bidPrice2={bidPrice2}
-              askPrice2={askPrice2}
-              scale={chartInfo.scale}
-              config={config}
-              digits={DIGITS}
-              digits2={DIGITS2}
-              label1={exchangeName}
-              label2={label2}
-            />
-          ) : (
-            <BidAskLines bidPrice={bidPrice} askPrice={askPrice} scale={chartInfo.scale} config={config} digits={DIGITS} label1={exchangeName} />
-          )}
-        </svg>
-      </div>
-    </div>
-  );
-});
+);
 ChartView.displayName = 'ChartView';
 
 // ============================================================================
@@ -932,7 +1048,6 @@ const StatItem: React.FC<{
 // MAIN MODAL
 // ============================================================================
 
-
 export async function Handle_ResetSymbol(
   symbol: string,
   exchangeName: string,
@@ -941,26 +1056,19 @@ export async function Handle_ResetSymbol(
   try {
     const exchangeName_ = normalizeBrokerName(exchangeName);
 
-    const accessToken = localStorage.getItem("accessToken") || "";
-    const resp: any = await axios.get(
-      `http://116.105.227.149:5000/v1/api/${exchangeName_}/${symbol}/reset`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${accessToken}`,
-        },
-        timeout: 10000,
-      }
-    );
+    const accessToken = localStorage.getItem('accessToken') || '';
+    const resp: any = await axios.get(`http://116.105.227.149:5000/v1/api/${exchangeName_}/${symbol}/reset`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `${accessToken}`,
+      },
+      timeout: 10000,
+    });
 
     if (resp?.data?.code === 1) {
       messageApi.success(`Gửi Reset Broker: ${exchangeName} thành công!`);
     } else {
-      messageApi.error(
-        `Gửi yêu cầu Reset Broker: ${exchangeName} thất bại!${
-          resp?.data?.mess ? " , " + resp.data.mess : ""
-        }`
-      );
+      messageApi.error(`Gửi yêu cầu Reset Broker: ${exchangeName} thất bại!${resp?.data?.mess ? ' , ' + resp.data.mess : ''}`);
     }
 
     return resp?.data;
@@ -1029,13 +1137,9 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '18px' }}>💱</span>
               <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#008670' }}>{symbol}</span>
-              <span style={{ fontSize: '11px', fontWeight: 'normal', color: THEME.text.muted, marginLeft: '4px' }}>
-                So Sánh Giá (3 Broker)
-              </span>
+              <span style={{ fontSize: '11px', fontWeight: 'normal', color: THEME.text.muted, marginLeft: '4px' }}>So Sánh Giá (3 Broker)</span>
             </div>
-            <div style={{ fontSize: '11px', color: THEME.text.muted, marginTop: '4px' }}>
-              Timeframe: {timeframe} | Real-time
-            </div>
+            <div style={{ fontSize: '11px', color: THEME.text.muted, marginTop: '4px' }}>Timeframe: {timeframe} | Real-time</div>
           </div>
           {contextHolder}
 
@@ -1044,7 +1148,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
               <Button
                 size="small"
                 onClick={() => {
-                  Handle_ResetSymbol(symbol, exchange1?.name , messageApi);
+                  Handle_ResetSymbol(symbol, exchange1?.name, messageApi);
                 }}
                 disabled={isFullScreen}
                 style={{
@@ -1059,6 +1163,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
                 <RefreshCcw size={14} /> {exchange1?.name || 'Exchange 1'}
               </Button>
             </Tooltip>
+
             <Tooltip title={isZoom ? 'Thu nhỏ Modal' : 'Phóng to Modal'}>
               <Button
                 size="small"
@@ -1078,6 +1183,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
                 <RefreshCcw size={14} /> {symbol} All
               </Button>
             </Tooltip>
+
             <Tooltip title={isZoom ? 'Thu nhỏ Modal' : 'Phóng to Modal'}>
               <Button
                 size="small"
@@ -1102,9 +1208,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
                 onClick={toggleFullScreen}
                 style={{
                   borderColor: isFullScreen ? '#3b82f6' : THEME.border.default,
-                  background: isFullScreen
-                    ? 'rgba(59, 130, 246, 0.15)'
-                    : 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%)',
+                  background: isFullScreen ? 'rgba(59, 130, 246, 0.15)' : 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%)',
                   color: isFullScreen ? '#60a5fa' : THEME.text.primary,
                   fontWeight: 700,
                   transition: 'all 0.3s ease',
@@ -1131,9 +1235,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
           overflowY: isMobile || isZoom || isFullScreen ? 'auto' : undefined,
         },
         header: {
-          background: isFullScreen
-            ? `linear-gradient(135deg, #1e293b 0%, #0f172a 100%)`
-            : `linear-gradient(135deg, ${THEME.background.primary} 0%, ${THEME.background.secondary} 100%)`,
+          background: isFullScreen ? `linear-gradient(135deg, #1e293b 0%, #0f172a 100%)` : `linear-gradient(135deg, ${THEME.background.primary} 0%, ${THEME.background.secondary} 100%)`,
           borderBottom: `1px solid ${isFullScreen ? '#3b82f6' : THEME.border.default}`,
           padding: isMobile ? '10px 12px' : '12px 16px',
           boxShadow: isFullScreen ? '0 2px 8px rgba(59, 130, 246, 0.2)' : 'none',
@@ -1152,8 +1254,12 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
             gap: isMobile ? '10px' : isFullScreen ? '16px' : '12px',
             marginBottom: '12px',
+
+            // ✅ NEW: ép 3 item stretch đều nhau
+            alignItems: 'stretch',
           }}
         >
+          {/* Chart 1: Pair1 colors */}
           <ChartView
             data={exchange1?.data || []}
             exchangeName={exchange1?.name || 'Exchange 1'}
@@ -1164,8 +1270,11 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             digits={exchange1Digits}
             isMobile={isMobile}
             scaleFactor={scaleFactor}
+            bidColor={THEME.price.bid1}
+            askColor={THEME.price.ask1}
           />
 
+          {/* Chart 2: Pair2 colors (different from chart1) */}
           <ChartView
             data={exchange2?.data || []}
             exchangeName={exchange2?.name || 'Exchange 2'}
@@ -1176,12 +1285,13 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             digits={exchange2Digits}
             isMobile={isMobile}
             scaleFactor={scaleFactor}
+            bidColor={THEME.price.bid2}
+            askColor={THEME.price.ask2}
           />
 
-          {/* ✅ Chart 3 theo đúng yêu cầu:
-              - Candle/Bid1/Ask1/Spread1 = Exchange3
-              - Bid2 = Exchange2
-              - Ask2 = Bid2 + Spread2(points) (Spread2 = Exchange2Spread)
+          {/* Chart 3:
+              Pair1 colors = Chart1
+              Pair2 colors = Chart2
            */}
           <ChartView
             data={exchange3?.data || []}
@@ -1194,11 +1304,14 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             isMobile={isMobile}
             scaleFactor={scaleFactor}
             bid2={exchange2Bid}
-            // ask2 sẽ auto tính theo bid2+spread2Points
             digits2={exchange2Digits}
             label2={exchange2?.name || 'Exchange 2'}
             spread2Points={exchange2Spread}
             ask2FromBidPlusSpread2={true}
+            bidColor={THEME.price.bid1}
+            askColor={THEME.price.ask1}
+            bid2Color={THEME.price.bid2}
+            ask2Color={THEME.price.ask2}
           />
         </div>
 
@@ -1231,10 +1344,10 @@ const Legend = memo<{ isMobile: boolean }>(({ isMobile }) => (
   >
     <LegendItem color={THEME.candle.bullish} label="Tăng" />
     <LegendItem color={THEME.candle.bearish} label="Giảm" />
-    <LegendItem color={THEME.price.bid} label="Bid" isLine />
-    <LegendItem color={THEME.price.ask} label="Ask" isLine />
-    <LegendItem color={THEME.price.bid2} label="Bid2" isLine />
-    <LegendItem color={THEME.price.ask2} label="Ask2" isLine />
+    <LegendItem color={THEME.price.bid1} label="Bid (Chart1)" isLine />
+    <LegendItem color={THEME.price.ask1} label="Ask (Chart1)" isLine />
+    <LegendItem color={THEME.price.bid2} label="Bid (Chart2)" isLine />
+    <LegendItem color={THEME.price.ask2} label="Ask (Chart2)" isLine />
     <div style={{ color: THEME.text.muted, fontSize: '10px' }}>* Spread khác nhau do thanh khoản</div>
   </div>
 ));
