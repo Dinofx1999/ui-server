@@ -68,12 +68,6 @@ const CHART_CONFIG = {
   animationDuration: 200,
 } as const;
 
-// ✅ FIX: giữ 3 khung chart đều nhau (header cố định, chart fill)
-const CARD_MIN_HEIGHT = 430; // desktop
-const CARD_MIN_HEIGHT_MOBILE = 360;
-const HEADER_HEIGHT = 78; // desktop
-const HEADER_HEIGHT_MOBILE = 96;
-
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
@@ -141,11 +135,11 @@ interface ChartViewProps {
 
   // Pair 2 (only chart3 uses)
   bid2?: number;
-  ask2?: number; // if not provided, can be computed from bid2+spread2Points
+  ask2?: number; // if not provided, can be computed from bid2 + spread2Points
   digits2?: number;
   label2?: string;
 
-  // ✅ Pair2: Ask2 = Bid2 + Spread2(points)
+  // ✅ Ask2 = Bid2 + Spread(points)*10^(-digits2)
   spread2Points?: number;
   ask2FromBidPlusSpread2?: boolean;
 
@@ -193,10 +187,10 @@ const formatPrice = (price: number, digits: number = 2): string => {
   return Number.isFinite(price) ? price.toFixed(Math.max(0, digits)) : '--';
 };
 
-// spread in points -> price
+// spread in points -> price (points * 10^-digits)
 const pointsToPrice = (points: number, digits: number) => {
   const d = Math.max(0, digits);
-  return points / Math.pow(10, d);
+  return safeNumber(points, 0) * Math.pow(10, -d);
 };
 
 // ============================================================================
@@ -290,7 +284,7 @@ const GridLines = memo<{
 GridLines.displayName = 'GridLines';
 
 // ============================================================================
-// BID/ASK LINES (Label left on line, Price box right centered)
+// BID/ASK LINES
 // ============================================================================
 
 const PriceBox = memo<{
@@ -379,8 +373,6 @@ const BidAskLines = memo<{
   config: any;
   digits: number;
   label1?: string;
-
-  // ✅ per-chart colors
   bidColor: string;
   askColor: string;
 }>(({ bidPrice, askPrice, scale, config, digits, label1, bidColor, askColor }) => {
@@ -393,78 +385,14 @@ const BidAskLines = memo<{
   return (
     <g>
       {/* ASK */}
-      <line
-        x1={config.bidAskXLeft}
-        y1={askY}
-        x2={config.bidAskXRight}
-        y2={askY}
-        stroke={askColor}
-        strokeWidth={config.bidAskStrokeWidth}
-        strokeDasharray="6,3"
-        opacity="0.95"
-      />
-      <ExchangeLineLabel
-        x={labelX}
-        yLine={askY}
-        yOffset={0}
-        text={label1 ? `${label1} ASK` : 'ASK'}
-        color={askColor}
-        fontSize={config.exchangeLabelFontSize}
-        textYOffset={config.exchangeLabelTextYOffset}
-      />
-      <PriceBox
-        x={priceBoxX}
-        yLine={askY}
-        yOffset={0}
-        width={config.priceBoxWidth}
-        height={config.priceBoxHeight}
-        radius={config.priceBoxRadius}
-        stroke={askColor}
-        strokeWidth={config.priceBoxStroke}
-        fill={THEME.background.tertiary}
-        text={formatPrice(askPrice, digits)}
-        textPaddingX={config.priceBoxTextPaddingX}
-        textYOffset={config.priceBoxTextYOffset}
-        fontSize={config.priceBoxFontSize}
-        textColor={askColor}
-      />
+      <line x1={config.bidAskXLeft} y1={askY} x2={config.bidAskXRight} y2={askY} stroke={askColor} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="6,3" opacity="0.95" />
+      <ExchangeLineLabel x={labelX} yLine={askY} yOffset={0} text={label1 ? `${label1} ASK` : 'ASK'} color={askColor} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
+      <PriceBox x={priceBoxX} yLine={askY} yOffset={0} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor} />
 
       {/* BID */}
-      <line
-        x1={config.bidAskXLeft}
-        y1={bidY}
-        x2={config.bidAskXRight}
-        y2={bidY}
-        stroke={bidColor}
-        strokeWidth={config.bidAskStrokeWidth}
-        strokeDasharray="4,4"
-        opacity="0.95"
-      />
-      <ExchangeLineLabel
-        x={labelX}
-        yLine={bidY}
-        yOffset={0}
-        text={label1 ? `${label1} BID` : 'BID'}
-        color={bidColor}
-        fontSize={config.exchangeLabelFontSize}
-        textYOffset={config.exchangeLabelTextYOffset}
-      />
-      <PriceBox
-        x={priceBoxX}
-        yLine={bidY}
-        yOffset={0}
-        width={config.priceBoxWidth}
-        height={config.priceBoxHeight}
-        radius={config.priceBoxRadius}
-        stroke={bidColor}
-        strokeWidth={config.priceBoxStroke}
-        fill={THEME.background.tertiary}
-        text={formatPrice(bidPrice, digits)}
-        textPaddingX={config.priceBoxTextPaddingX}
-        textYOffset={config.priceBoxTextYOffset}
-        fontSize={config.priceBoxFontSize}
-        textColor={bidColor}
-      />
+      <line x1={config.bidAskXLeft} y1={bidY} x2={config.bidAskXRight} y2={bidY} stroke={bidColor} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="4,4" opacity="0.95" />
+      <ExchangeLineLabel x={labelX} yLine={bidY} yOffset={0} text={label1 ? `${label1} BID` : 'BID'} color={bidColor} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
+      <PriceBox x={priceBoxX} yLine={bidY} yOffset={0} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor} />
     </g>
   );
 });
@@ -481,8 +409,6 @@ const BidAskLinesDual = memo<{
   digits2: number;
   label1?: string;
   label2?: string;
-
-  // ✅ per-chart colors
   bidColor1: string;
   askColor1: string;
   bidColor2: string;
@@ -528,152 +454,24 @@ const BidAskLinesDual = memo<{
     return (
       <g>
         {/* Pair 1 ASK */}
-        <line
-          x1={config.bidAskXLeft}
-          y1={askY1}
-          x2={config.bidAskXRight}
-          y2={askY1}
-          stroke={askColor1}
-          strokeWidth={config.bidAskStrokeWidth}
-          strokeDasharray="6,3"
-          opacity="0.95"
-        />
-        <ExchangeLineLabel
-          x={labelX}
-          yLine={askY1}
-          yOffset={0}
-          text={label1 ? `${label1} ASK` : 'ASK'}
-          color={askColor1}
-          fontSize={config.exchangeLabelFontSize}
-          textYOffset={config.exchangeLabelTextYOffset}
-        />
-        <PriceBox
-          x={priceBoxX}
-          yLine={askY1}
-          yOffset={offsetAsk1}
-          width={config.priceBoxWidth}
-          height={config.priceBoxHeight}
-          radius={config.priceBoxRadius}
-          stroke={askColor1}
-          strokeWidth={config.priceBoxStroke}
-          fill={THEME.background.tertiary}
-          text={formatPrice(askPrice, digits)}
-          textPaddingX={config.priceBoxTextPaddingX}
-          textYOffset={config.priceBoxTextYOffset}
-          fontSize={config.priceBoxFontSize}
-          textColor={askColor1}
-        />
+        <line x1={config.bidAskXLeft} y1={askY1} x2={config.bidAskXRight} y2={askY1} stroke={askColor1} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="6,3" opacity="0.95" />
+        <ExchangeLineLabel x={labelX} yLine={askY1} yOffset={0} text={label1 ? `${label1} ASK` : 'ASK'} color={askColor1} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
+        <PriceBox x={priceBoxX} yLine={askY1} yOffset={offsetAsk1} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor1} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor1} />
 
         {/* Pair 1 BID */}
-        <line
-          x1={config.bidAskXLeft}
-          y1={bidY1}
-          x2={config.bidAskXRight}
-          y2={bidY1}
-          stroke={bidColor1}
-          strokeWidth={config.bidAskStrokeWidth}
-          strokeDasharray="4,4"
-          opacity="0.95"
-        />
-        <ExchangeLineLabel
-          x={labelX}
-          yLine={bidY1}
-          yOffset={0}
-          text={label1 ? `${label1} BID` : 'BID'}
-          color={bidColor1}
-          fontSize={config.exchangeLabelFontSize}
-          textYOffset={config.exchangeLabelTextYOffset}
-        />
-        <PriceBox
-          x={priceBoxX}
-          yLine={bidY1}
-          yOffset={offsetBid1}
-          width={config.priceBoxWidth}
-          height={config.priceBoxHeight}
-          radius={config.priceBoxRadius}
-          stroke={bidColor1}
-          strokeWidth={config.priceBoxStroke}
-          fill={THEME.background.tertiary}
-          text={formatPrice(bidPrice, digits)}
-          textPaddingX={config.priceBoxTextPaddingX}
-          textYOffset={config.priceBoxTextYOffset}
-          fontSize={config.priceBoxFontSize}
-          textColor={bidColor1}
-        />
+        <line x1={config.bidAskXLeft} y1={bidY1} x2={config.bidAskXRight} y2={bidY1} stroke={bidColor1} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="4,4" opacity="0.95" />
+        <ExchangeLineLabel x={labelX} yLine={bidY1} yOffset={0} text={label1 ? `${label1} BID` : 'BID'} color={bidColor1} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
+        <PriceBox x={priceBoxX} yLine={bidY1} yOffset={offsetBid1} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor1} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor1} />
 
         {/* Pair 2 ASK */}
-        <line
-          x1={config.bidAskXLeft}
-          y1={askY2}
-          x2={config.bidAskXRight}
-          y2={askY2}
-          stroke={askColor2}
-          strokeWidth={config.bidAskStrokeWidth}
-          strokeDasharray="8,2"
-          opacity="0.95"
-        />
-        <ExchangeLineLabel
-          x={labelX}
-          yLine={askY2}
-          yOffset={0}
-          text={label2 ? `${label2} ASK` : 'ASK2'}
-          color={askColor2}
-          fontSize={config.exchangeLabelFontSize}
-          textYOffset={config.exchangeLabelTextYOffset}
-        />
-        <PriceBox
-          x={priceBoxX}
-          yLine={askY2}
-          yOffset={offsetAsk2}
-          width={config.priceBoxWidth}
-          height={config.priceBoxHeight}
-          radius={config.priceBoxRadius}
-          stroke={askColor2}
-          strokeWidth={config.priceBoxStroke}
-          fill={THEME.background.tertiary}
-          text={formatPrice(askPrice2, digits2)}
-          textPaddingX={config.priceBoxTextPaddingX}
-          textYOffset={config.priceBoxTextYOffset}
-          fontSize={config.priceBoxFontSize}
-          textColor={askColor2}
-        />
+        <line x1={config.bidAskXLeft} y1={askY2} x2={config.bidAskXRight} y2={askY2} stroke={askColor2} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="8,2" opacity="0.95" />
+        <ExchangeLineLabel x={labelX} yLine={askY2} yOffset={0} text={label2 ? `${label2} ASK` : 'ASK2'} color={askColor2} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
+        <PriceBox x={priceBoxX} yLine={askY2} yOffset={offsetAsk2} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor2} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice2, digits2)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor2} />
 
         {/* Pair 2 BID */}
-        <line
-          x1={config.bidAskXLeft}
-          y1={bidY2}
-          x2={config.bidAskXRight}
-          y2={bidY2}
-          stroke={bidColor2}
-          strokeWidth={config.bidAskStrokeWidth}
-          strokeDasharray="2,6"
-          opacity="0.95"
-        />
-        <ExchangeLineLabel
-          x={labelX}
-          yLine={bidY2}
-          yOffset={0}
-          text={label2 ? `${label2} BID` : 'BID2'}
-          color={bidColor2}
-          fontSize={config.exchangeLabelFontSize}
-          textYOffset={config.exchangeLabelTextYOffset}
-        />
-        <PriceBox
-          x={priceBoxX}
-          yLine={bidY2}
-          yOffset={offsetBid2}
-          width={config.priceBoxWidth}
-          height={config.priceBoxHeight}
-          radius={config.priceBoxRadius}
-          stroke={bidColor2}
-          strokeWidth={config.priceBoxStroke}
-          fill={THEME.background.tertiary}
-          text={formatPrice(bidPrice2, digits2)}
-          textPaddingX={config.priceBoxTextPaddingX}
-          textYOffset={config.priceBoxTextYOffset}
-          fontSize={config.priceBoxFontSize}
-          textColor={bidColor2}
-        />
+        <line x1={config.bidAskXLeft} y1={bidY2} x2={config.bidAskXRight} y2={bidY2} stroke={bidColor2} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="2,6" opacity="0.95" />
+        <ExchangeLineLabel x={labelX} yLine={bidY2} yOffset={0} text={label2 ? `${label2} BID` : 'BID2'} color={bidColor2} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
+        <PriceBox x={priceBoxX} yLine={bidY2} yOffset={offsetBid2} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor2} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice2, digits2)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor2} />
       </g>
     );
   }
@@ -712,7 +510,6 @@ const ChartView = memo<ChartViewProps>(
     const DIGITS = Math.max(0, safeNumber(digits, 2));
     const DIGITS2 = Math.max(0, safeNumber(digits2 ?? digits, 2));
 
-    // ✅ colors resolved per chart
     const bidC = bidColor ?? THEME.price.bid1;
     const askC = askColor ?? THEME.price.ask1;
     const bid2C = bid2Color ?? THEME.price.bid2;
@@ -760,7 +557,6 @@ const ChartView = memo<ChartViewProps>(
       return data.length > CHART_CONFIG.maxCandles ? data.slice(-CHART_CONFIG.maxCandles) : data;
     }, [data]);
 
-    // Pair1 realtime
     const { bidPrice, askPrice, realtimeData } = useMemo(() => {
       if (!viewData.length) return { bidPrice: 0, askPrice: 0, realtimeData: [] as OHLCData[] };
 
@@ -783,22 +579,25 @@ const ChartView = memo<ChartViewProps>(
       return { bidPrice: bidP, askPrice: askP, realtimeData: rtData };
     }, [viewData, bid, ask]);
 
-    // Pair2: compute Ask2 = Bid2 + Spread2(points) when enabled
+    // ✅ Pair2 ASK2 chuẩn:
+    // Ask2 = Bid2 + (spread2Points * 10^-digits2)
     const { bidPrice2, askPrice2 } = useMemo(() => {
       if (!viewData.length) return { bidPrice2: Number.NaN, askPrice2: Number.NaN };
 
       const lastCandle = viewData[viewData.length - 1];
-      const b2 = safeNumber(bid2, Number.NaN);
       const fallback = lastCandle.close;
 
+      const b2 = safeNumber(bid2, Number.NaN);
       const bid2Final = Number.isFinite(b2) ? b2 : fallback;
 
       let ask2Final = safeNumber(ask2, Number.NaN);
-      if (!Number.isFinite(ask2Final)) ask2Final = fallback;
 
       if (ask2FromBidPlusSpread2 && Number.isFinite(bid2Final)) {
-        const sp2Pts = safeNumber(spread2Points, 0);
-        ask2Final = bid2Final + pointsToPrice(sp2Pts, DIGITS2);
+        // ✅ đây là công thức bạn cần
+        // ví dụ spread=15 digits=3 => 15 * 10^-3 = 0.015
+        ask2Final = bid2Final + pointsToPrice(safeNumber(spread2Points, 0), DIGITS2);
+      } else {
+        if (!Number.isFinite(ask2Final)) ask2Final = fallback;
       }
 
       return { bidPrice2: bid2Final, askPrice2: ask2Final };
@@ -855,9 +654,6 @@ const ChartView = memo<ChartViewProps>(
 
     const hasSecondPair = Number.isFinite(bid2 as any) || ask2FromBidPlusSpread2 || Number.isFinite(ask2 as any);
 
-    // ✅ FIX: header cố định chiều cao để 3 chart không bị lệch
-    const headerH = isMobile ? HEADER_HEIGHT_MOBILE : HEADER_HEIGHT;
-
     return (
       <div
         style={{
@@ -867,11 +663,11 @@ const ChartView = memo<ChartViewProps>(
           overflow: 'hidden',
           transition: 'all 0.3s ease',
 
-          // ✅ NEW: giúp 3 khung luôn stretch đều nhau trong grid
+          // ✅ equal height when in grid
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          minHeight: isMobile ? CARD_MIN_HEIGHT_MOBILE : CARD_MIN_HEIGHT,
+          minHeight: 0,
         }}
       >
         {/* Header */}
@@ -886,14 +682,11 @@ const ChartView = memo<ChartViewProps>(
             alignItems: isMobile ? 'flex-start' : 'center',
             background: `linear-gradient(135deg, ${accentColor}15 0%, transparent 100%)`,
 
-            // ✅ NEW: FIX height
-            height: headerH,
-            minHeight: headerH,
-            maxHeight: headerH,
-            overflow: 'hidden',
+            // ✅ keep header consistent height
+            minHeight: isMobile ? undefined : 78,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div
               style={{
                 width: '8px',
@@ -901,30 +694,10 @@ const ChartView = memo<ChartViewProps>(
                 borderRadius: '50%',
                 backgroundColor: accentColor,
                 boxShadow: `0 0 8px ${accentColor}`,
-                flex: '0 0 auto',
               }}
             />
-            {/* ✅ NEW: tránh broker name dài làm header cao lên */}
-            <Tooltip title={exchangeName}>
-              <span
-                style={{
-                  color: THEME.text.primary,
-                  fontWeight: 700,
-                  fontSize: '13px',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: isMobile ? 260 : 170,
-                  display: 'inline-block',
-                }}
-              >
-                {exchangeName}
-              </span>
-            </Tooltip>
-
-            {hasSecondPair && (
-              <span style={{ marginLeft: 8, fontSize: 10, color: THEME.text.muted, flex: '0 0 auto' }}>(Bid/Ask x2)</span>
-            )}
+            <span style={{ color: THEME.text.primary, fontWeight: 700, fontSize: '13px' }}>{exchangeName}</span>
+            {hasSecondPair && <span style={{ marginLeft: 8, fontSize: 10, color: THEME.text.muted }}>(Bid/Ask x2)</span>}
           </div>
 
           {stats && (
@@ -936,10 +709,6 @@ const ChartView = memo<ChartViewProps>(
                 flexWrap: 'wrap',
                 justifyContent: isMobile ? 'flex-start' : 'flex-end',
                 width: '100%',
-
-                // ✅ NEW: giữ header không đội chiều cao
-                overflow: 'hidden',
-                maxHeight: headerH - 8,
               }}
             >
               <StatItem label="O" value={formatPrice(stats.open, DIGITS)} color={THEME.text.primary} />
@@ -962,30 +731,9 @@ const ChartView = memo<ChartViewProps>(
         </div>
 
         {/* Chart */}
-        <div
-          style={{
-            padding: '8px',
-            background: THEME.background.tertiary,
-
-            // ✅ NEW: phần chart fill đều chiều cao còn lại
-            flex: 1,
-            display: 'flex',
-            alignItems: 'stretch',
-          }}
-        >
-          <svg
-            width="100%"
-            height="100%"
-            viewBox={`0 0 ${config.chartWidth} ${config.chartHeight}`}
-            preserveAspectRatio="xMidYMid meet"
-          >
-            <GridLines
-              scale={chartInfo.scale}
-              maxPrice={chartInfo.maxPrice}
-              minPrice={chartInfo.minPrice}
-              config={config}
-              digits={DIGITS}
-            />
+        <div style={{ padding: '8px', background: THEME.background.tertiary, flex: 1, minHeight: 0, display: 'flex' }}>
+          <svg width="100%" height={config.chartHeight} viewBox={`0 0 ${config.chartWidth} ${config.chartHeight}`} style={{ display: 'block' }}>
+            <GridLines scale={chartInfo.scale} maxPrice={chartInfo.maxPrice} minPrice={chartInfo.minPrice} config={config} digits={DIGITS} />
 
             {realtimeData.map((candle, index) => (
               <Candlestick key={`${candle.time}-${index}`} candle={candle} index={index} scale={chartInfo.scale} config={config} />
@@ -1121,43 +869,6 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
     return isZoom ? 1.45 : 1.0;
   }, [isMobile, isZoom, isFullScreen]);
 
-  async function HandleOrder(type:string , record: any, messageApi: { open: (arg: { type: 'success' | 'error'; content: string }) => void }) {
-     try {
-            const AccessToken = localStorage.getItem("accessToken") || "";
-            const Key_SECRET = localStorage.getItem("id_SECRET") || "";
-            const Symbol = record.symbol;
-            const Broker_ = record.broker_;
-            const Price = record.price;
-            let IP_Server = "116.105.227.149";
-            const resp: any = await axios.get(
-              `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/${type}/${Price}/${Key_SECRET}/order`,
-              {
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `${AccessToken}`,
-                },
-                timeout: 10000,
-              }
-            );
-            if (resp?.data.code === 1) {
-              messageApi.open({
-                type: "success",
-                content: `Send BUY ${record.symbol} -> ${record.broker} thành công!`,
-              });
-            } else {
-              messageApi.open({
-                type: "error",
-                content: `Gửi yêu cầu BUY ${record.symbol} cho broker ${record.broker} thất bại!`,
-              });
-            }
-          } catch (error) {
-            messageApi.open({
-              type: "error",
-              content: (error as Error).message,
-            });
-          }
-  }
-
   const handleClose = useCallback(() => onClose(), [onClose]);
 
   const toggleZoom = useCallback(() => setIsZoom((prev) => !prev), []);
@@ -1174,61 +885,16 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '18px' }}>💱</span>
               <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#008670' }}>{symbol}</span>
-              <span style={{ fontSize: '11px', fontWeight: 'normal', color: THEME.text.muted, marginLeft: '4px' }}>So Sánh Giá (3 Broker)</span>
+              <span style={{ fontSize: '11px', fontWeight: 'normal', color: THEME.text.muted, marginLeft: '4px' }}>
+                So Sánh Giá (3 Broker)
+              </span>
             </div>
             <div style={{ fontSize: '11px', color: THEME.text.muted, marginTop: '4px' }}>Timeframe: {timeframe} | Real-time</div>
           </div>
           {contextHolder}
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
-             <Button
-                size="small"
-                onClick={() => {
-                  const record = {
-                    symbol: symbol,
-                    broker_: exchange1?.name || 'Exchange 1',
-                    broker: exchange1?.name || 'Exchange 1',
-                    price: exchange1Bid,
-                  };
-                  HandleOrder("SELL", record, messageApi);
-                }}
-                disabled={isFullScreen}
-                style={{
-                  borderColor: isZoom ? '#b91010' : THEME.border.default,
-                  background: '#b91010',
-                  color: isZoom ? '#10b981' : THEME.text.primary,
-                  fontWeight: 700,
-                  transition: 'all 0.3s ease',
-                  opacity: isFullScreen ? 0.5 : 1,
-                }}
-              >
-                <TrendingDown size={14} /> SELL
-              </Button>
-              <Button
-                size="small"
-                onClick={() => {
-                  const record = {
-                    symbol: symbol,
-                    broker_: exchange1?.name || 'Exchange 1',
-                    broker: exchange1?.name || 'Exchange 1',
-                    price: exchange1Ask,
-                  };
-                  HandleOrder("BUY", record, messageApi);
-                }}
-                disabled={isFullScreen}
-                style={{
-                  borderColor: isZoom ? '#1b1bff' : THEME.border.default,
-                  background: '#1b1bff',
-                  color: isZoom ? '#10b981' : THEME.text.primary,
-                  fontWeight: 700,
-                  transition: 'all 0.3s ease',
-                  opacity: isFullScreen ? 0.5 : 1,
-                }}
-              >
-                <TrendingUp size={14} /> BUY
-              </Button>
             <Tooltip title={`Reset ${symbol} , Broker ${exchange1?.name || 'Exchange 1'}`}>
-             
               <Button
                 size="small"
                 onClick={() => {
@@ -1338,12 +1004,10 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
             gap: isMobile ? '10px' : isFullScreen ? '16px' : '12px',
             marginBottom: '12px',
-
-            // ✅ NEW: ép 3 item stretch đều nhau
-            alignItems: 'stretch',
+            alignItems: 'stretch', // ✅ equal height
           }}
         >
-          {/* Chart 1: Pair1 colors */}
+          {/* Chart 1 */}
           <ChartView
             data={exchange1?.data || []}
             exchangeName={exchange1?.name || 'Exchange 1'}
@@ -1358,7 +1022,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             askColor={THEME.price.ask1}
           />
 
-          {/* Chart 2: Pair2 colors (different from chart1) */}
+          {/* Chart 2 */}
           <ChartView
             data={exchange2?.data || []}
             exchangeName={exchange2?.name || 'Exchange 2'}
@@ -1374,29 +1038,33 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
           />
 
           {/* Chart 3:
-              Pair1 colors = Chart1
-              Pair2 colors = Chart2
-           */}
-          <ChartView
-            data={exchange3?.data || []}
-            exchangeName={exchange3?.name || 'Exchange 3'}
-            accentColor={exchange3?.color || '#10b981'}
-            bid={exchange3Bid}
-            ask={exchange3Ask}
-            spread={exchange3Spread}
-            digits={exchange3Digits}
-            isMobile={isMobile}
-            scaleFactor={scaleFactor}
-            bid2={exchange2Bid}
-            digits2={exchange2Digits}
-            label2={exchange2?.name || 'Exchange 2'}
-            spread2Points={exchange2Spread}
-            ask2FromBidPlusSpread2={true}
-            bidColor={THEME.price.bid1}
-            askColor={THEME.price.ask1}
-            bid2Color={THEME.price.bid2}
-            ask2Color={THEME.price.ask2}
-          />
+              ✅ Ask2 = Bid2 + (exchange3Spread * 10^(-exchange3Digits))
+              => dùng spread2Points = exchange3Spread, digits2 = exchange3Digits
+          */}
+         <ChartView
+  data={exchange3?.data || []}
+  exchangeName={exchange3?.name || 'Exchange 3'}
+  accentColor={exchange3?.color || '#10b981'}
+  bid={exchange3Bid}
+  ask={exchange3Ask}
+  spread={exchange3Spread}
+  digits={exchange3Digits}
+  isMobile={isMobile}
+  scaleFactor={scaleFactor}
+
+  // Pair2 lines (so với Chart2 bid)
+  bid2={exchange2Bid}
+  digits2={exchange3Digits}                 // ✅ dùng digits của exchange3
+  label2={exchange2?.name || 'Exchange 2'}
+
+  spread2Points={exchange3Spread}           // ✅ dùng spread của exchange3
+  ask2FromBidPlusSpread2={true}
+
+  bidColor={THEME.price.bid1}
+  askColor={THEME.price.ask1}
+  bid2Color={THEME.price.bid2}
+  ask2Color={THEME.price.ask2}
+/>
         </div>
 
         <Legend isMobile={isMobile} />
