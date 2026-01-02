@@ -472,9 +472,18 @@ function buildChartDataFromAB(payload: any, chartData_Example: any) {
 
 
 
- useEffect(() => {
-  audioRef.current = new Audio("/sound/alert.wav");
-  audioRef.current.load();
+useEffect(() => {
+  const audio = new Audio("/sound/alert.wav");
+  audio.load();
+  audioRef.current = audio;
+  
+  return () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+  };
 }, []);
 
 // ✅ parse "02:00pm" | "2:00 pm" | "14:45" | "14:45:00" => phút trong ngày
@@ -650,12 +659,18 @@ const { data, connected, error } = useChartWS(
     : null
 );
 
+// ✅ Thêm error handling
 useEffect(() => {
-  if (!isChartOpen) return;
-  if (!data) return;
-  setDataChart(transformServerDataToChartData(data, "1M"));
+  if (!isChartOpen || !data) return;
+  
+  try {
+    const transformedData = transformServerDataToChartData(data, "1M");
+    setDataChart(transformedData);
+  } catch (error) {
+    console.error("Chart transformation error:", error);
+    messageApi.error("Lỗi xử lý dữ liệu chart");
+  }
 }, [isChartOpen, data]);
-
 
   const {
     brokerInfo,
@@ -933,13 +948,17 @@ useEffect(() => {
           });
         }
       } catch (error: any) {
-        console.log("Error resetting broker:", error.message);
-        messageApi.open({
-          type: "error",
-          content: error.message,
-        });
-        handleLogout();
-      }
+  console.error("Reset broker error:", error);
+  
+  if (error.response?.status === 401) {
+    messageApi.error("Phiên đăng nhập hết hạn");
+    handleLogout();
+  } else if (error.code === 'ECONNABORTED') {
+    messageApi.error("Timeout - Vui lòng thử lại");
+  } else {
+    messageApi.error(error.response?.data?.message || "Có lỗi xảy ra");
+  }
+}
     }}
   >
   </Button>
@@ -978,14 +997,14 @@ useEffect(() => {
             content: `Gửi yêu cầu Reset Broker: ${record.broker} thất bại! , ${resp?.data.mess}`,
           });
         }
-      } catch (error: any) {
-        console.log("Error resetting broker:", error.message);
-        messageApi.open({
-          type: "error",
-          content: error.message,
-        });
-        handleLogout();
-      }
+        } catch (error: any) {
+          console.log("Error resetting broker:", error.message);
+          messageApi.open({
+            type: "error",
+            content: error.message,
+          });
+          handleLogout();
+        }
     }}
   >
   </Button>
@@ -2206,14 +2225,15 @@ useEffect(() => {
     };
   }, []);
 
-  useEffect(() => {
+// ✅ ĐÚNG - Dùng useCallback từ custom hooks
+useEffect(() => {
   if (openModalInfo) {
     connect_Brokers();
   } else {
     disconnect_Brokers();
   }
   return () => disconnect_Brokers();
-}, [openModalInfo]); // Chỉ giữ openModalInfo
+}, [openModalInfo, connect_Brokers, disconnect_Brokers]); // Chỉ giữ openModalInfo
 
 // Hoặc nếu ESLint báo lỗi, dùng useCallback trong custom hook
 
@@ -2226,16 +2246,18 @@ useEffect(() => {
     return () => disconnect_BrokerInfo();
   }, [openModalBrokerInfo]);
 
-  const shouldConnectSymbols = modalOpenSymbol || isChartOpen;
-
+// ✅ Tách riêng để tránh conflict
 useEffect(() => {
-  if (shouldConnectSymbols) connect_symbols();
-  else disconnect_symbols();
+  if (modalOpenSymbol || isChartOpen) {
+    connect_symbols();
+  } else {
+    disconnect_symbols();
+  }
   
-  
-
-  return () => disconnect_symbols();
-}, [shouldConnectSymbols]);
+  return () => {
+    disconnect_symbols();
+  };
+}, [modalOpenSymbol, isChartOpen, connect_symbols, disconnect_symbols]);
 
 
 const rafRef = useRef<number | null>(null);
