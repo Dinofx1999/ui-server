@@ -15,6 +15,7 @@
     "antd": "^5.28.0",
     "axios": "^1.13.2",
     "lucide-react": "^0.555.0",
+    "moment-timezone": "^0.6.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-fast-marquee": "^1.6.5",

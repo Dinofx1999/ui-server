@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Avatar, Dropdown, Badge, Drawer, message } from 'antd';
+import { Layout, Avatar, Dropdown, Badge, Drawer, message, Tooltip } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+
 import { 
   UserOutlined, 
   LogoutOutlined, 
@@ -52,11 +53,71 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // ===== ONLINE USERS =====
+const [onlineCount, setOnlineCount] = useState<any[]>([]);
 
   // Get current tab from URL
   const currentPath = location.pathname;
   const selectedTab = currentPath.includes('/price') ? 'price' : 
                      currentPath.includes('/candle') ? 'candle' : 'home';
+
+  const API_URL = "http://116.105.227.149:5000";
+  const API_BASE_URL = `${API_URL}/v1/api`;
+  const ACCESS_TOKEN = localStorage.getItem("accessToken") || "";
+
+ async function getData_User() {
+  try {
+    const response = await axios.put(
+      `http://116.105.227.149:5000/auth/account-user/me`,
+      {
+        // gửi lên nếu bạn muốn (có thể bỏ nếu server tự set)
+        last_online: new Date().toISOString(),
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: ACCESS_TOKEN,
+        },
+        timeout: 10000,
+      }
+    );
+
+    const userData = response.data;
+
+    // ✅ server trả all_users
+    const allUsers = userData?.all_users;
+    if (!Array.isArray(allUsers)) {
+      messageApi.error("Không có all_users từ server");
+      return;
+    }
+
+    // ===================== CHECK ONLINE (<= 5s) =====================
+    const NOW = Date.now();
+    const ONLINE_THRESHOLD = 5 * 1000;
+
+    const onlineUsers = allUsers.filter((u) => {
+      if (!u?.last_online) return false;
+
+      const last = new Date(u.last_online).getTime();
+      if (!Number.isFinite(last)) return false;
+
+      return Math.abs(NOW - last) <= ONLINE_THRESHOLD;
+    });
+
+    // ✅ nếu bạn muốn lưu COUNT
+    setOnlineCount(onlineUsers);
+
+    // ✅ nếu bạn muốn lưu list để render avatar
+    // setOnlineUsers(onlineUsers);
+
+    console.log("ALL USERS:", allUsers);
+    console.log("ONLINE USERS:", onlineUsers);
+  } catch (error) {
+    console.error(error);
+    messageApi.error("Lỗi khi tải danh sách tài khoản");
+  }
+}
+
 
   // 🔥 Responsive breakpoints
   useEffect(() => {
@@ -65,11 +126,31 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
       setIsMobile(width < 768);
       setIsTablet(width >= 768 && width < 1024);
     };
-
+    
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+  let alive = true;
+
+  const tick = async () => {
+    try {
+      getData_User();
+    } catch {
+      if (!alive) return;
+    }
+  };
+
+  tick();
+  const t = setInterval(tick, 5000);
+
+  return () => {
+    alive = false;
+    clearInterval(t);
+  };
+}, []);
 
 
  // Cập nhật mỗi phút
@@ -98,11 +179,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
   };
 
  const userMenuItems: MenuProps['items'] = [
-    {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: 'My Profile',
-    },
+    // {
+    //   key: 'profile',
+    //   icon: <UserOutlined />,
+    //   label: 'My Profile',
+    // },
 {
   key: 'Key SECRET',
   icon: <CopyOutlined />,
@@ -351,6 +432,75 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
           height: '100%',
           flexShrink: 0,
         }}>
+          {/* Online Users Avatars */}
+{!isMobile && (
+  <Tooltip
+    title={
+      <div style={{ maxWidth: 220 }}>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>
+          Online ({onlineCount.length})
+        </div>
+        {onlineCount.slice(0, 10).map(u => (
+          <div key={u.id} style={{ fontSize: 12 }}>
+            • {u.fullname}
+          </div>
+        ))}
+        {onlineCount.length > 10 && (
+          <div style={{ fontSize: 11, opacity: 0.7 }}>
+            +{onlineCount.length - 10} more
+          </div>
+        )}
+      </div>
+    }
+    placement="bottom"
+  >
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        height: '36px',
+        padding: '0 10px',
+        borderRadius: '6px',
+        background: darkMode ? '#374151' : '#f3f4f6',
+        cursor: 'pointer',
+        gap: '6px',
+      }}
+    >
+      {/* Avatar stack */}
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        {onlineCount.slice(0, 5).map((u, i) => (
+          <Avatar
+            key={u.id}
+            size={22}
+            src={u.avatar}
+            style={{
+              background: u.avatar ? undefined : '#2563eb',
+              border: `2px solid ${darkMode ? '#374151' : '#f3f4f6'}`,
+              marginLeft: i === 0 ? 0 : -8,
+              zIndex: 10 - i,
+              fontSize: 11,
+              fontWeight: 600,
+            }}
+          >
+            {!u.avatar && u.name?.[0]?.toUpperCase()}
+          </Avatar>
+        ))}
+      </div>
+
+      {/* Count */}
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: darkMode ? '#22c55e' : '#16a34a',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {onlineCount.length}
+      </span>
+    </div>
+  </Tooltip>
+)}
           {/* Live Status - Hide on mobile */}
           {!isMobile && (
             <button
@@ -387,7 +537,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
        
 
           {/* Notifications */}
-          <Badge count={3} size="small">
+          {/* <Badge count={3} size="small">
             <button style={{
               width: isMobile ? '36px' : '40px',
               height: isMobile ? '36px' : '40px',
@@ -404,7 +554,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
             }}>
               <BellOutlined style={{ fontSize: isMobile ? '16px' : '18px' }} />
             </button>
-          </Badge>
+          </Badge> */}
 
           {/* Dark Mode Toggle */}
           <button
