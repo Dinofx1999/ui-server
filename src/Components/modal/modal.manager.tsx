@@ -15,6 +15,8 @@ import {
   InputNumber,
   Select,
   Tooltip,
+  Input,
+  AutoComplete
 } from "antd";
 import {
   ClockCircleOutlined,
@@ -26,6 +28,9 @@ import {
   HourglassOutlined,
   PlusOutlined,
   DeleteOutlined,
+  AreaChartOutlined,
+  FileSearchOutlined,
+  SearchOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 import dayjs, { Dayjs } from "dayjs";
@@ -45,8 +50,14 @@ const AccountModal = ({ open, onCancel }: any) => {
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
   const [delayBrokerStop, setDelayBrokerStop] = useState<number>(0);
+  const [points , setPoints] = useState<number>(0);
   const [loadingDelay, setLoadingDelay] = useState(false);
   const [typeAnalysis, setTypeAnalysis] = useState("type1");
+  const [allBroker, setAllBroker] = useState<string[]>([]);
+  const [allSymbol, setAllSymbol] = useState<string[]>([]);
+  const [broker, setBroker] = useState("");
+  const [symbol, setSymbol] = useState("");
+
 
   // ✅ NEW: nhiều khung giờ
   const [timeRanges, setTimeRanges] = useState<TimeRange[]>([
@@ -56,6 +67,49 @@ const AccountModal = ({ open, onCancel }: any) => {
   const API_URL = "http://116.105.227.149:5000";
   const API_BASE_URL = `${API_URL}/v1/api`;
   const ACCESS_TOKEN = localStorage.getItem("accessToken") || "";
+
+
+  async function getAllBroker(){
+    try {
+      const response = await axios.get(`${API_BASE_URL}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: ACCESS_TOKEN,
+        },
+        timeout: 10000,
+      });
+      console.log("Response All Broker:", response);
+      if (response?.data) {
+        setAllBroker(response.data);
+        console.log("All Broker:", response.data);
+      } else {
+        console.error("Không thể tải danh sách broker");
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách broker");
+    }
+  }
+
+  async function getSymbolBroker(broker: string) {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/${broker}/info`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: ACCESS_TOKEN,
+        },
+        timeout: 10000,
+      });
+      console.log("Response All Symbol:", response);
+      if (response?.data) {
+        setAllSymbol(response.data);
+        console.log("All Symbol:", response.data);
+      } else {
+        console.error("Không thể tải danh sách symbol");
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách symbol");
+    }
+  }
 
   async function getSpreadPlus() {
     try {
@@ -71,9 +125,6 @@ const AccountModal = ({ open, onCancel }: any) => {
         setAutoTrade(response.data.data.AutoTrade);
         setSendTelegram(response.data.data.sendTelegram);
 
-        // ✅ NEW: support 2 dạng TimeStopReset:
-        // - dạng cũ: {start,end}
-        // - dạng mới: [{start,end},...]
         const tsr = response.data.data.TimeStopReset;
 
         if (Array.isArray(tsr)) {
@@ -131,6 +182,7 @@ const AccountModal = ({ open, onCancel }: any) => {
       console.log("Fetching initial data...");
       getSpreadPlus();
       getData_Table();
+      getAllBroker();
     }
   }, [open]);
 
@@ -275,6 +327,31 @@ const AccountModal = ({ open, onCancel }: any) => {
     }
   }
 
+  async function HandleTest(broker: any , symbol :any , points: any) {
+    try {
+      if(!broker || !symbol || !points) {
+        messageApi.error("Thông tin không đầy đủ!");
+        return;
+      }
+      const response = await axios.get(`${API_BASE_URL}/${broker}/${symbol}/${points}/test-reset`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: ACCESS_TOKEN,
+        },
+      });
+
+      console.log("Response Test Delay:", response);
+
+      if (response.data?.success) {
+        messageApi.success(`Gửi Yêu Cầu Thành Công!`);
+      } else {
+        messageApi.error(`Gửi Yêu Cầu Thất Bại!`);
+      }
+    } catch (error) {
+      messageApi.error("Lỗi khi kết nối đến server");
+    }
+  }
+
   const handleUpdateDelay = async () => {
     setLoadingDelay(true);
     try {
@@ -285,7 +362,6 @@ const AccountModal = ({ open, onCancel }: any) => {
       setLoadingDelay(false);
     }
   };
-
   // ✅ NEW: add/remove/update time ranges
   const addTimeRange = () => {
     setTimeRanges((prev) => [...prev, { start: null, end: null }]);
@@ -398,6 +474,102 @@ const AccountModal = ({ open, onCancel }: any) => {
         <Title level={5} style={{ marginBottom: "20px", color: "#262626" }}>
           ⚙️ Cấu Hình Giao Dịch
         </Title>
+
+        {/* Test Price Delay */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "16px",
+            background: "#fafafa",
+            borderRadius: "8px",
+            marginTop: "12px",
+            border: "1px solid #f0f0f0",
+          }}
+        >
+          <Space>
+            <FileSearchOutlined style={{ fontSize: "18px", color: "#fb1072" }} />
+            <div>
+              <Text strong style={{ fontSize: "15px" }}>
+                Test Price Delay
+              </Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: "12px" }}>
+                Nhập vào giá trị để kiểm tra cài đặt
+              </Text>
+            </div>
+          </Space>
+          <Space>
+            <Text strong style={{ fontSize: "13px" }}>
+              Broker
+            </Text>
+            <AutoComplete
+              onChange={(value) => {
+                getSymbolBroker(value);
+                setBroker(value);
+              }}
+              options={allBroker.map((b: string) => ({
+                      value: b,
+                      label: (
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>{b}</span>
+                          <span style={{ fontSize: 11, color: '#999' }}>
+                            {b.includes('mt5') ? 'MT5' : 'MT4'}
+                          </span>
+                        </div>
+                      ),
+                    }))}
+              style={{ width: 130 }}
+            >
+              <Input
+                prefix={<SearchOutlined />}
+                placeholder="Search symbol"
+                allowClear
+              />
+            </AutoComplete>
+             <Text strong style={{ fontSize: "13px" }}>
+              Symbol
+            </Text>
+             <AutoComplete
+              onChange={(value) => {
+                if(broker!=="")setSymbol(value);
+              }}
+              options={allSymbol.map((b: string) => ({
+                      value: b,
+                      label: (
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>{b}</span>
+                        </div>
+                      ),
+                    }))}
+              style={{ width: 130 }}
+            >
+              <Input
+                prefix={<SearchOutlined />}
+                placeholder="Search symbol"
+                allowClear
+              />
+            </AutoComplete>
+            <Text strong style={{ fontSize: "13px" }}>
+              Points
+            </Text>
+            <InputNumber
+              value={points}
+              onChange={(value) => setPoints(value || 0)}
+              style={{ width: "100px" }}
+              placeholder="Nhập delay (Giây)"
+            />
+            <Button
+              type="primary"
+              loading={loadingDelay}
+              onClick={() => HandleTest(broker, symbol, points)}
+              style={{ background: "#fa1616", borderColor: "#fa1616" }}
+            >
+              Kiểm Tra
+            </Button>
+          </Space>
+        </div>
 
         {/* Auto Trade Toggle */}
         <div
@@ -528,14 +700,14 @@ const AccountModal = ({ open, onCancel }: any) => {
           }}
         >
           <Space>
-            <HourglassOutlined style={{ fontSize: "18px", color: "#fa8c16" }} />
+            <AreaChartOutlined style={{ fontSize: "18px", color: "#00b176" }} />
             <div>
               <Text strong style={{ fontSize: "15px" }}>
                 Type Analysis
               </Text>
               <br />
               <Text type="secondary" style={{ fontSize: "12px" }}>
-                Thời gian phân tích loại (Giây)
+                Chọn kiểu phân tích dữ liệu
               </Text>
             </div>
           </Space>

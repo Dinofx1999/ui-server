@@ -388,12 +388,12 @@ const BidAskLines = memo<{
       {/* ASK */}
       <line x1={config.bidAskXLeft} y1={askY} x2={config.bidAskXRight} y2={askY} stroke={askColor} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="6,3" opacity="0.95" />
       <ExchangeLineLabel x={labelX} yLine={askY} yOffset={0} text={label1 ? `${label1} ASK` : 'ASK'} color={askColor} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-      <PriceBox x={priceBoxX} yLine={askY} yOffset={0} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor} />
+      <PriceBox x={priceBoxX +40} yLine={askY} yOffset={0} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor} />
 
       {/* BID */}
       <line x1={config.bidAskXLeft} y1={bidY} x2={config.bidAskXRight} y2={bidY} stroke={bidColor} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="4,4" opacity="0.95" />
       <ExchangeLineLabel x={labelX} yLine={bidY} yOffset={0} text={label1 ? `${label1} BID` : 'BID'} color={bidColor} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-      <PriceBox x={priceBoxX} yLine={bidY} yOffset={0} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor} />
+      <PriceBox x={priceBoxX + 40} yLine={bidY} yOffset={0} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor} />
     </g>
   );
 });
@@ -456,23 +456,23 @@ const BidAskLinesDual = memo<{
       <g>
         {/* Pair 1 ASK */}
         <line x1={config.bidAskXLeft} y1={askY1} x2={config.bidAskXRight} y2={askY1} stroke={askColor1} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="6,3" opacity="0.95" />
-        <ExchangeLineLabel x={labelX} yLine={askY1} yOffset={0} text={label1 ? `${label1} ASK` : 'ASK'} color={askColor1} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-        <PriceBox x={priceBoxX} yLine={askY1} yOffset={offsetAsk1} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor1} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor1} />
+        <ExchangeLineLabel x={labelX}  yLine={askY1} yOffset={0} text={label1 ? `${label1} ASK` : 'ASK'} color={askColor1} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
+        <PriceBox x={priceBoxX+40} yLine={askY1} yOffset={offsetAsk1} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor1} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor1} />
 
         {/* Pair 1 BID */}
         <line x1={config.bidAskXLeft} y1={bidY1} x2={config.bidAskXRight} y2={bidY1} stroke={bidColor1} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="4,4" opacity="0.95" />
-        <ExchangeLineLabel x={labelX} yLine={bidY1} yOffset={0} text={label1 ? `${label1} BID` : 'BID'} color={bidColor1} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-        <PriceBox x={priceBoxX} yLine={bidY1} yOffset={offsetBid1} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor1} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor1} />
+        <ExchangeLineLabel x={labelX}  yLine={bidY1} yOffset={0} text={label1 ? `${label1} BID` : 'BID'} color={bidColor1} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
+        <PriceBox x={priceBoxX+40} yLine={bidY1} yOffset={offsetBid1} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor1} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor1} />
 
         {/* Pair 2 ASK */}
         <line x1={config.bidAskXLeft} y1={askY2} x2={config.bidAskXRight} y2={askY2} stroke={askColor2} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="8,2" opacity="0.95" />
-        <ExchangeLineLabel x={labelX} yLine={askY2} yOffset={0} text={label2 ? `${label2} ASK` : 'ASK2'} color={askColor2} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-        <PriceBox x={priceBoxX} yLine={askY2} yOffset={offsetAsk2} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor2} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice2, digits2)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor2} />
+        <ExchangeLineLabel x={labelX}  yLine={askY2} yOffset={0} text={label2 ? `${label2} ASK` : 'ASK2'} color={askColor2} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
+        <PriceBox x={priceBoxX+40} yLine={askY2} yOffset={offsetAsk2} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor2} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice2, digits2)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor2} />
 
         {/* Pair 2 BID */}
         <line x1={config.bidAskXLeft} y1={bidY2} x2={config.bidAskXRight} y2={bidY2} stroke={bidColor2} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="2,6" opacity="0.95" />
-        <ExchangeLineLabel x={labelX} yLine={bidY2} yOffset={0} text={label2 ? `${label2} BID` : 'BID2'} color={bidColor2} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-        <PriceBox x={priceBoxX} yLine={bidY2} yOffset={offsetBid2} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor2} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice2, digits2)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor2} />
+        <ExchangeLineLabel x={labelX}  yLine={bidY2} yOffset={0} text={label2 ? `${label2} BID` : 'BID2'} color={bidColor2} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
+        <PriceBox x={priceBoxX+40} yLine={bidY2} yOffset={offsetBid2} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor2} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice2, digits2)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor2} />
       </g>
     );
   }
@@ -1233,11 +1233,15 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             digits={exchange3Digits}
             isMobile={isMobile}
             scaleFactor={scaleFactor}
+            // Pair2 lấy BID2 từ exchange2Bid như cũ
             bid2={exchange2Bid}
-            digits2={exchange2Digits}
+            // ✅ digits2 phải là exchange3Digits (để đổi spread points -> price theo digits của exchange3)
+            digits2={exchange3Digits}
             label2={exchange2?.name || 'Exchange 2'}
-            spread2Points={exchange2Spread}
+            // ✅ spread2Points phải là exchange3Spread (để Ask2 dùng spread của chart3)
+            spread2Points={exchange3Spread}
             ask2FromBidPlusSpread2={true}
+            // colors giữ nguyên theo code mới
             bidColor={THEME.price.bid1}
             askColor={THEME.price.ask1}
             bid2Color={THEME.price.bid2}
