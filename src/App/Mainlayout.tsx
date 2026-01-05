@@ -114,7 +114,7 @@ const [onlineCount, setOnlineCount] = useState<any[]>([]);
     console.log("ONLINE USERS:", onlineUsers);
   } catch (error) {
     console.error(error);
-    messageApi.error("Lỗi khi tải danh sách tài khoản");
+    messageApi.error("Lỗi khi tải danh sách tài khoản.");
   }
 }
 
