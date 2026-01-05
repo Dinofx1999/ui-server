@@ -968,7 +968,7 @@ useEffect(() => {
     <Button
     type="default"
   icon={<Trash2 size={16} />}
-  disabled={record.status !== "True"}
+  // disabled={record.status !== "True"}
   danger
   size={isMobile ? "small" : "middle"}
   style={{width:50}}
