@@ -1,9 +1,9 @@
-import React, { useMemo, useCallback, memo } from 'react';
+import React, { useMemo, useCallback, memo, useEffect, useRef, useState } from 'react';
 import { Modal, Spin, Button, Tooltip, message } from 'antd';
 import { normalizeBrokerName } from '../../Helpers/text';
 import axios from 'axios';
 
-import { RefreshCcw, TrendingUp, TrendingDown } from 'lucide-react';
+import { CheckSquare, RefreshCcw, TrendingUp, TrendingDown, XSquare } from 'lucide-react';
 
 // ============================================================================
 // CONSTANTS
@@ -114,6 +114,8 @@ export interface TripleExchangeChartModalProps {
   exchange1Spread?: number; // points
   exchange2Spread?: number; // points
   exchange3Spread?: number; // points
+
+  _id_Error?: string;
 }
 
 interface ChartViewProps {
@@ -131,23 +133,19 @@ interface ChartViewProps {
 
   // Pair 2 (only chart3 uses)
   bid2?: number;
-  ask2?: number; // if not provided, can be computed from bid2+spread2Points
+  ask2?: number;
   digits2?: number;
   label2?: string;
 
-  // ✅ Pair2: Ask2 = Bid2 + Spread2(points)
   spread2Points?: number;
   ask2FromBidPlusSpread2?: boolean;
 
-  // ✅ per-chart colors (pair 1)
   bidColor?: string;
   askColor?: string;
 
-  // ✅ per-chart colors (pair 2)
   bid2Color?: string;
   ask2Color?: string;
 
-  // ✅ selection (activeExchange)
   selectable?: boolean;
   isActive?: boolean;
   onSelect?: () => void;
@@ -339,7 +337,14 @@ const PriceBox = memo<{
           strokeWidth={strokeWidth}
           opacity="0.95"
         />
-        <text x={x + textPaddingX} y={textY} textAnchor="start" fill={textColor} fontSize={fontSize} fontWeight={fontWeight}>
+        <text
+          x={x + textPaddingX}
+          y={textY}
+          textAnchor="start"
+          fill={textColor}
+          fontSize={fontSize}
+          fontWeight={fontWeight}
+        >
           {text}
         </text>
       </>
@@ -360,7 +365,15 @@ const ExchangeLineLabel = memo<{
 }>(({ x, yLine, yOffset, text, color, fontSize, fontWeight = 800, textYOffset }) => {
   const yLabel = yLine + yOffset;
   return (
-    <text x={x} y={yLabel + textYOffset} textAnchor="start" fill={color} fontSize={fontSize} fontWeight={fontWeight} opacity="0.95">
+    <text
+      x={x}
+      y={yLabel + textYOffset}
+      textAnchor="start"
+      fill={color}
+      fontSize={fontSize}
+      fontWeight={fontWeight}
+      opacity="0.95"
+    >
       {text}
     </text>
   );
@@ -386,14 +399,78 @@ const BidAskLines = memo<{
   return (
     <g>
       {/* ASK */}
-      <line x1={config.bidAskXLeft} y1={askY} x2={config.bidAskXRight} y2={askY} stroke={askColor} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="6,3" opacity="0.95" />
-      <ExchangeLineLabel x={labelX} yLine={askY} yOffset={0} text={label1 ? `${label1} ASK` : 'ASK'} color={askColor} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-      <PriceBox x={priceBoxX +40} yLine={askY} yOffset={0} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor} />
+      <line
+        x1={config.bidAskXLeft}
+        y1={askY}
+        x2={config.bidAskXRight}
+        y2={askY}
+        stroke={askColor}
+        strokeWidth={config.bidAskStrokeWidth}
+        strokeDasharray="6,3"
+        opacity="0.95"
+      />
+      <ExchangeLineLabel
+        x={labelX}
+        yLine={askY}
+        yOffset={0}
+        text={label1 ? `${label1} ASK` : 'ASK'}
+        color={askColor}
+        fontSize={config.exchangeLabelFontSize}
+        textYOffset={config.exchangeLabelTextYOffset}
+      />
+      <PriceBox
+        x={priceBoxX + 40}
+        yLine={askY}
+        yOffset={0}
+        width={config.priceBoxWidth}
+        height={config.priceBoxHeight}
+        radius={config.priceBoxRadius}
+        stroke={askColor}
+        strokeWidth={config.priceBoxStroke}
+        fill={THEME.background.tertiary}
+        text={formatPrice(askPrice, digits)}
+        textPaddingX={config.priceBoxTextPaddingX}
+        textYOffset={config.priceBoxTextYOffset}
+        fontSize={config.priceBoxFontSize}
+        textColor={askColor}
+      />
 
       {/* BID */}
-      <line x1={config.bidAskXLeft} y1={bidY} x2={config.bidAskXRight} y2={bidY} stroke={bidColor} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="4,4" opacity="0.95" />
-      <ExchangeLineLabel x={labelX} yLine={bidY} yOffset={0} text={label1 ? `${label1} BID` : 'BID'} color={bidColor} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-      <PriceBox x={priceBoxX + 40} yLine={bidY} yOffset={0} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor} />
+      <line
+        x1={config.bidAskXLeft}
+        y1={bidY}
+        x2={config.bidAskXRight}
+        y2={bidY}
+        stroke={bidColor}
+        strokeWidth={config.bidAskStrokeWidth}
+        strokeDasharray="4,4"
+        opacity="0.95"
+      />
+      <ExchangeLineLabel
+        x={labelX}
+        yLine={bidY}
+        yOffset={0}
+        text={label1 ? `${label1} BID` : 'BID'}
+        color={bidColor}
+        fontSize={config.exchangeLabelFontSize}
+        textYOffset={config.exchangeLabelTextYOffset}
+      />
+      <PriceBox
+        x={priceBoxX + 40}
+        yLine={bidY}
+        yOffset={0}
+        width={config.priceBoxWidth}
+        height={config.priceBoxHeight}
+        radius={config.priceBoxRadius}
+        stroke={bidColor}
+        strokeWidth={config.priceBoxStroke}
+        fill={THEME.background.tertiary}
+        text={formatPrice(bidPrice, digits)}
+        textPaddingX={config.priceBoxTextPaddingX}
+        textYOffset={config.priceBoxTextYOffset}
+        fontSize={config.priceBoxFontSize}
+        textColor={bidColor}
+      />
     </g>
   );
 });
@@ -455,24 +532,152 @@ const BidAskLinesDual = memo<{
     return (
       <g>
         {/* Pair 1 ASK */}
-        <line x1={config.bidAskXLeft} y1={askY1} x2={config.bidAskXRight} y2={askY1} stroke={askColor1} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="6,3" opacity="0.95" />
-        <ExchangeLineLabel x={labelX}  yLine={askY1} yOffset={0} text={label1 ? `${label1} ASK` : 'ASK'} color={askColor1} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-        <PriceBox x={priceBoxX+40} yLine={askY1} yOffset={offsetAsk1} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor1} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor1} />
+        <line
+          x1={config.bidAskXLeft}
+          y1={askY1}
+          x2={config.bidAskXRight}
+          y2={askY1}
+          stroke={askColor1}
+          strokeWidth={config.bidAskStrokeWidth}
+          strokeDasharray="6,3"
+          opacity="0.95"
+        />
+        <ExchangeLineLabel
+          x={labelX}
+          yLine={askY1}
+          yOffset={0}
+          text={label1 ? `${label1} ASK` : 'ASK'}
+          color={askColor1}
+          fontSize={config.exchangeLabelFontSize}
+          textYOffset={config.exchangeLabelTextYOffset}
+        />
+        <PriceBox
+          x={priceBoxX + 40}
+          yLine={askY1}
+          yOffset={offsetAsk1}
+          width={config.priceBoxWidth}
+          height={config.priceBoxHeight}
+          radius={config.priceBoxRadius}
+          stroke={askColor1}
+          strokeWidth={config.priceBoxStroke}
+          fill={THEME.background.tertiary}
+          text={formatPrice(askPrice, digits)}
+          textPaddingX={config.priceBoxTextPaddingX}
+          textYOffset={config.priceBoxTextYOffset}
+          fontSize={config.priceBoxFontSize}
+          textColor={askColor1}
+        />
 
         {/* Pair 1 BID */}
-        <line x1={config.bidAskXLeft} y1={bidY1} x2={config.bidAskXRight} y2={bidY1} stroke={bidColor1} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="4,4" opacity="0.95" />
-        <ExchangeLineLabel x={labelX}  yLine={bidY1} yOffset={0} text={label1 ? `${label1} BID` : 'BID'} color={bidColor1} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-        <PriceBox x={priceBoxX+40} yLine={bidY1} yOffset={offsetBid1} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor1} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice, digits)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor1} />
+        <line
+          x1={config.bidAskXLeft}
+          y1={bidY1}
+          x2={config.bidAskXRight}
+          y2={bidY1}
+          stroke={bidColor1}
+          strokeWidth={config.bidAskStrokeWidth}
+          strokeDasharray="4,4"
+          opacity="0.95"
+        />
+        <ExchangeLineLabel
+          x={labelX}
+          yLine={bidY1}
+          yOffset={0}
+          text={label1 ? `${label1} BID` : 'BID'}
+          color={bidColor1}
+          fontSize={config.exchangeLabelFontSize}
+          textYOffset={config.exchangeLabelTextYOffset}
+        />
+        <PriceBox
+          x={priceBoxX + 40}
+          yLine={bidY1}
+          yOffset={offsetBid1}
+          width={config.priceBoxWidth}
+          height={config.priceBoxHeight}
+          radius={config.priceBoxRadius}
+          stroke={bidColor1}
+          strokeWidth={config.priceBoxStroke}
+          fill={THEME.background.tertiary}
+          text={formatPrice(bidPrice, digits)}
+          textPaddingX={config.priceBoxTextPaddingX}
+          textYOffset={config.priceBoxTextYOffset}
+          fontSize={config.priceBoxFontSize}
+          textColor={bidColor1}
+        />
 
         {/* Pair 2 ASK */}
-        <line x1={config.bidAskXLeft} y1={askY2} x2={config.bidAskXRight} y2={askY2} stroke={askColor2} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="8,2" opacity="0.95" />
-        <ExchangeLineLabel x={labelX}  yLine={askY2} yOffset={0} text={label2 ? `${label2} ASK` : 'ASK2'} color={askColor2} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-        <PriceBox x={priceBoxX+40} yLine={askY2} yOffset={offsetAsk2} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={askColor2} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(askPrice2, digits2)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={askColor2} />
+        <line
+          x1={config.bidAskXLeft}
+          y1={askY2}
+          x2={config.bidAskXRight}
+          y2={askY2}
+          stroke={askColor2}
+          strokeWidth={config.bidAskStrokeWidth}
+          strokeDasharray="8,2"
+          opacity="0.95"
+        />
+        <ExchangeLineLabel
+          x={labelX}
+          yLine={askY2}
+          yOffset={0}
+          text={label2 ? `${label2} ASK` : 'ASK2'}
+          color={askColor2}
+          fontSize={config.exchangeLabelFontSize}
+          textYOffset={config.exchangeLabelTextYOffset}
+        />
+        <PriceBox
+          x={priceBoxX + 40}
+          yLine={askY2}
+          yOffset={offsetAsk2}
+          width={config.priceBoxWidth}
+          height={config.priceBoxHeight}
+          radius={config.priceBoxRadius}
+          stroke={askColor2}
+          strokeWidth={config.priceBoxStroke}
+          fill={THEME.background.tertiary}
+          text={formatPrice(askPrice2, digits2)}
+          textPaddingX={config.priceBoxTextPaddingX}
+          textYOffset={config.priceBoxTextYOffset}
+          fontSize={config.priceBoxFontSize}
+          textColor={askColor2}
+        />
 
         {/* Pair 2 BID */}
-        <line x1={config.bidAskXLeft} y1={bidY2} x2={config.bidAskXRight} y2={bidY2} stroke={bidColor2} strokeWidth={config.bidAskStrokeWidth} strokeDasharray="2,6" opacity="0.95" />
-        <ExchangeLineLabel x={labelX}  yLine={bidY2} yOffset={0} text={label2 ? `${label2} BID` : 'BID2'} color={bidColor2} fontSize={config.exchangeLabelFontSize} textYOffset={config.exchangeLabelTextYOffset} />
-        <PriceBox x={priceBoxX+40} yLine={bidY2} yOffset={offsetBid2} width={config.priceBoxWidth} height={config.priceBoxHeight} radius={config.priceBoxRadius} stroke={bidColor2} strokeWidth={config.priceBoxStroke} fill={THEME.background.tertiary} text={formatPrice(bidPrice2, digits2)} textPaddingX={config.priceBoxTextPaddingX} textYOffset={config.priceBoxTextYOffset} fontSize={config.priceBoxFontSize} textColor={bidColor2} />
+        <line
+          x1={config.bidAskXLeft}
+          y1={bidY2}
+          x2={config.bidAskXRight}
+          y2={bidY2}
+          stroke={bidColor2}
+          strokeWidth={config.bidAskStrokeWidth}
+          strokeDasharray="2,6"
+          opacity="0.95"
+        />
+        <ExchangeLineLabel
+          x={labelX}
+          yLine={bidY2}
+          yOffset={0}
+          text={label2 ? `${label2} BID` : 'BID2'}
+          color={bidColor2}
+          fontSize={config.exchangeLabelFontSize}
+          textYOffset={config.exchangeLabelTextYOffset}
+        />
+        <PriceBox
+          x={priceBoxX + 40}
+          yLine={bidY2}
+          yOffset={offsetBid2}
+          width={config.priceBoxWidth}
+          height={config.priceBoxHeight}
+          radius={config.priceBoxRadius}
+          stroke={bidColor2}
+          strokeWidth={config.priceBoxStroke}
+          fill={THEME.background.tertiary}
+          text={formatPrice(bidPrice2, digits2)}
+          textPaddingX={config.priceBoxTextPaddingX}
+          textYOffset={config.priceBoxTextYOffset}
+          fontSize={config.priceBoxFontSize}
+          textColor={bidColor2}
+        />
       </g>
     );
   }
@@ -536,7 +741,6 @@ const ChartView = memo<ChartViewProps>(
     const bid2C = bid2Color ?? THEME.price.bid2;
     const ask2C = ask2Color ?? THEME.price.ask2;
 
-    // ✅ FIX viewBox overflow + timeY
     const config = useMemo(() => {
       const candle = CANDLE_PRESETS['slim-tall'];
       const s = Math.max(0.8, Math.min(2.2, scaleFactor));
@@ -605,7 +809,7 @@ const ChartView = memo<ChartViewProps>(
       return { bidPrice: bidP, askPrice: askP, realtimeData: rtData };
     }, [viewData, bid, ask]);
 
-    // Pair2: compute Ask2 = Bid2 + Spread2(points) when enabled
+    // Pair2
     const { bidPrice2, askPrice2 } = useMemo(() => {
       if (!viewData.length) return { bidPrice2: Number.NaN, askPrice2: Number.NaN };
 
@@ -676,7 +880,6 @@ const ChartView = memo<ChartViewProps>(
     }
 
     const hasSecondPair = Number.isFinite(bid2 as any) || ask2FromBidPlusSpread2 || Number.isFinite(ask2 as any);
-
     const headerH = isMobile ? HEADER_HEIGHT_MOBILE : HEADER_HEIGHT;
 
     return (
@@ -759,7 +962,9 @@ const ChartView = memo<ChartViewProps>(
               </span>
             )}
 
-            {hasSecondPair && <span style={{ marginLeft: 8, fontSize: 10, color: THEME.text.muted, flex: '0 0 auto' }}>(Bid/Ask x2)</span>}
+            {hasSecondPair && (
+              <span style={{ marginLeft: 8, fontSize: 10, color: THEME.text.muted, flex: '0 0 auto' }}>(Bid/Ask x2)</span>
+            )}
           </div>
 
           {stats && (
@@ -804,7 +1009,12 @@ const ChartView = memo<ChartViewProps>(
             alignItems: 'stretch',
           }}
         >
-          <svg width="100%" height="100%" viewBox={`0 0 ${config.chartWidth} ${config.chartHeight}`} preserveAspectRatio="xMidYMid meet">
+          <svg
+            width="100%"
+            height="100%"
+            viewBox={`0 0 ${config.chartWidth} ${config.chartHeight}`}
+            preserveAspectRatio="xMidYMid meet"
+          >
             <GridLines scale={chartInfo.scale} maxPrice={chartInfo.maxPrice} minPrice={chartInfo.minPrice} config={config} digits={DIGITS} />
 
             {realtimeData.map((candle, index) => (
@@ -849,7 +1059,7 @@ const ChartView = memo<ChartViewProps>(
 ChartView.displayName = 'ChartView';
 
 // ============================================================================
-// MAIN MODAL
+// API HELPERS (RESET / TRUST)
 // ============================================================================
 
 export async function Handle_ResetSymbol(
@@ -882,6 +1092,66 @@ export async function Handle_ResetSymbol(
   }
 }
 
+export async function Handle_UpdateTrusted(
+  id: any,
+  trust: boolean,
+  messageApi: { success: (s: string) => void; error: (s: string) => void; warning: (s: string) => void }
+) {
+  try {
+    const accessToken = localStorage.getItem('accessToken') || '';
+    const resp: any = await axios.put(
+      `http://116.105.227.149:5000/v1/api/errors/${id}/stable`,
+      { IsStable: trust },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `${accessToken}`,
+        },
+        timeout: 10000,
+      }
+    );
+
+    if (resp?.data?.ok === true) {
+      if (trust === true) {
+        messageApi.success(`Trusted Thành Công!`);
+      } else {
+        messageApi.warning(`Cancle Trust thành công!`);
+      }
+    } else {
+      messageApi.error(`Gửi yêu cầu cập nhật trạng thái tin cậy thất bại!${resp?.data?.mess ? ' , ' + resp.data.mess : ''}`);
+    }
+
+    return resp?.data;
+  } catch (error: any) {
+    messageApi.error(String(error?.message ?? error));
+    throw error;
+  }
+}
+
+export async function Handle_GetIsStable(
+  id: any,
+  messageApi: { success: (s: string) => void; error: (s: string) => void }
+) {
+  try {
+    const accessToken = localStorage.getItem('accessToken') || '';
+    const resp: any = await axios.get(`http://116.105.227.149:5000/v1/api/errors/${id}/is-stable`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `${accessToken}`,
+      },
+      timeout: 10000,
+    });
+    return resp?.data;
+  } catch (error: any) {
+    messageApi.error(String(error?.message ?? error));
+    throw error;
+  }
+}
+
+// ============================================================================
+// MAIN MODAL
+// ============================================================================
+
 const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
   isOpen,
   onClose,
@@ -905,14 +1175,44 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
   exchange1Digits,
   exchange2Digits,
   exchange3Digits,
+  _id_Error,
 }) => {
   const { isMobile, isTablet } = useResponsive();
 
-  const [isZoom, setIsZoom] = React.useState(false);
-  const [isFullScreen, setIsFullScreen] = React.useState(false);
-  const [activeExchange, setActiveExchange] = React.useState<1 | 2>(1);
+  const [isZoom, setIsZoom] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [activeExchange, setActiveExchange] = useState<1 | 2>(1);
+
+  // ✅ TRUST STATE (FIXED)
+  const [trusted, setTrusted] = useState<boolean>(false);
+  const [loadingTrust, setLoadingTrust] = useState<boolean>(false);
 
   const [messageApi, contextHolder] = message.useMessage();
+
+  // dùng để tránh race khi modal mở/đóng nhanh
+  const stableReqRef = useRef(0);
+
+  // ✅ Load trust when open + id change
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!_id_Error) return;
+
+    const reqId = ++stableReqRef.current;
+    setLoadingTrust(true);
+
+    Handle_GetIsStable(_id_Error, messageApi as any)
+      .then((res) => {
+        if (reqId !== stableReqRef.current) return;
+        setTrusted(Boolean(res?.IsStable));
+      })
+      .catch(() => {
+        // optional: setTrusted(false);
+      })
+      .finally(() => {
+        if (reqId === stableReqRef.current) setLoadingTrust(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, _id_Error]);
 
   const modalWidth = useMemo(() => {
     if (isFullScreen) return isMobile ? '99vw' : '98vw';
@@ -949,16 +1249,13 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
       const Price = record.price;
 
       const IP_Server = '116.105.227.149';
-      const resp: any = await axios.get(
-        `http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/${type}/${Price}/${Key_SECRET}/order`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `${AccessToken}`,
-          },
-          timeout: 10000,
-        }
-      );
+      const resp: any = await axios.get(`http://${IP_Server}:5000/v1/api/${Symbol}/${Broker_}/${type}/${Price}/${Key_SECRET}/order`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `${AccessToken}`,
+        },
+        timeout: 10000,
+      });
 
       if (resp?.data?.code === 1) {
         messageApi_.open({
@@ -986,6 +1283,31 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
     setIsFullScreen((prev) => !prev);
     if (!isFullScreen) setIsZoom(false);
   }, [isFullScreen]);
+
+  // ✅ TRUST TOGGLE (FIXED - state-first, rollback on fail)
+  const handleToggleTrust = useCallback(async () => {
+    if (!_id_Error) return;
+    if (loadingTrust) return;
+
+    const next = !trusted;
+
+    // optimistic UI
+    setTrusted(next);
+    setLoadingTrust(true);
+
+    try {
+      const resp = await Handle_UpdateTrusted(_id_Error, next, messageApi as any);
+      if (!resp?.ok) {
+        // rollback
+        setTrusted(!next);
+      }
+    } catch {
+      // rollback
+      setTrusted(!next);
+    } finally {
+      setLoadingTrust(false);
+    }
+  }, [_id_Error, trusted, loadingTrust, messageApi]);
 
   return (
     <Modal
@@ -1017,14 +1339,12 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
                 };
                 HandleOrder('SELL', record, messageApi);
               }}
-              disabled={isFullScreen}
               style={{
-                borderColor: '#b91010',
+                // borderColor: '#b91010',
                 background: '#b91010',
                 color: THEME.text.primary,
                 fontWeight: 800,
                 transition: 'all 0.3s ease',
-                opacity: isFullScreen ? 0.5 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
@@ -1045,14 +1365,13 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
                 };
                 HandleOrder('BUY', record, messageApi);
               }}
-              disabled={isFullScreen}
+              // disabled={isFullScreen}
               style={{
-                borderColor: '#1b1bff',
+                // borderColor: '#1b1bff',
                 background: '#1b1bff',
                 color: THEME.text.primary,
                 fontWeight: 800,
                 transition: 'all 0.3s ease',
-                opacity: isFullScreen ? 0.5 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
@@ -1067,20 +1386,17 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
                 onClick={() => {
                   Handle_ResetSymbol(symbol, exchange1?.name, messageApi as any);
                 }}
-                disabled={isFullScreen}
                 style={{
-                  borderColor: isZoom ? '#10b981' : THEME.border.default,
                   background: 'rgb(174, 101, 0)',
                   color: THEME.text.primary,
                   fontWeight: 700,
                   transition: 'all 0.3s ease',
-                  opacity: isFullScreen ? 0.5 : 1,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
                 }}
               >
-                <RefreshCcw size={14} /> {exchange1?.name || 'Exchange 1'}
+                <RefreshCcw size={14} /> {exchange1?.name.toUpperCase() || 'Exchange 1'}
               </Button>
             </Tooltip>
 
@@ -1090,20 +1406,37 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
                 onClick={() => {
                   Handle_ResetSymbol(symbol, 'all', messageApi as any);
                 }}
-                disabled={isFullScreen}
                 style={{
-                  borderColor: isZoom ? '#10b981' : THEME.border.default,
                   background: 'rgba(0, 142, 106, 0.875)',
                   color: THEME.text.primary,
                   fontWeight: 700,
                   transition: 'all 0.3s ease',
-                  opacity: isFullScreen ? 0.5 : 1,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
                 }}
               >
                 <RefreshCcw size={14} /> {symbol} All
+              </Button>
+            </Tooltip>
+
+            {/* ✅ TRUST (FIXED) */}
+            <Tooltip title={trusted ? 'Bỏ Trust' : 'Tick Trust'}>
+              <Button
+                size="small"
+                loading={loadingTrust}
+                onClick={handleToggleTrust}
+                style={{
+                  background: !trusted ? 'rgba(237, 25, 89, 0.875)' : 'rgb(7, 255, 123)',
+                  color: THEME.text.primary,
+                  fontWeight: 800,
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                {!trusted ? <XSquare size={14} /> : <CheckSquare size={14} />} Trust
               </Button>
             </Tooltip>
 
@@ -1222,7 +1555,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             onSelect={() => setActiveExchange(2)}
           />
 
-          {/* Chart 3 (not selectable) - keep your new price logic */}
+          {/* Chart 3 (not selectable) */}
           <ChartView
             data={exchange3?.data || []}
             exchangeName={exchange3?.name || 'Exchange 3'}
@@ -1241,7 +1574,7 @@ const TripleExchangeChartModal: React.FC<TripleExchangeChartModalProps> = ({
             // ✅ spread2Points phải là exchange3Spread (để Ask2 dùng spread của chart3)
             spread2Points={exchange3Spread}
             ask2FromBidPlusSpread2={true}
-            // colors giữ nguyên theo code mới
+            // colors
             bidColor={THEME.price.bid1}
             askColor={THEME.price.ask1}
             bid2Color={THEME.price.bid2}
@@ -1289,7 +1622,11 @@ Legend.displayName = 'Legend';
 
 const LegendItem: React.FC<{ color: string; label: string; isLine?: boolean }> = ({ color, label, isLine }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-    {isLine ? <div style={{ width: '14px', height: '2px', background: color }} /> : <div style={{ width: '12px', height: '12px', background: color, borderRadius: '2px' }} />}
+    {isLine ? (
+      <div style={{ width: '14px', height: '2px', background: color }} />
+    ) : (
+      <div style={{ width: '12px', height: '12px', background: color, borderRadius: '2px' }} />
+    )}
     <span style={{ color: THEME.text.secondary }}>{label}</span>
   </div>
 );

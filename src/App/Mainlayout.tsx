@@ -110,8 +110,8 @@ const [onlineCount, setOnlineCount] = useState<any[]>([]);
     // ✅ nếu bạn muốn lưu list để render avatar
     // setOnlineUsers(onlineUsers);
 
-    console.log("ALL USERS:", allUsers);
-    console.log("ONLINE USERS:", onlineUsers);
+    // console.log("ALL USERS:", allUsers);
+    // console.log("ONLINE USERS:", onlineUsers);
   } catch (error) {
     console.error(error);
     messageApi.error("Lỗi khi tải danh sách tài khoản.");
@@ -144,7 +144,7 @@ const [onlineCount, setOnlineCount] = useState<any[]>([]);
   };
 
   tick();
-  const t = setInterval(tick, 5000);
+  const t = setInterval(tick, 3000);
 
   return () => {
     alive = false;
@@ -443,7 +443,7 @@ const [onlineCount, setOnlineCount] = useState<any[]>([]);
   }}
   title={
     <div style={{ width: 240 }}>
-      <div
+      {/* <div
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -451,23 +451,7 @@ const [onlineCount, setOnlineCount] = useState<any[]>([]);
           marginBottom: 8,
         }}
       >
-        <div style={{ fontWeight: 700, fontSize: 13 }}>
-          Online <span style={{ opacity: 0.7 }}>({onlineCount.length})</span>
-        </div>
-
-        <div
-          style={{
-            fontSize: 11,
-            padding: "2px 8px",
-            borderRadius: 999,
-            background: darkMode ? "rgba(34,197,94,0.15)" : "rgba(22,163,74,0.12)",
-            color: darkMode ? "#22c55e" : "#16a34a",
-            fontWeight: 700,
-          }}
-        >
-          LIVE
-        </div>
-      </div>
+      </div> */}
 
       <div
         style={{
@@ -496,7 +480,8 @@ const [onlineCount, setOnlineCount] = useState<any[]>([]);
                   size={26}
                   src={u.avatar}
                   style={{
-                    background: u.avatar ? undefined : "#2563eb",
+                    background: u.avatar ? undefined : "#274044",
+                    border: `1px solid ${darkMode ? "rgba(251, 251, 251, 0.9)" : "#f3f4f6"}`,
                     fontSize: 12,
                     fontWeight: 700,
                   }}
@@ -579,8 +564,8 @@ const [onlineCount, setOnlineCount] = useState<any[]>([]);
             size={24}
             src={u.avatar}
             style={{
-              background: u.avatar ? undefined : "#2563eb",
-              border: `2px solid ${darkMode ? "rgba(55,65,81,0.9)" : "#f3f4f6"}`,
+              background: u.avatar ? undefined : "#0a616f",
+              border: `1px solid ${darkMode ? "rgba(251, 251, 251, 0.9)" : "#f3f4f6"}`,
               marginLeft: i === 0 ? 0 : -10,
               zIndex: 10 - i,
               fontSize: 12,

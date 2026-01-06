@@ -346,6 +346,8 @@ const [alert_, setAlert_] = useState(false);
 
 //Data
 const [dataChart, setDataChart] = useState<any | null>(null);
+const [_id_Error, set_Id_Error] = useState("");
+const [trusted , setTrusted] = useState(false);
 //data chart
 
 const [chartData, setChartData] = useState<{
@@ -3478,7 +3480,9 @@ useEffect(() => {
                 setActiveBrokerChart(item.Broker || item.provider);
                 setActiveTab(item.Symbol || item.pair);
                 setIsChartOpen(true);
-              console.log("Clicked action button", item.Symbol);
+                set_Id_Error(item._id);
+                setTrusted(item.IsStable);
+              console.log("Clicked action button", item._id);
             }}
             >
               {item.Messenger || item.action}
@@ -3530,6 +3534,7 @@ useEffect(() => {
         exchange1Spread={dataChart?.exchange1?.spread}
         exchange2Spread={dataChart?.exchange2?.spread}
         exchange3Spread={dataChart?.exchange3?.spread}
+        _id_Error={_id_Error}
       />
       )}
       

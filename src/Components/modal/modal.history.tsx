@@ -410,7 +410,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ visible, onClose }) => {
     {
       title: isMobile ? 'Trust' : <span style={{ color: '#595959', fontWeight: 600 }}>✅ Trusted</span>,
       key: 'IsStable',
-      dataIndex: 'isTrusted',
+      dataIndex: 'IsStable',
       width: isMobile ? 60 : 110,
       align: 'center' as const,
       fixed: 'right' as const,
