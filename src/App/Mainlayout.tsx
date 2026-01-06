@@ -433,76 +433,222 @@ const [onlineCount, setOnlineCount] = useState<any[]>([]);
           flexShrink: 0,
         }}>
           {/* Online Users Avatars */}
-{!isMobile && (
-  <Tooltip
-    title={
-      <div style={{ maxWidth: 220 }}>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>
-          Online ({onlineCount.length})
+
+<Tooltip
+  placement="bottom"
+  overlayInnerStyle={{
+    padding: 10,
+    borderRadius: 10,
+    maxWidth: 260,
+  }}
+  title={
+    <div style={{ width: 240 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 8,
+        }}
+      >
+        <div style={{ fontWeight: 700, fontSize: 13 }}>
+          Online <span style={{ opacity: 0.7 }}>({onlineCount.length})</span>
         </div>
-        {onlineCount.slice(0, 10).map(u => (
-          <div key={u.id} style={{ fontSize: 12 }}>
-            • {u.fullname}
-          </div>
-        ))}
-        {onlineCount.length > 10 && (
-          <div style={{ fontSize: 11, opacity: 0.7 }}>
-            +{onlineCount.length - 10} more
+
+        <div
+          style={{
+            fontSize: 11,
+            padding: "2px 8px",
+            borderRadius: 999,
+            background: darkMode ? "rgba(34,197,94,0.15)" : "rgba(22,163,74,0.12)",
+            color: darkMode ? "#22c55e" : "#16a34a",
+            fontWeight: 700,
+          }}
+        >
+          LIVE
+        </div>
+      </div>
+
+      <div
+        style={{
+          maxHeight: 220,
+          overflow: "auto",
+          paddingRight: 4,
+        }}
+      >
+        {onlineCount.slice(0, 20).map((u) => {
+          const name = u.fullname || u.name || "Unknown";
+          const initial = name?.trim()?.[0]?.toUpperCase() || "?";
+
+          return (
+            <div
+              key={u.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "6px 6px",
+                borderRadius: 8,
+              }}
+            >
+              <div style={{ position: "relative" }}>
+                <Avatar
+                  size={26}
+                  src={u.avatar}
+                  style={{
+                    background: u.avatar ? undefined : "#2563eb",
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
+                  {!u.avatar && initial}
+                </Avatar>
+
+                {/* online dot */}
+                <span
+                  style={{
+                    position: "absolute",
+                    right: -1,
+                    bottom: -1,
+                    width: 10,
+                    height: 10,
+                    borderRadius: 999,
+                    background: "#22c55e",
+                    border: `2px solid ${darkMode ? "#111827" : "#ffffff"}`,
+                  }}
+                />
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: 170,
+                  }}
+                  title={name}
+                >
+                  {name}
+                </div>
+                {u.role && (
+                  <div style={{ fontSize: 11, opacity: 0.7 }}>
+                    {u.role}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {onlineCount.length > 20 && (
+          <div style={{ fontSize: 11, opacity: 0.7, marginTop: 6 }}>
+            +{onlineCount.length - 20} more…
           </div>
         )}
       </div>
-    }
-    placement="bottom"
+    </div>
+  }
+>
+  <div
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      height: 36,
+      padding: "0 10px",
+      borderRadius: 10,
+      background: darkMode ? "rgba(55,65,81,0.9)" : "#f3f4f6",
+      border: `1px solid ${darkMode ? "rgba(148,163,184,0.18)" : "#e5e7eb"}`,
+      cursor: "pointer",
+      gap: 10,
+      userSelect: "none",
+      transition: "all .15s ease",
+    }}
   >
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        height: '36px',
-        padding: '0 10px',
-        borderRadius: '6px',
-        background: darkMode ? '#374151' : '#f3f4f6',
-        cursor: 'pointer',
-        gap: '6px',
-      }}
-    >
-      {/* Avatar stack */}
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        {onlineCount.slice(0, 5).map((u, i) => (
+    {/* Avatar stack */}
+    <div style={{ display: "flex", alignItems: "center" }}>
+      {onlineCount.slice(0, 4).map((u, i) => {
+        const name = u.fullname || u.name || "U";
+        const initial = name?.trim()?.[0]?.toUpperCase() || "U";
+
+        return (
           <Avatar
             key={u.id}
-            size={22}
+            size={24}
             src={u.avatar}
             style={{
-              background: u.avatar ? undefined : '#2563eb',
-              border: `2px solid ${darkMode ? '#374151' : '#f3f4f6'}`,
-              marginLeft: i === 0 ? 0 : -8,
+              background: u.avatar ? undefined : "#2563eb",
+              border: `2px solid ${darkMode ? "rgba(55,65,81,0.9)" : "#f3f4f6"}`,
+              marginLeft: i === 0 ? 0 : -10,
               zIndex: 10 - i,
-              fontSize: 11,
-              fontWeight: 600,
+              fontSize: 12,
+              fontWeight: 700,
+              boxShadow: darkMode
+                ? "0 0 0 1px rgba(0,0,0,0.25)"
+                : "0 0 0 1px rgba(0,0,0,0.06)",
             }}
           >
-            {!u.avatar && u.name?.[0]?.toUpperCase()}
+            {!u.avatar && initial}
           </Avatar>
-        ))}
-      </div>
+        );
+      })}
 
-      {/* Count */}
+      {/* +N */}
+      {onlineCount.length > 4 && (
+        <div style={{ marginLeft: -10, zIndex: 6 }}>
+          <Avatar
+            size={24}
+            style={{
+              background: darkMode ? "#111827" : "#e5e7eb",
+              color: darkMode ? "#e5e7eb" : "#111827",
+              border: `2px solid ${darkMode ? "rgba(55,65,81,0.9)" : "#f3f4f6"}`,
+              fontSize: 11,
+              fontWeight: 800,
+            }}
+          >
+            +{onlineCount.length - 4}
+          </Avatar>
+        </div>
+      )}
+    </div>
+
+    {/* Label + Count */}
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <span
         style={{
           fontSize: 12,
-          fontWeight: 600,
-          color: darkMode ? '#22c55e' : '#16a34a',
-          whiteSpace: 'nowrap',
+          fontWeight: 700,
+          color: darkMode ? "#e5e7eb" : "#111827",
+          opacity: 0.9,
+          whiteSpace: "nowrap",
+        }}
+      >
+        Online
+      </span>
+
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 800,
+          color: darkMode ? "#22c55e" : "#16a34a",
+          background: darkMode ? "rgba(34,197,94,0.12)" : "rgba(22,163,74,0.12)",
+          border: `1px solid ${darkMode ? "rgba(34,197,94,0.25)" : "rgba(22,163,74,0.25)"}`,
+          padding: "2px 8px",
+          borderRadius: 999,
+          lineHeight: "16px",
+          whiteSpace: "nowrap",
         }}
       >
         {onlineCount.length}
       </span>
     </div>
-  </Tooltip>
-)}
+  </div>
+</Tooltip>
+
           {/* Live Status - Hide on mobile */}
-          {!isMobile && (
+          {/* {!isMobile && (
             <button
               style={{
                 height: '36px',
@@ -531,7 +677,7 @@ const [onlineCount, setOnlineCount] = useState<any[]>([]);
               }} />
               LIVE
             </button>
-          )}
+          )} */}
 
           {/* Time - Hide on mobile */}
        
