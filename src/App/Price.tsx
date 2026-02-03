@@ -3640,6 +3640,66 @@ useEffect(() => {
 
       <Button
         type="primary"
+        icon={<RefreshCcw size={14} />}
+        size="small"
+        style={{
+          width: isMobile ? "100%" : "160px",
+          height: "32px",
+          fontSize: "13px",
+          fontWeight: 500,
+          borderRadius: "6px",
+          boxShadow: "0 2px 6px rgba(24, 144, 255, 0.25)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "6px",
+          background: "linear-gradient(135deg, #ea7566 0%, #a24e4b 100%)",
+          border: "none",
+          marginRight: isMobile ? 0 : "16px",
+        }}
+        onClick={async () => {
+          try {
+            message.loading("Deleting...");
+            console.log("Delete broker server initiated");
+
+            const AccessToken = localStorage.getItem("accessToken") || "";
+            if (!AccessToken) {
+              messageApi.open({
+                type: "warning",
+                content: "Chưa có token truy cập!, vui lòng đăng nhập lại.",
+              });
+              return;
+            }
+            messageApi.open({
+              type: "success",
+              content: "Đã gửi yêu cầu Delete Broker!",
+            });
+            const resp = await axios.get(
+              `http://${IP_Server}:5000/v1/api/ALL/ALL-SYMBOLS/reset`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `${AccessToken}`,
+                },
+                timeout: 10000,
+              }
+            );
+            if (resp.data && resp.data.success) {
+              message.success("Delete Broker successful!");
+              console.log("Delete Broker response:", resp.data);
+            } else {
+              console.error("Delete Broker failed:", resp.data);
+            }
+          } catch (error) {
+            console.error("Error deleting:", error);
+          }
+        }}
+      >
+        SYMBOL RESET
+      </Button>
+
+      <Button
+        type="primary"
         icon={<Trash2 size={14} />}
         size="small"
         style={{
