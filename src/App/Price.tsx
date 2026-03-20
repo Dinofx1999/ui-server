@@ -4173,7 +4173,7 @@ const titles = g.items
               maxWidth: "100%",
             }}
           >
-            {analysis?.resetting &&
+            {analysis?.resetting && analysis?.resetting[0] !== "Proccess: 0" &&
               Array.isArray(analysis.resetting) &&
               analysis.resetting.length > 0 && (
                 <Alert
@@ -4212,7 +4212,7 @@ const titles = g.items
                               {item.broker}
                             </span>{" "}
                             <span style={{ color: "#f59e0b", fontWeight: 700 }}>
-                              {item.status}
+                              {item.status} {analysis.resetting}
                             </span>
                             {idx < analysis.resetting.length - 1 && ", "}
                           </span>
@@ -4307,7 +4307,7 @@ const titles = g.items
                 </button>
 
                   {/* Spread 0 Button */}
-                  {roleUser.toUpperCase() === "ADMIN" && (
+                  {/* {roleUser.toUpperCase() === "ADMIN" && ( */}
                        <button
                     style={{
                       padding: "10px 20px",
@@ -4356,7 +4356,7 @@ const titles = g.items
                    
                     Spread Config
                   </button>
-                  )}
+                  {/* )} */}
                  
 
                    {/* Config Button */}

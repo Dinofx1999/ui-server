@@ -45,7 +45,7 @@ type MainLayoutProps = {
   }, (60000 * 10));
 
 const MainLayout: React.FC<MainLayoutProps> = ({ handle_dark_mode_toggle }) => {
-
+  const nav = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,7 +93,7 @@ const [onlineCount, setOnlineCount] = useState<any[]>([]);
 
     // ===================== CHECK ONLINE (<= 5s) =====================
     const NOW = Date.now();
-    const ONLINE_THRESHOLD = 5 * 1000;
+    const ONLINE_THRESHOLD = 10 * 1000;
 
     const onlineUsers = allUsers.filter((u) => {
       if (!u?.last_online) return false;
@@ -106,6 +106,15 @@ const [onlineCount, setOnlineCount] = useState<any[]>([]);
 
     // ✅ nếu bạn muốn lưu COUNT
     setOnlineCount(onlineUsers);
+
+    if(userData?.data?.actived === false){
+      messageApi.error("tài khoản đã bị vô hiệu hóa.");
+      handleLogout();
+    }else if(userData?.data?.session === false){
+      messageApi.error("Phiên đăng nhập đã hết hạn.");
+      handleLogout();
+    }
+
 
     // ✅ nếu bạn muốn lưu list để render avatar
     // setOnlineUsers(onlineUsers);

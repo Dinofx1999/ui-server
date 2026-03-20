@@ -4,9 +4,11 @@ import './App.css';
 import MainLayout from './App/Mainlayout';
 import Login from './App/Login';
 import Price from './App/Price';
+import MaintenanceNotice from './App/MaintenanceNotice';
 import Candle from './App/Candle';
 import ProtectedRoute from './Components/ProtectedRoute';
 import PublicRoute from './Components/PublicRoute';
+import SystemMaintenance from './App/MaintenanceNotice';
 
 function App() {
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -46,7 +48,17 @@ function App() {
           <Route index element={<Navigate to="/price" replace />} />
           
           {/* Price Page */}
-          <Route path="price" element={<Price isDark={isDark} />} />
+          {/* <Route path="price" element={<Price isDark={isDark} />} /> */}
+          <Route path="price" element={<SystemMaintenance
+            brand="Dino Hunter" 
+            etaText="Dự kiến hoàn tất: 14:30 hôm nay , Mọi chi tiết liên hệ a Tuấn" 
+            incidentText="Mã thông báo: BA-2026-0205"
+            contactText="0383537581 (Zalo/Call)" 
+            contactHref="tel:0383537581" 
+            autoReloadSeconds={90}
+          />} />
+
+          <Route path="price/admin" element={<Price isDark={isDark} />} />
           
           {/* Candle Page */}
           <Route path="candle" element={<Candle isDark={isDark} />} />
