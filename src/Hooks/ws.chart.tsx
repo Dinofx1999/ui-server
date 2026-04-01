@@ -100,7 +100,7 @@ export function useChartWS(params: ChartWSParams | null): UseChartWSReturn {
     const url = `${baseUrl.replace(/\/+$/, "")}/${encodeURIComponent(
       symbol
     )}?broker=${encodeURIComponent(broker_)}`;
-
+   console.log("Connecting to WS with URL:", url);
     // ✅ đóng cái cũ nếu có
     cleanup();
 

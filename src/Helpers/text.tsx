@@ -68,3 +68,4 @@ export function formatDecimal(value: any, digit: number) {
   if (!Number.isFinite(num)) return "0";
   return num.toFixed(digit);
 }
+

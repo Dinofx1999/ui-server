@@ -21,6 +21,7 @@ import Marquee from 'react-fast-marquee';
 import HistoryModal from '../Components/modal/modal.history';
 import AccountModal from '../Components/modal/modal.manager';
 import DualExchangeChartModal from '../Components/modal/modal.chart';
+import SymbolConfigModal from '../Components/modal/modal.symbolaliasmodal';
 import TripleExchangeChartModal from '../Components/modal/modal.chartV2';
 import ImpactBadge from '../Components/Alert/Alert_News';
 
@@ -305,6 +306,7 @@ const [alert_, setAlert_] = useState(false);
 
   const [activeBroker, setActiveBroker] = useState("");
   const [activeBrokerChart, setActiveBrokerChart] = useState("");
+  const [activeBrokerChart_Main, setActiveBrokerChart_Main] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
@@ -323,6 +325,7 @@ const [alert_, setAlert_] = useState(false);
   const [modalHistory, setModalHistory] = useState(false);
   const [modalSpreadConfig, setModalSpreadConfig] = useState(false);
   const [isChartOpen, setIsChartOpen] = useState(false);
+  const [modalSymbolConfig, setModalSymbolConfig] = useState(false);
   // const [chartData, setChartData] = useState<any | null>(null);
 
   const [form_Add_Symbol, setForm_Add_Symbol] = useState(false);
@@ -1066,9 +1069,13 @@ useEffect(() => {
         // icon={<LineChartOutlined style={{ fontSize: '16px' }} />}
         onClick={async () => {
           try {
-            setActiveBrokerChart(record.broker);
+            
+            const dataSource = Array.isArray(symbols) ? symbols : [];
+            const firstBroker = dataSource?.[0]?.broker;
+            setActiveBrokerChart(record.broker + "45678" + firstBroker);
+            // setActiveBrokerChart_Main(firstBroker);
             setIsChartOpen(true);
-            console.log("Open chart for:", record.symbol);
+            console.log("Open chart for:", record.symbol + " - Broker: " + firstBroker + " / " + record.broker);
           } catch (error) {
             messageApi.open({
               type: "error",
@@ -3248,10 +3255,11 @@ useEffect(() => {
               whiteSpace: "nowrap",
             }}
             onClick={() => {
-                setActiveBrokerChart(item.Broker || item.provider);
+                
+                setActiveBrokerChart((item.Broker || item.provider) +"45678"+item.Broker_Main);
                 setActiveTab(item.Symbol || item.pair);
                 setIsChartOpen(true);
-              console.log("Clicked action button", item.Symbol);
+              console.log("Clicked action button BUY", item.Symbol);
             }}
           >
             {item.Messenger || item.action}
@@ -3477,12 +3485,13 @@ useEffect(() => {
                 minWidth: isTablet ? "60px" : "80px",
               }}
               onClick={() => {
-                setActiveBrokerChart(item.Broker || item.provider);
+                // setActiveBrokerChart(item.Broker || item.provider);
+                setActiveBrokerChart((item.Broker || item.provider) +"45678"+item.Broker_Main);
                 setActiveTab(item.Symbol || item.pair);
                 setIsChartOpen(true);
                 set_Id_Error(item._id);
                 setTrusted(item.IsStable);
-              console.log("Clicked action button", item._id);
+              console.log("Clicked action button SELL", item._id);
             }}
             >
               {item.Messenger || item.action}
@@ -3542,6 +3551,8 @@ useEffect(() => {
 
       <AccountModal open={modalConfig} onCancel={() => setModalConfig(false)} />
 
+      <SymbolConfigModal open={modalSymbolConfig} onClose={() => setModalSymbolConfig(false)} />
+      
         <SpreadManagementModal
         visible={modalSpreadConfig}
           onClose={() => setModalSpreadConfig(false)}
@@ -4360,7 +4371,59 @@ const titles = g.items
                  
 
                    {/* Config Button */}
+{roleUser.toUpperCase() === "ADMIN" && (
+     <button
+                    style={{
+                      padding: "10px 20px",
+                      background:
+                        "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                      border: "none",
+                      borderRadius: "8px",
+                      color: "#fff",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      boxShadow: "0 4px 12px rgba(245, 158, 11, 0.35)",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)";
+                      e.currentTarget.style.transform =
+                        "translateY(-2px) scale(1.05)";
+                      e.currentTarget.style.boxShadow =
+                        "0 8px 20px rgba(245, 158, 11, 0.5)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
+                      e.currentTarget.style.transform =
+                        "translateY(0) scale(1)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(245, 158, 11, 0.35)";
+                    }}
+                    onMouseDown={(e) => {
+                      e.currentTarget.style.transform =
+                        "translateY(0) scale(0.98)";
+                    }}
+                    onMouseUp={(e) => {
+                      e.currentTarget.style.transform =
+                        "translateY(-2px) scale(1.05)";
+                    }}
+                    onClick={() => setModalSymbolConfig(true)}
+                  > <SettingOutlined />
+                   
+                    Symbol Convert
+                  </button>
+)}
+                  
                    {roleUser.toUpperCase() === "ADMIN" && (
+                      
                        <button
                       style={{
                         padding: "10px 20px",

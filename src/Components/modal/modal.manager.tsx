@@ -351,14 +351,10 @@ const AccountModal = ({ open, onCancel }: any) => {
       render: (text: string) => <Text type="secondary">{text}</Text>,
     },
     {
-      title: "Password",
-      dataIndex: "password",
-      key: "password",
-      render: (text: string) => (
-        <Text code style={{ fontSize: "12px" }}>
-          {"•".repeat(8)}
-        </Text>
-      ),
+      title: "Last Online",
+      dataIndex: "last_online",
+      key: "last_online",
+      render: (text: string) => <Text type="secondary">{text}</Text>,
     },
     {
       title: "Role",
@@ -1123,6 +1119,7 @@ const AccountModal = ({ open, onCancel }: any) => {
                 placeholder="Để trống nếu không đổi"
               />
             </Col>
+            
 
             <Col span={12}>
               <Text strong>Role</Text>
