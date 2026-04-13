@@ -51,8 +51,8 @@ function App() {
           {/* <Route path="price" element={<Price isDark={isDark} />} /> */}
           <Route path="price" element={<SystemMaintenance
             brand="Dino Hunter" 
-            etaText="Dự kiến hoàn tất: 14:30 hôm nay , Mọi chi tiết liên hệ a Tuấn" 
-            incidentText="Mã thông báo: BA-2026-0205"
+            etaText="Dự kiến hoàn tất:Chưa biết khi nào , Mọi chi tiết liên hệ a Tuấn" 
+            incidentText="Mã thông báo: BA-2026-0604"
             contactText="0383537581 (Zalo/Call)" 
             contactHref="tel:0383537581" 
             autoReloadSeconds={90}

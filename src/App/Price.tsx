@@ -155,56 +155,107 @@ const DEFAULT_COLORS = [
   "#EC4899", // Hồng
 ];
 
-function transformServerDataToChartData(serverData : any, timeframe = "1M") {
+function transformServerDataToChartData(serverData: any, timeframe = "1M") {
   const colors = [
-    "#F0B90B", "#5741D9", "#10B981", "#EF4444", 
-    "#3B82F6", "#F59E0B", "#8B5CF6", "#EC4899"
+    "#F0B90B", "#5741D9", "#10B981", "#EF4444",
+    "#3B82F6", "#F59E0B", "#8B5CF6", "#EC4899",
   ];
 
   const result: Record<string, any> = {
-    symbol: serverData.symbol,
+    symbol:    serverData.symbol,
     timeframe: timeframe,
   };
 
-  serverData.charts.forEach((chart:any, index:any) => {
-    // Kiểm tra xem có dùng bid_mdf/ask_mdf không
-    const useMdf = chart.title?.includes("mdf");
-    let bid = parseFloat(useMdf ? chart.bid_mdf : chart.bid);
-    let ask = parseFloat(useMdf ? chart.ask_mdf : chart.ask);
-    let spread = parseFloat(useMdf ? chart.spread_mdf : chart.spread);
-    let digit = parseFloat(useMdf ? serverData.charts[1].digit : chart.digit);
-    // Thêm exchange
-    let Chart_Name = chart.Broker;
-    // let Bid_mdf = serverData.charts[0].bid_mdf;
-    // let Ask_mdf = serverData.charts[0].ask_mdf;
-    if(index === 2){
-      Chart_Name = serverData.charts[0]?.Broker + " MDF ";  
-      bid = serverData.charts[0].bid_mdf;
-      
-      spread = serverData.charts[0].spread_mdf;
-      digit = serverData.charts[1].digit;
-      ask = Number(calcAskPrice(bid, spread, digit));
-    } 
+  serverData.charts.forEach((chart: any, index: number) => {
+    const digitRoot = parseInt(chart.digit_root, 10) || parseInt(chart.digit, 10);
+    const digitRaw  = parseInt(chart.digit, 10);
+
+    // ✅ Chart 1 & 2: luôn dùng bid/ask/spread GỐC (không dùng mdf)
+    // Chart 3 (title có "mdf"): dùng bid_mdf/ask_mdf/spread_mdf
+    const useMdf  = chart.title?.includes("mdf");
+    const bid     = parseFloat(chart.bid);          // luôn lấy bid gốc
+    const ask     = parseFloat(chart.ask);          // luôn lấy ask gốc
+    const spread  = parseFloat(chart.spread);       // luôn lấy spread gốc
+
+    // Normalize ohlc về digitRaw (digit thực của broker, không dùng digit_root)
+    const normalizePrice = (price: number): number =>
+      parseFloat(price.toFixed(digitRaw));
+
+    const data = chart.ohlc.map((candle: any) => ({
+      time:  candle.time,
+      open:  normalizePrice(parseFloat(candle.open)),
+      high:  normalizePrice(parseFloat(candle.high)),
+      low:   normalizePrice(parseFloat(candle.low)),
+      close: normalizePrice(parseFloat(candle.close)),
+    }));
+
     result[`exchange${index + 1}`] = {
-      name: Chart_Name,
-      color: colors[index % colors.length],
-      bid: bid,
-      ask: ask,
-      spread: spread,
-      digit: Number(digit),
-      data: chart.ohlc.map((candle:any) => ({
-        time: candle.time,
-        open: parseFloat(candle.open),
-        high: parseFloat(candle.high),
-        low: parseFloat(candle.low),
-        close: parseFloat(candle.close),
-      })),
+      name:        chart.Broker,
+      color:       colors[index % colors.length],
+      // ✅ Giá hiển thị cho Chart 1 & 2: bid/ask gốc
+      bid,
+      ask,
+      spread,
+      digit:       digitRaw,       // digit gốc — dùng để hiển thị bid/ask đúng chữ số
+      digit_root:  digitRoot,      // digit chuẩn — dùng cho tính toán normalize
+      // Raw mdf fields — chỉ dùng cho Chart 3
+      bid_mdf:     parseFloat(chart.bid_mdf)    || bid,
+      ask_mdf:     parseFloat(chart.ask_mdf)    || ask,
+      spread_mdf:  parseFloat(chart.spread_mdf) || spread,
+      data,
     };
-    
-    // Thêm Bid_X và Ask_X ở root level
-    result[`Bid_${index + 1}`] = bid;
-    result[`Ask_${index + 1}`] = ask;
   });
+
+  // =====================================================================
+  // Chart 3 — override: dùng bid_mdf/ask_mdf của c1, ohlc offset về mdf
+  // =====================================================================
+  const c1 = result['exchange1'];
+  const c2 = result['exchange2'];
+
+  if (c1 && c2) {
+    const digitRoot = c1.digit_root;
+
+    // Offset ohlc c1 về vùng giá mdf
+    const offsetMdf = parseFloat((c1.bid_mdf - c1.bid).toFixed(digitRoot));
+
+    const c3Data = c1.data.map((candle: any) => ({
+      time:  candle.time,
+      open:  parseFloat((candle.open  + offsetMdf).toFixed(digitRoot)),
+      high:  parseFloat((candle.high  + offsetMdf).toFixed(digitRoot)),
+      low:   parseFloat((candle.low   + offsetMdf).toFixed(digitRoot)),
+      close: parseFloat((candle.close + offsetMdf).toFixed(digitRoot)),
+    }));
+
+    // Spread Chart 3 = ask_mdf - bid_mdf của c1
+    const spreadMdf    = parseFloat((c1.ask_mdf - c1.bid_mdf).toFixed(digitRoot));
+    const chart3_bid2  = parseFloat(c2.bid_mdf.toFixed ? c2.bid_mdf.toFixed(digitRoot) : c2.bid_mdf);
+    const chart3_ask2  = parseFloat((chart3_bid2 + spreadMdf).toFixed(digitRoot));
+
+    result['exchange3'] = {
+      ...result['exchange3'],
+      digit:      digitRoot,
+      digit_root: digitRoot,
+      // Pair1 = mdf của c1
+      bid:        c1.bid_mdf,
+      ask:        c1.ask_mdf,
+      spread:     c1.spread_mdf,
+      bid_mdf:    c1.bid_mdf,
+      ask_mdf:    c1.ask_mdf,
+      spread_mdf: c1.spread_mdf,
+      // Pair2
+      bid2:       chart3_bid2,
+      ask2:       chart3_ask2,
+      data:       c3Data,
+    };
+
+    // Root-level shortcuts cho JSX
+    result['chart3_bid1']   = c1.bid_mdf;
+    result['chart3_ask1']   = c1.ask_mdf;
+    result['chart3_bid2']   = chart3_bid2;
+    result['chart3_ask2']   = chart3_ask2;
+    result['chart3_digit']  = digitRoot;
+    result['chart3_spread'] = c1.spread_mdf;
+  }
 
   return result;
 }
@@ -435,45 +486,7 @@ function mapOHLC(ohlc: any[]) {
   }));
 }
 
-function buildChartDataFromAB(payload: any, chartData_Example: any) {
-  const A = payload?.A;
-  const B = payload?.B;
 
-  const aData = mapOHLC(A?.ohlc);
-  const bData = mapOHLC(B?.ohlc);
-
-  return {
-    symbol: A?.symbol || B?.symbol || chartData_Example.symbol || "UNKNOWN",
-    timeframe: A?.timeframe || B?.timeframe || chartData_Example.timeframe || "1M",
-
-    exchange1: {
-      name: A?.Broker || "Broker A",
-      color: "#F0B90B",
-      data: aData.length ? aData : bData || chartData_Example.exchange1.data,
-    },
-
-    exchange2: {
-      name: B?.Broker || "Broker B",
-      color: "#5741D9",
-      data: bData.length ? bData : aData || chartData_Example.exchange2.data,
-    },
-    exchange3: {
-      name: A?.Broker + " & "+ B?.Broker || "Broker C",
-      color: "#10B981",
-      data: bData.length ? bData : chartData_Example.exchange3.data,
-    },
-
-    exchange1Bid: toNum(A?.bid),
-    exchange1Ask: toNum(A?.ask),
-    exchange2Bid: toNum(B?.bid),
-    exchange2Ask: toNum(B?.ask),
-    exchange3Bid: toNum(A?.bid_mdf),
-    exchange3Ask: toNum(A?.ask_mdf),
-    exchange1Digits: toNum(A?.digit),
-    exchange2Digits: toNum(B?.digit),
-    exchange3Digits: toNum(B?.digit),
-  };
-}
 
 
 
@@ -546,9 +559,9 @@ const getToneByTime = (timeLabel: string, soonWindowMin = 30) => {
 };
 
 
-const filteredNews = highNews.filter((item: any) => {
+const filteredNews = highNews?.filter((item: any) => {
   return getToneByTime(item.timeLabel, time_soon) !== "past";
-});
+}) || [];
 
 const groupNewsByMinute = (news: any[]) => {
   const map = new Map<string, any[]>();
@@ -1168,16 +1181,18 @@ useEffect(() => {
       dataIndex: "bid_mdf",
       key: "bid_mdf",
       width: isMobile ? 50 : 120,
-      render: (text: any) => (
-        <div
+      render: (text: any , record: any) => (
+         <Tooltip title={`Digits: ${record.digit_root}`}>
+          <div
           style={{
             color: "#d90606",
             fontSize: "14px",
             fontWeight: 500,
           }}
         >
-          <span>{text}</span>
+          <span>{formatDecimal(text, Number(record.digit_root))}</span>
         </div>
+        </Tooltip>
       ),
       sorter: (a: any, b: any) => Number(a.bid_mdf) - Number(b.bid_mdf),
     },
@@ -1186,17 +1201,18 @@ useEffect(() => {
       dataIndex: "ask",
       key: "ask",
       width: isMobile ? 50 : 120,
-      render: (text: any) => (
-        <div
+      render: (text: any, record: any) => (
+        <Tooltip title={`Digits: ${record.digit}`}>
+          <div
           style={{
-            color: "#066098",
+            color: "#d90606",
             fontSize: "14px",
             fontWeight: 500,
-            textAlign: "center",
           }}
         >
-          <span>{text}</span>
+          <span>{formatDecimal(text, Number(record.digit))}</span>
         </div>
+        </Tooltip>
       ),
       sorter: (a: any, b: any) => Number(a.ask) - Number(b.ask),
     },
@@ -1205,17 +1221,19 @@ useEffect(() => {
       dataIndex: "ask_mdf",
       key: "ask_mdf",
       width: isMobile ? 50 : 120,
-      render: (text: any) => (
-        <div
-          style={{
-            color: "#058569",
-            fontSize: "14px",
-            fontWeight: 500,
-            textAlign: "center",
-          }}
-        >
-          <span>{text}</span>
-        </div>
+      render: (text: any, record: any) => (
+        <Tooltip title={`Digits: ${record.digit_root}`}>
+          <div
+            style={{
+              color: "#058569",
+              fontSize: "14px",
+              fontWeight: 500,
+              textAlign: "center",
+            }}
+          >
+            <span>{formatDecimal(text, Number(record.digit_root))}</span>
+          </div>
+        </Tooltip>
       ),
       sorter: (a: any, b: any) => Number(a.ask_mdf) - Number(b.ask_mdf),
     },
@@ -1223,7 +1241,8 @@ useEffect(() => {
       title: "Spread",
       dataIndex: "spread_mdf",
       key: "spread_mdf",
-      render: (text: any) => (
+      render: (text: any , record: any) => (
+        <Tooltip title={`Spread Raw: ${record.spread} - Spread Fix: ${record.spread_mdf}`}>
         <div
           style={{
             color: "#065ed9",
@@ -1234,6 +1253,7 @@ useEffect(() => {
         >
           <span>{text}</span>
         </div>
+      </Tooltip>
       ),
       sorter: (a: any, b: any) => Number(a.spread_mdf) - Number(b.spread_mdf),
     },
@@ -1651,7 +1671,8 @@ useEffect(() => {
       title: "Bid",
       dataIndex: "bid",
       key: "bid",
-      render: (text) => (
+      render: (text , record) => (
+        <Tooltip title={`Digits: ${record.digit}`}>
         <div
           style={{
             color: "#d90606",
@@ -1659,8 +1680,9 @@ useEffect(() => {
             fontWeight: 500,
           }}
         >
-          <span>{text}</span>
+          <span>{formatDecimal(text, Number(record.digit))}</span>
         </div>
+        </Tooltip>
       ),
       sorter: (a: any, b: any) => Number(a.bid) - Number(b.bid),
       fixed: isMobile ? undefined : "left",
@@ -1669,16 +1691,18 @@ useEffect(() => {
       title: "Bid Fix",
       dataIndex: "bid_mdf",
       key: "bid_mdf",
-      render: (text: any) => (
+      render: (text: any , record) => (
+        <Tooltip title={`Digits: ${record.digit_root}`}>
         <div
           style={{
-            color: "#f09b55",
-            fontSize: "14px",
+            color: "#d90606",
+            fontSize: isMobile ? "12px" : "14px",
             fontWeight: 500,
           }}
         >
-          <span>{text}</span>
+          <span>{formatDecimal(text, Number(record.digit_root))}</span>
         </div>
+        </Tooltip>
       ),
       sorter: (a: any, b: any) => a.bid_mdf.localeCompare(b.bid_mdf),
     },
@@ -1686,7 +1710,8 @@ useEffect(() => {
       title: "Ask",
       dataIndex: "ask",
       key: "ask",
-      render: (text) => (
+      render: (text , record) => (
+        <Tooltip title={`Digits: ${record.digit}`}>
         <div
           style={{
             color: "#07a6c6",
@@ -1694,8 +1719,9 @@ useEffect(() => {
             fontWeight: 500,
           }}
         >
-          <span>{text}</span>
+          <span>{formatDecimal(text, Number(record.digit))}</span>
         </div>
+        </Tooltip>
       ),
       sorter: (a: any, b: any) => a.ask.localeCompare(b.ask),
       fixed: isMobile ? undefined : "left",
@@ -1705,7 +1731,8 @@ useEffect(() => {
       title: "Ask Fix",
       dataIndex: "ask_mdf",
       key: "ask_mdf",
-      render: (text: any) => (
+      render: (text: any , record) => (
+        <Tooltip title={`Digits: ${record.digit_root}`}>
         <div
           style={{
             color: "#5aedef",
@@ -1713,16 +1740,18 @@ useEffect(() => {
             fontWeight: 500,
           }}
         >
-          <span>{text}</span>
+          <span>{formatDecimal(text, Number(record.digit_root))}</span>
         </div>
+        </Tooltip>
       ),
       sorter: (a: any, b: any) => a.ask_mdf.localeCompare(b.ask_mdf),
     },
     {
-      title: "Spread",
-      dataIndex: "spread",
-      key: "spread",
-      render: (text: any) => (
+      title: "Spread MDF",
+      dataIndex: "spread_mdf",
+      key: "spread_mdf",
+      render: (text: any, record: any) => (
+        <Tooltip title={`Spread: ${record.spread} - Spread Fix: ${record.spread_mdf}`}>
         <div
           style={{
             color: "#ca5aef",
@@ -1732,8 +1761,10 @@ useEffect(() => {
         >
           <span>{text}</span>
         </div>
+        </Tooltip>
       ),
-      sorter: (a: any, b: any) => a.spread.localeCompare(b.spread),
+      sorter: (a: any, b: any) => a.spread_mdf.localeCompare(b.spread_mdf),
+      
     },
     {
       title: "Delay",
@@ -3522,30 +3553,55 @@ useEffect(() => {
         <p>Disconnected server at {new Date().toLocaleTimeString()} </p>
       </Modal>
 
-      {dataChart && (
-      <TripleExchangeChartModal
-        isOpen={isChartOpen}
-        onClose={() => setIsChartOpen(false)}
-        symbol={dataChart?.symbol || activeTab}
-        exchange1={dataChart?.exchange1 || null}
-        exchange2={dataChart?.exchange2 || null}
-        exchange3={dataChart?.exchange3 || null}
-        timeframe={dataChart?.timeframe || "1m"}
-        exchange1Bid={dataChart?.exchange1?.bid || 1.0875}
-        exchange1Ask={dataChart?.exchange1?.ask || 1.0878}
-        exchange2Bid={dataChart?.exchange2?.bid || 1.0876}
-        exchange2Ask={dataChart?.exchange2?.ask || 1.0879}
-        exchange3Bid={dataChart?.exchange3?.bid || 1.0877}
-        exchange3Ask={dataChart?.exchange3?.ask || 1.0880}
-        exchange1Digits={dataChart?.exchange1?.digit}
-        exchange2Digits={dataChart?.exchange2?.digit}
-        exchange3Digits={dataChart?.exchange3?.digit}
-        exchange1Spread={dataChart?.exchange1?.spread}
-        exchange2Spread={dataChart?.exchange2?.spread}
-        exchange3Spread={dataChart?.exchange3?.spread}
-        _id_Error={_id_Error}
-      />
-      )}
+      // ============================================================
+// JSX — truyền props vào TripleExchangeChartModal
+// Chart 1 & 2: bid/ask/spread GỐC, digit GỐC của broker
+// Chart 3:     bid_mdf/ask_mdf, digit_root
+// ============================================================
+
+{dataChart && (() => {
+  const c1 = dataChart.exchange1;
+  const c2 = dataChart.exchange2;
+  const c3 = dataChart.exchange3;
+
+  return (
+    <TripleExchangeChartModal
+      isOpen={isChartOpen}
+      onClose={() => setIsChartOpen(false)}
+      symbol={dataChart.symbol || activeTab}
+      exchange1={c1}
+      exchange2={c2}
+      exchange3={c3}
+      timeframe={dataChart.timeframe || "1M"}
+
+      // ✅ Chart 1 — bid/ask/spread gốc, digit gốc
+      exchange1Bid={c1?.bid}
+      exchange1Ask={c1?.ask}
+      exchange1Spread={c1?.spread}
+      exchange1Digits={c1?.digit}        // digit gốc (vd: 1)
+
+      // ✅ Chart 2 — bid/ask/spread gốc, digit gốc
+      exchange2Bid={c2?.bid}
+      exchange2Ask={c2?.ask}
+      exchange2Spread={c2?.spread}
+      exchange2Digits={c2?.digit}        // digit gốc (vd: 2)
+
+      // ✅ Chart 3 — bid_mdf/ask_mdf, digit_root
+      exchange3Bid={dataChart.chart3_bid1}
+      exchange3Ask={dataChart.chart3_ask1}
+      exchange3Spread={dataChart.chart3_spread}
+      exchange3Digits={dataChart.chart3_digit}  // digit_root (vd: 3)
+
+      // Chart 3 pair2
+      exchange3BidMdf={dataChart.chart3_bid1}
+      exchange3AskMdf={dataChart.chart3_ask1}
+      exchange2BidMdf={dataChart.chart3_bid2}
+      exchange3Ask2Mdf={dataChart.chart3_ask2}
+
+      _id_Error={_id_Error}
+    />
+  );
+})()}
       
 
 
@@ -4373,53 +4429,52 @@ const titles = g.items
                    {/* Config Button */}
 {roleUser.toUpperCase() === "ADMIN" && (
      <button
-                    style={{
-                      padding: "10px 20px",
-                      background:
-                        "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                      border: "none",
-                      borderRadius: "8px",
-                      color: "#fff",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      boxShadow: "0 4px 12px rgba(245, 158, 11, 0.35)",
-                      position: "relative",
-                      overflow: "hidden",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background =
-                        "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)";
-                      e.currentTarget.style.transform =
-                        "translateY(-2px) scale(1.05)";
-                      e.currentTarget.style.boxShadow =
-                        "0 8px 20px rgba(245, 158, 11, 0.5)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background =
-                        "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
-                      e.currentTarget.style.transform =
-                        "translateY(0) scale(1)";
-                      e.currentTarget.style.boxShadow =
-                        "0 4px 12px rgba(245, 158, 11, 0.35)";
-                    }}
-                    onMouseDown={(e) => {
-                      e.currentTarget.style.transform =
-                        "translateY(0) scale(0.98)";
-                    }}
-                    onMouseUp={(e) => {
-                      e.currentTarget.style.transform =
-                        "translateY(-2px) scale(1.05)";
-                    }}
-                    onClick={() => setModalSymbolConfig(true)}
-                  > <SettingOutlined />
-                   
-                    Symbol Convert
-                  </button>
+  style={{
+    padding: "10px 20px",
+    background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
+    border: "none",
+    borderRadius: "8px",
+    color: "#fff",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    boxShadow: "0 4px 12px rgba(139, 92, 246, 0.35)",
+    position: "relative",
+    overflow: "hidden",
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.background =
+      "linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)";
+    e.currentTarget.style.transform =
+      "translateY(-2px) scale(1.05)";
+    e.currentTarget.style.boxShadow =
+      "0 8px 20px rgba(139, 92, 246, 0.5)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.background =
+      "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)";
+    e.currentTarget.style.transform =
+      "translateY(0) scale(1)";
+    e.currentTarget.style.boxShadow =
+      "0 4px 12px rgba(139, 92, 246, 0.35)";
+  }}
+  onMouseDown={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(0) scale(0.97)";
+  }}
+  onMouseUp={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(-2px) scale(1.05)";
+  }}
+  onClick={() => setModalSymbolConfig(true)}
+>
+  <SettingOutlined />
+  Symbol Convert
+</button>
 )}
                   
                    {roleUser.toUpperCase() === "ADMIN" && (
@@ -4631,6 +4686,56 @@ const titles = g.items
             >
               <HistoryOutlined /> History
             </button>
+
+            {roleUser.toUpperCase() === "ADMIN" && (
+     <button
+  style={{
+    padding: "10px 20px",
+    background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
+    border: "none",
+    borderRadius: "8px",
+    color: "#fff",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    boxShadow: "0 4px 12px rgba(139, 92, 246, 0.35)",
+    position: "relative",
+    overflow: "hidden",
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.background =
+      "linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)";
+    e.currentTarget.style.transform =
+      "translateY(-2px) scale(1.05)";
+    e.currentTarget.style.boxShadow =
+      "0 8px 20px rgba(139, 92, 246, 0.5)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.background =
+      "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)";
+    e.currentTarget.style.transform =
+      "translateY(0) scale(1)";
+    e.currentTarget.style.boxShadow =
+      "0 4px 12px rgba(139, 92, 246, 0.35)";
+  }}
+  onMouseDown={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(0) scale(0.97)";
+  }}
+  onMouseUp={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(-2px) scale(1.05)";
+  }}
+  onClick={() => setModalSymbolConfig(true)}
+>
+  <SettingOutlined />
+  Symbol Convert
+</button>
+)}
                {/* Spread 0 Button - Mobile */}
           {roleUser.toUpperCase() === "ADMIN" && (
            
